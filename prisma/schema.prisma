@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Existing Task Models
+model Task {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      TaskStatus
+  notes       Note[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  content   String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+// User and Auth Models
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  organizations Organization[] // User can manage multiple organizations
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// Organization Models
+model Organization {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  businessUnits BusinessUnit[]
+  users         User[]         // Many-to-many relationship with users
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model BusinessUnit {
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  orgId         String
+  organization  Organization  @relation(fields: [orgId], references: [id])
+  stakeholders  Stakeholder[]
+  metrics       Metric[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Stakeholder {
+  id             String        @id @default(cuid())
+  name           String
+  email          String
+  role           String
+  businessUnitId String
+  businessUnit   BusinessUnit  @relation(fields: [businessUnitId], references: [id])
+  goals          Goal[]
+  meetings       Meeting[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Goal {
+  id              String      @id @default(cuid())
+  title           String
+  description     String
+  startDate       DateTime
+  endDate         DateTime
+  status          GoalStatus
+  stakeholderId   String
+  stakeholder     Stakeholder @relation(fields: [stakeholderId], references: [id])
+  requirements    String?     // Notes for gathering requirements
+  progressNotes   String?     // Additional notes on progress
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Meeting {
+  id            String      @id @default(cuid())
+  date          DateTime
+  notes         String
+  stakeholderId String
+  stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Metric {
+  id             String       @id @default(cuid())
+  name           String
+  target         Float
+  current        Float
+  unit           String
+  businessUnitId String
+  businessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  AT_RISK
+  BLOCKED
+  CANCELLED
+}

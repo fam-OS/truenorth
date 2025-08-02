@@ -1,0 +1,63 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { createNoteSchema } from '@/lib/validations/task';
+import { handleError } from '@/lib/api-response';
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!task) {
+      return NextResponse.json(
+        { error: 'Task not found' },
+        { status: 404 }
+      );
+    }
+
+    const json = await request.json();
+    const data = createNoteSchema.parse(json);
+
+    const note = await prisma.note.create({
+      data: {
+        content: data.content,
+        taskId: params.id,
+      },
+    });
+
+    return NextResponse.json(note, { status: 201 });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!task) {
+      return NextResponse.json(
+        { error: 'Task not found' },
+        { status: 404 }
+      );
+    }
+
+    const notes = await prisma.note.findMany({
+      where: { taskId: params.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(notes);
+  } catch (error) {
+    return handleError(error);
+  }
+}
