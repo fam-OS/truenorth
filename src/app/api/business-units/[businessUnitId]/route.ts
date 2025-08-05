@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import prisma from '@/lib/prisma';
-import { apiResponse } from '@/lib/api-response';
+import { prisma } from '@/lib/prisma';
+import { handleError } from '@/lib/api-response';
 
 const updateBusinessUnitSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -10,14 +10,14 @@ const updateBusinessUnitSchema = z.object({
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { businessUnitId: string } }
 ) {
   try {
     const body = await request.json();
     const validatedData = updateBusinessUnitSchema.parse(body);
 
     const businessUnit = await prisma.businessUnit.update({
-      where: { id: params.id },
+      where: { id: params.businessUnitId },
       data: {
         name: validatedData.name,
         description: validatedData.description,
@@ -26,59 +26,59 @@ export async function PUT(
         organization: true,
         stakeholders: true,
         metrics: true,
-        goals: true,
+
       },
     });
 
-    return apiResponse(businessUnit);
+    return NextResponse.json(businessUnit);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return apiResponse(null, 400, 'Invalid request data', error.errors);
+      return NextResponse.json({ error: 'Invalid request data', details: error.issues }, { status: 400 });
     }
 
     console.error('Failed to update business unit:', error);
-    return apiResponse(null, 500, 'Failed to update business unit');
+    return handleError(error);
   }
 }
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { businessUnitId: string } }
 ) {
   try {
     const businessUnit = await prisma.businessUnit.findUnique({
-      where: { id: params.id },
+      where: { id: params.businessUnitId },
       include: {
         organization: true,
         stakeholders: true,
         metrics: true,
-        goals: true,
+
       },
     });
 
     if (!businessUnit) {
-      return apiResponse(null, 404, 'Business unit not found');
+      return NextResponse.json({ error: 'Business unit not found' }, { status: 404 });
     }
 
-    return apiResponse(businessUnit);
+    return NextResponse.json(businessUnit);
   } catch (error) {
     console.error('Failed to fetch business unit:', error);
-    return apiResponse(null, 500, 'Failed to fetch business unit');
+    return handleError(error);
   }
 }
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { businessUnitId: string } }
 ) {
   try {
     await prisma.businessUnit.delete({
-      where: { id: params.id },
+      where: { id: params.businessUnitId },
     });
 
-    return apiResponse({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete business unit:', error);
-    return apiResponse(null, 500, 'Failed to delete business unit');
+    return handleError(error);
   }
 }

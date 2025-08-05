@@ -4,23 +4,25 @@ import { useState } from 'react';
 import { BusinessUnit } from '@prisma/client';
 import { CreateBusinessUnitInput } from '@/lib/validations/organization';
 
+type BusinessUnitFormState = CreateBusinessUnitInput & { organizationId: string };
+
 interface BusinessUnitFormProps {
   businessUnit?: BusinessUnit;
-  orgId: string;
-  onSubmit: (data: CreateBusinessUnitInput) => Promise<void>;
+  organizationId: string;
+  onSubmit: (data: BusinessUnitFormState) => Promise<void>;
   onCancel: () => void;
 }
 
 export function BusinessUnitForm({
   businessUnit,
-  orgId,
+  organizationId,
   onSubmit,
   onCancel,
 }: BusinessUnitFormProps) {
-  const [formData, setFormData] = useState<CreateBusinessUnitInput>({
+  const [formData, setFormData] = useState<BusinessUnitFormState>({
     name: businessUnit?.name ?? '',
     description: businessUnit?.description ?? '',
-    orgId: orgId,
+    organizationId: organizationId,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);

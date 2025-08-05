@@ -53,18 +53,33 @@ A web application for managing tasks, goals, and business metrics for tech execu
    npm install
    ```
 
-3. Set up the database:
+3. Set up PostgreSQL (macOS/Homebrew example):
+
+   #### a. Open Terminal and enter the PostgreSQL shell:
    ```bash
-   # Create a PostgreSQL database
-   createdb truenorth_dev
+   psql -U postgres
+   ```
 
-   # Copy the example env file
+   #### b. Create a new user and database (replace `yourusername`/`yourpassword` as needed):
+   ```sql
+   CREATE USER yourusername WITH PASSWORD 'yourpassword';
+   CREATE DATABASE truenorth_dev;
+   GRANT ALL PRIVILEGES ON DATABASE truenorth_dev TO yourusername;
+   \q
+   ```
+
+   #### c. Copy the example env file:
+   ```bash
    cp .env.example .env
+   ```
 
-   # Update the DATABASE_URL in .env with your database credentials
-   # DATABASE_URL="postgresql://username:password@localhost:5432/truenorth_dev"
+   #### d. Set your DATABASE_URL in `.env`:
+   ```env
+   DATABASE_URL="postgresql://yourusername:yourpassword@localhost:5432/truenorth_dev"
+   ```
 
-   # Run migrations
+   #### e. Run migrations:
+   ```bash
    npx prisma migrate dev
    ```
 
@@ -72,6 +87,16 @@ A web application for managing tasks, goals, and business metrics for tech execu
    ```bash
    npm run dev
    ```
+
+   Stop the development server: 
+   ```bash
+   pkill -f next
+   ``` 
+
+   Sync the schema changes:
+   ```bash
+   npx prisma migrate dev
+   ``` 
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 

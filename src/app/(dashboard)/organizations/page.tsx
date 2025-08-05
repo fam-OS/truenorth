@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { OrganizationWithBusinessUnits } from '@/types/prisma';
+import { OrganizationForm } from '@/components/OrganizationForm';
+
+import { BusinessUnitForm } from '@/components/BusinessUnitForm';
 
 export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<OrganizationWithBusinessUnits[]>([]);
@@ -9,6 +12,7 @@ export default function OrganizationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateOrg, setShowCreateOrg] = useState(false);
   const [showCreateUnit, setShowCreateUnit] = useState<string | null>(null);
+  const [editUnit, setEditUnit] = useState<{ orgId: string; unit: any } | null>(null);
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
   const abortController = useRef<AbortController | null>(null);
@@ -57,7 +61,26 @@ export default function OrganizationsPage() {
     isMounted.current = true;
     void fetchOrganizations();
 
-    return () => {
+    // Handler for editing a business unit
+   const handleEditBusinessUnit = async (orgId: string, unitId: string, data: { name: string; description?: string }) => {
+     try {
+       setError(null);
+       const response = await fetch(`/api/organizations/${orgId}/business-units/${unitId}`, {
+         method: 'PUT',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(data),
+       });
+       if (!response.ok) {
+         throw new Error('Failed to update business unit');
+       }
+       await fetchOrganizations();
+       setEditUnit(null);
+     } catch (err) {
+       setError(err instanceof Error ? err.message : 'Failed to update business unit');
+     }
+   };
+
+   return () => {
       isMounted.current = false;
       if (abortController.current) {
         abortController.current.abort();
@@ -112,6 +135,89 @@ export default function OrganizationsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="min-h-[400px]">
+        {/* Modal for creating an organization */}
+        {showCreateOrg && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 relative">
+              <button
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowCreateOrg(false)}
+                aria-label="Close"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Create Organization</h2>
+                {/* Import OrganizationForm at the top if not already */}
+                <OrganizationForm
+                  onSubmit={handleCreateOrganization}
+                  onCancel={() => setShowCreateOrg(false)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal for creating a business unit */}
+        {showCreateUnit && !editUnit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 relative">
+              <button
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowCreateUnit(null)}
+                aria-label="Close"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Add Business Unit</h2>
+                <BusinessUnitForm
+                  organizationId={showCreateUnit}
+                  onSubmit={async (data) => {
+                    await handleCreateBusinessUnit(showCreateUnit, data);
+                    setShowCreateUnit(null);
+                  }}
+                  onCancel={() => setShowCreateUnit(null)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal for editing a business unit */}
+        {editUnit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 relative">
+              <button
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setEditUnit(null)}
+                aria-label="Close"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Edit Business Unit</h2>
+                <BusinessUnitForm
+                  businessUnit={editUnit.unit}
+                  organizationId={editUnit.orgId}
+                  onSubmit={async (data) => {
+                    await handleEditBusinessUnit(editUnit.orgId, editUnit.unit.id, data);
+                    setEditUnit(null);
+                  }}
+                  onCancel={() => setEditUnit(null)}
+                />
+              </div>
+            </div>
+          </div>
+        )
+}
+
         {error && (
           <div className="rounded-md bg-red-50 p-4 mb-6">
             <div className="text-sm text-red-700">{error}</div>
@@ -154,12 +260,30 @@ export default function OrganizationsPage() {
                   <div className="px-6 py-5">
                     <div className="flex items-center justify-between">
                       <h2 className="text-xl font-semibold text-gray-900">{org.name}</h2>
-                      <button
-                        onClick={() => setShowCreateUnit(org.id)}
-                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200"
-                      >
-                        Add Business Unit
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowCreateUnit(org.id)}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200"
+                        >
+                          Add Business Unit
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm(`Delete organization '${org.name}'? This will remove all business units and associated data.`)) {
+                              setError(null);
+                              const response = await fetch(`/api/organizations/${org.id}`, { method: 'DELETE' });
+                              if (!response.ok) {
+                                setError('Failed to delete organization');
+                              } else {
+                                await fetchOrganizations();
+                              }
+                            }
+                          }}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     {org.description && (
                       <p className="mt-1 text-sm text-gray-500">{org.description}</p>
@@ -177,9 +301,33 @@ export default function OrganizationsPage() {
                               className="flex items-center justify-between py-2"
                             >
                               <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {unit.name}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {unit.name}
+                                  </p>
+                                  <button
+                                    onClick={() => setEditUnit({ orgId: org.id, unit })}
+                                    className="inline-flex items-center px-2 py-0.5 border border-transparent text-xs font-medium rounded bg-yellow-100 text-yellow-700 hover:bg-yellow-200 mr-2"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (window.confirm(`Delete business unit '${unit.name}'?`)) {
+                                        setError(null);
+                                        const response = await fetch(`/api/organizations/${org.id}/business-units/${unit.id}`, { method: 'DELETE' });
+                                        if (!response.ok) {
+                                          setError('Failed to delete business unit');
+                                        } else {
+                                          await fetchOrganizations();
+                                        }
+                                      }
+                                    }}
+                                    className="inline-flex items-center px-2 py-0.5 border border-transparent text-xs font-medium rounded bg-red-100 text-red-600 hover:bg-red-200"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                                 {unit.description && (
                                   <p className="text-sm text-gray-500">
                                     {unit.description}

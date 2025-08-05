@@ -5,12 +5,12 @@ import { handleError } from '@/lib/api-response';
 
 export async function GET(
   request: Request,
-  { params }: { params: { orgId: string } }
+  { params }: { params: { organizationId: string } }
 ) {
   try {
     const businessUnits = await prisma.businessUnit.findMany({
       where: {
-        orgId: params.orgId,
+        organization: { id: params.organizationId },
       },
       include: {
         stakeholders: true,
@@ -26,14 +26,18 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { orgId: string } }
+  { params }: { params: { organizationId: string } }
 ) {
   try {
     const json = await request.json();
-    const data = createBusinessUnitSchema.parse({ ...json, orgId: params.orgId });
+    const data = createBusinessUnitSchema.parse(json);
 
     const businessUnit = await prisma.businessUnit.create({
-      data,
+      data: {
+        name: data.name,
+        description: data.description,
+        organization: { connect: { id: params.organizationId } },
+      },
       include: {
         stakeholders: true,
         metrics: true,

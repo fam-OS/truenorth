@@ -74,12 +74,12 @@ export default function BusinessUnitsPage() {
     };
   }, [fetchData]);
 
-  async function handleCreateBusinessUnit(data: { name: string; description?: string; orgId: string }) {
+  async function handleCreateBusinessUnit({ name, description, organizationId }: { name: string; description?: string; organizationId: string }) {
     try {
-      const response = await fetch(`/api/organizations/${data.orgId}/business-units`, {
+      const response = await fetch(`/api/organizations/${organizationId}/business-units`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ name, description }),
       });
 
       if (!response.ok) throw new Error('Failed to create business unit');
@@ -193,7 +193,7 @@ export default function BusinessUnitsPage() {
               </div>
               {selectedOrg && (
                 <BusinessUnitForm
-                  orgId={selectedOrg.id}
+                  organizationId={selectedOrg.id}
                   onSubmit={handleCreateBusinessUnit}
                   onCancel={() => setViewMode('list')}
                 />
