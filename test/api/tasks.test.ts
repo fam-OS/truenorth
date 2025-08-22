@@ -3,31 +3,31 @@ import { GET, POST } from '@/app/api/tasks/route';
 import { GET as GET_SINGLE, PUT, DELETE } from '@/app/api/tasks/[id]/route';
 import { POST as POST_NOTE, GET as GET_NOTES } from '@/app/api/tasks/[id]/notes/route';
 
+const nowIso = new Date().toISOString();
 const mockTask = {
   id: '1',
   title: 'Test Task',
   description: 'Test Description',
   status: 'TODO',
-  dueDate: new Date(),
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  dueDate: nowIso,
+  createdAt: nowIso,
+  updatedAt: nowIso,
 };
 
 const mockNote = {
   id: '1',
   content: 'Test Note',
   taskId: '1',
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  createdAt: nowIso,
+  updatedAt: nowIso,
 };
 
 describe('Tasks API', () => {
   describe('GET /api/tasks', () => {
     it('should return all tasks', async () => {
-      prismaMock.task.findMany.mockResolvedValue([mockTask]);
+      prismaMock.task.findMany.mockResolvedValue([mockTask] as any);
 
-      const req = new Request('http://localhost/api/tasks');
-      const response = await GET(req);
+      const response = await GET();
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -58,7 +58,7 @@ describe('Tasks API', () => {
         status: 'TODO',
       };
 
-      prismaMock.task.create.mockResolvedValue({ ...mockTask, ...newTask });
+      prismaMock.task.create.mockResolvedValue({ ...mockTask, ...newTask } as any);
 
       const req = new Request('http://localhost/api/tasks', {
         method: 'POST',
@@ -94,10 +94,10 @@ describe('Tasks API', () => {
 
   describe('GET /api/tasks/[id]', () => {
     it('should return a single task', async () => {
-      prismaMock.task.findUnique.mockResolvedValue(mockTask);
+      prismaMock.task.findUnique.mockResolvedValue(mockTask as any);
 
       const req = new Request('http://localhost/api/tasks/1');
-      const response = await GET_SINGLE(req, { params: { id: '1' } });
+      const response = await GET_SINGLE(req, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -127,8 +127,8 @@ describe('Tasks API', () => {
         status: 'IN_PROGRESS',
       };
 
-      prismaMock.task.findUnique.mockResolvedValue(mockTask);
-      prismaMock.task.update.mockResolvedValue({ ...mockTask, ...updates });
+      prismaMock.task.findUnique.mockResolvedValue(mockTask as any);
+      prismaMock.task.update.mockResolvedValue({ ...mockTask, ...updates } as any);
 
       const req = new Request('http://localhost/api/tasks/1', {
         method: 'PUT',
@@ -136,7 +136,7 @@ describe('Tasks API', () => {
         body: JSON.stringify(updates),
       });
 
-      const response = await PUT(req, { params: { id: '1' } });
+      const response = await PUT(req, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -151,14 +151,14 @@ describe('Tasks API', () => {
 
   describe('DELETE /api/tasks/[id]', () => {
     it('should delete a task', async () => {
-      prismaMock.task.findUnique.mockResolvedValue(mockTask);
-      prismaMock.task.delete.mockResolvedValue(mockTask);
+      prismaMock.task.findUnique.mockResolvedValue(mockTask as any);
+      prismaMock.task.delete.mockResolvedValue(mockTask as any);
 
       const req = new Request('http://localhost/api/tasks/1', {
         method: 'DELETE',
       });
 
-      const response = await DELETE(req, { params: { id: '1' } });
+      const response = await DELETE(req, { params: Promise.resolve({ id: '1' }) });
 
       expect(response.status).toBe(204);
       expect(prismaMock.task.delete).toHaveBeenCalledWith({
@@ -169,8 +169,8 @@ describe('Tasks API', () => {
 
   describe('POST /api/tasks/[id]/notes', () => {
     it('should add a note to a task', async () => {
-      prismaMock.task.findUnique.mockResolvedValue(mockTask);
-      prismaMock.note.create.mockResolvedValue(mockNote);
+      prismaMock.task.findUnique.mockResolvedValue(mockTask as any);
+      prismaMock.note.create.mockResolvedValue(mockNote as any);
 
       const req = new Request('http://localhost/api/tasks/1/notes', {
         method: 'POST',
@@ -178,7 +178,7 @@ describe('Tasks API', () => {
         body: JSON.stringify({ content: 'Test Note' }),
       });
 
-      const response = await POST_NOTE(req, { params: { id: '1' } });
+      const response = await POST_NOTE(req, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(201);
@@ -194,11 +194,11 @@ describe('Tasks API', () => {
 
   describe('GET /api/tasks/[id]/notes', () => {
     it('should get all notes for a task', async () => {
-      prismaMock.task.findUnique.mockResolvedValue(mockTask);
-      prismaMock.note.findMany.mockResolvedValue([mockNote]);
+      prismaMock.task.findUnique.mockResolvedValue(mockTask as any);
+      prismaMock.note.findMany.mockResolvedValue([mockNote] as any);
 
       const req = new Request('http://localhost/api/tasks/1/notes');
-      const response = await GET_NOTES(req, { params: { id: '1' } });
+      const response = await GET_NOTES(req, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
