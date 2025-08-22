@@ -54,6 +54,7 @@ model Organization {
   name          String
   description   String?
   businessUnits BusinessUnit[]
+  teams         Team[]
   users         User[]         // Many-to-many relationship with users
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -76,8 +77,8 @@ model Stakeholder {
   name           String
   email          String
   role           String
-  businessUnitId String
-  businessUnit   BusinessUnit  @relation(fields: [businessUnitId], references: [id])
+  businessUnitId String?
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id])
   goals          Goal[]
   meetings       Meeting[]
   createdAt      DateTime      @default(now())
@@ -128,4 +129,30 @@ enum GoalStatus {
   AT_RISK
   BLOCKED
   CANCELLED
+}
+
+// Teams and Members
+model Team {
+  id             String        @id @default(cuid())
+  name           String
+  description    String?
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  members        TeamMember[]
+
+  @@index([organizationId])
+  @@unique([organizationId, name])
+}
+
+model TeamMember {
+  id       String @id @default(cuid())
+  name     String
+  email    String
+  role     String
+  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId   String
+
+  @@index([teamId])
+  @@unique([teamId, email])
 }

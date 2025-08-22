@@ -5,11 +5,13 @@ import { handleError } from '@/lib/api-response';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { id } = await params;
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { notes: true },
     });
 
@@ -28,14 +30,16 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { id } = await params;
     const json = await request.json();
     const data = updateTaskSchema.parse(json);
 
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!task) {
@@ -46,7 +50,7 @@ export async function PUT(
     }
 
     const updatedTask = await prisma.task.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title: data.title,
         description: data.description,
@@ -64,11 +68,13 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { id } = await params;
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!task) {
@@ -79,7 +85,7 @@ export async function DELETE(
     }
 
     await prisma.task.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return new NextResponse(null, { status: 204 });

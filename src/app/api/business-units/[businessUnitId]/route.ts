@@ -10,14 +10,16 @@ const updateBusinessUnitSchema = z.object({
 
 export async function PUT(
   request: Request,
-  { params }: { params: { businessUnitId: string } }
+  { params }: { params: Promise<{ businessUnitId: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { businessUnitId } = await params;
     const body = await request.json();
     const validatedData = updateBusinessUnitSchema.parse(body);
 
     const businessUnit = await prisma.businessUnit.update({
-      where: { id: params.businessUnitId },
+      where: { id: businessUnitId },
       data: {
         name: validatedData.name,
         description: validatedData.description,
@@ -43,11 +45,13 @@ export async function PUT(
 
 export async function GET(
   _request: Request,
-  { params }: { params: { businessUnitId: string } }
+  { params }: { params: Promise<{ businessUnitId: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { businessUnitId } = await params;
     const businessUnit = await prisma.businessUnit.findUnique({
-      where: { id: params.businessUnitId },
+      where: { id: businessUnitId },
       include: {
         organization: true,
         stakeholders: true,
@@ -69,11 +73,13 @@ export async function GET(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { businessUnitId: string } }
+  { params }: { params: Promise<{ businessUnitId: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { businessUnitId } = await params;
     await prisma.businessUnit.delete({
-      where: { id: params.businessUnitId },
+      where: { id: businessUnitId },
     });
 
     return NextResponse.json({ success: true });

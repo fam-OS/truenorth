@@ -10,7 +10,7 @@ import { StakeholderForm } from '@/components/StakeholderForm';
 import { BusinessUnitEditForm } from '@/components/BusinessUnitEditForm';
 import type { BusinessUnitWithDetails } from '@/types/prisma';
 
-type ViewMode = 'list' | 'detail' | 'createUnit' | 'createGoal' | 'createStakeholder' | 'stakeholders' | 'editUnit';
+type ViewMode = 'list' | 'detail' | 'createUnit' | 'createGoal' | 'createStakeholder' | 'stakeholders' | 'editUnit' | 'createGlobalStakeholder';
 
 export default function BusinessUnitsPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -18,6 +18,8 @@ export default function BusinessUnitsPage() {
   const [selectedUnit, setSelectedUnit] = useState<BusinessUnitWithDetails | null>(null);
   const [selectedOrg, setSelectedOrg] = useState<any | null>(null);
   const [selectedStakeholder, setSelectedStakeholder] = useState<any | null>(null);
+  const [unassignedStakeholders, setUnassignedStakeholders] = useState<any[]>([]);
+  const [selectedExistingStakeholderId, setSelectedExistingStakeholderId] = useState<string>('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -28,34 +30,39 @@ export default function BusinessUnitsPage() {
     if (!isMounted.current) return;
     
     try {
-      const response = await fetch('/api/organizations');
+      setIsLoading(true);
+      const response = await fetch('/api/organizations', {
+        cache: 'no-store', // Prevent caching
+        signal: AbortSignal.timeout(5000) // Add timeout to prevent hanging requests
+      });
+      
       if (!response.ok) throw new Error('Failed to fetch organizations');
       const data = await response.json();
       
-      if (isMounted.current) {
-        setOrganizations(data);
-        const units = data.flatMap((org: any) => 
-          (org.businessUnits || []).map((unit: any) => ({
-            ...unit,
-            organization: org,
-            stakeholders: unit.stakeholders || [],
-            metrics: unit.metrics || [],
-            goals: unit.goals || [],
-          }))
-        );
-        setBusinessUnits(units);
+      if (!isMounted.current) return;
+      
+      setOrganizations(data);
+      const units = data.flatMap((org: any) => 
+        (org.businessUnits || []).map((unit: any) => ({
+          ...unit,
+          organization: org,
+          stakeholders: unit.stakeholders || [],
+          metrics: unit.metrics || [],
+          goals: unit.goals || [],
+        }))
+      );
+      setBusinessUnits(units);
 
-        if (selectedUnit) {
-          const updatedUnit = units.find(unit => unit.id === selectedUnit.id);
-          if (updatedUnit) setSelectedUnit(updatedUnit);
-        }
+      if (selectedUnit) {
+        const updatedUnit = units.find((unit: BusinessUnitWithDetails) => unit.id === selectedUnit.id);
+        if (updatedUnit) setSelectedUnit(updatedUnit);
+      }
 
-        if (!initialFetchDone.current) {
-          initialFetchDone.current = true;
-        }
+      if (!initialFetchDone.current) {
+        initialFetchDone.current = true;
       }
     } catch (err) {
-      if (isMounted.current) {
+      if (isMounted.current && !(err instanceof DOMException && err.name === 'AbortError')) {
         setError('Failed to load business units');
         console.error(err);
       }
@@ -66,13 +73,38 @@ export default function BusinessUnitsPage() {
     }
   }, [selectedUnit]);
 
+  // Initial data fetch
   useEffect(() => {
     isMounted.current = true;
-    void fetchData();
+    const controller = new AbortController();
+    
+    // Only fetch if we haven't loaded data yet or if we need to refresh
+    if (!initialFetchDone.current || businessUnits.length === 0) {
+      void fetchData();
+    }
+    
     return () => {
       isMounted.current = false;
+      controller.abort();
     };
-  }, [fetchData]);
+  }, []); // Empty dependency array ensures this only runs once on mount
+
+  // Load unassigned stakeholders when opening add-stakeholder view
+  useEffect(() => {
+    if (viewMode === 'createStakeholder') {
+      void (async () => {
+        try {
+          const res = await fetch('/api/stakeholders?unassigned=true', { cache: 'no-store' });
+          if (res.ok) {
+            const list = await res.json();
+            setUnassignedStakeholders(list);
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+    }
+  }, [viewMode]);
 
   async function handleCreateBusinessUnit({ name, description, organizationId }: { name: string; description?: string; organizationId: string }) {
     try {
@@ -89,6 +121,42 @@ export default function BusinessUnitsPage() {
       setSelectedOrg(null);
     } catch (err) {
       throw new Error('Failed to create business unit');
+    }
+  }
+
+  async function handleLinkExistingStakeholder() {
+    if (!selectedUnit || !selectedExistingStakeholderId) return;
+    try {
+      const response = await fetch(`/api/business-units/${selectedUnit.id}/stakeholders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stakeholderId: selectedExistingStakeholderId }),
+      });
+      if (!response.ok) throw new Error('Failed to link stakeholder');
+      await fetchData();
+      setViewMode('stakeholders');
+    } catch (err) {
+      throw new Error('Failed to link stakeholder');
+    }
+  }
+
+  async function handleCreateGlobalStakeholder(data: {
+    name: string;
+    role: string;
+    email?: string;
+  }) {
+    try {
+      const response = await fetch(`/api/stakeholders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) throw new Error('Failed to create stakeholder');
+      await fetchData();
+      setViewMode('list');
+    } catch (err) {
+      throw new Error('Failed to create stakeholder');
     }
   }
 
@@ -139,9 +207,8 @@ export default function BusinessUnitsPage() {
 
   async function handleCreateStakeholder(data: {
     name: string;
-    title: string;
     role: string;
-    email: string;
+    email?: string;
   }) {
     if (!selectedUnit) return;
 
@@ -292,7 +359,6 @@ export default function BusinessUnitsPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium text-blue-600">{stakeholder.name}</p>
-                            <p className="text-sm text-gray-500">{stakeholder.title}</p>
                           </div>
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                             {stakeholder.role}
@@ -359,6 +425,31 @@ export default function BusinessUnitsPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Add Stakeholder to {selectedUnit.name}
             </h2>
+            <div className="bg-white shadow rounded-lg p-4 mb-6">
+              <h3 className="text-md font-medium text-gray-900 mb-2">Link Existing Stakeholder</h3>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select
+                  className="mt-1 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  value={selectedExistingStakeholderId}
+                  onChange={(e) => setSelectedExistingStakeholderId(e.target.value)}
+                >
+                  <option value="">Select a stakeholder</option>
+                  {unassignedStakeholders.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.email ? `(${s.email})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={!selectedExistingStakeholderId}
+                  onClick={handleLinkExistingStakeholder}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Link to Business Unit
+                </button>
+              </div>
+            </div>
             <StakeholderForm
               businessUnit={selectedUnit}
               onSubmit={handleCreateStakeholder}
@@ -367,18 +458,45 @@ export default function BusinessUnitsPage() {
           </div>
         ) : null;
 
+      case 'createGlobalStakeholder':
+        return (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Add Stakeholder</h2>
+              <button
+                onClick={() => setViewMode('list')}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+            <StakeholderForm
+              onSubmit={handleCreateGlobalStakeholder}
+              onCancel={() => setViewMode('list')}
+            />
+          </div>
+        );
+
       default:
         return (
           <>
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-semibold text-gray-900">Business Units</h1>
               {organizations.length > 0 && (
-                <button
-                  onClick={() => setViewMode('createUnit')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  New Business Unit
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setViewMode('createGlobalStakeholder')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+                  >
+                    New Stakeholder
+                  </button>
+                  <button
+                    onClick={() => setViewMode('createUnit')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    New Business Unit
+                  </button>
+                </div>
               )}
             </div>
             {organizations.length === 0 ? (
@@ -389,8 +507,7 @@ export default function BusinessUnitsPage() {
             ) : (
               <div className="grid grid-cols-1 gap-6">
                 {organizations.map((org) => (
-                  <div key={org.id} className="space-y-4">
-                    <h2 className="text-lg font-medium text-gray-900">{org.name}</h2>
+                  <div key={org.id}>
                     <BusinessUnitList
                       businessUnits={businessUnits.filter(unit => unit.organization.id === org.id)}
                       onCreateUnit={() => {
@@ -400,6 +517,10 @@ export default function BusinessUnitsPage() {
                       onSelectUnit={(unit) => {
                         setSelectedUnit(unit);
                         setViewMode('detail');
+                      }}
+                      onAddStakeholder={(unit) => {
+                        setSelectedUnit(unit);
+                        setViewMode('createStakeholder');
                       }}
                     />
                   </div>

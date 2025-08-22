@@ -18,7 +18,6 @@ export function StakeholderList({
 
   const filteredStakeholders = stakeholders.filter((stakeholder) =>
     stakeholder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    stakeholder.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     stakeholder.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -99,11 +98,6 @@ export function StakeholderList({
                           <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                             {stakeholder.role}
                           </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <span className="truncate">{stakeholder.title}</span>
                         </div>
                       </div>
                     </div>

@@ -5,11 +5,12 @@ import { handleError } from '@/lib/api-response';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!task) {
@@ -25,7 +26,7 @@ export async function POST(
     const note = await prisma.note.create({
       data: {
         content: data.content,
-        taskId: params.id,
+        taskId: id,
       },
     });
 
@@ -37,11 +38,12 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!task) {
@@ -52,7 +54,7 @@ export async function GET(
     }
 
     const notes = await prisma.note.findMany({
-      where: { taskId: params.id },
+      where: { taskId: id },
       orderBy: { createdAt: 'desc' },
     });
 

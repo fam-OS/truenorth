@@ -5,12 +5,14 @@ import { handleError } from '@/lib/api-response';
 
 export async function GET(
   request: Request,
-  { params }: { params: { stakeholderId: string } }
+  { params }: { params: Promise<{ stakeholderId: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { stakeholderId } = await params;
     const goals = await prisma.goal.findMany({
       where: {
-        stakeholderId: params.stakeholderId,
+        stakeholderId,
       },
       orderBy: {
         startDate: 'asc',
@@ -25,13 +27,15 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { stakeholderId: string } }
+  { params }: { params: Promise<{ stakeholderId: string }> }
 ) {
   try {
+    // Destructure params at the beginning of the function
+    const { stakeholderId } = await params;
     const json = await request.json();
     const data = createGoalSchema.parse({
       ...json,
-      stakeholderId: params.stakeholderId,
+      stakeholderId,
     });
 
     const goal = await prisma.goal.create({

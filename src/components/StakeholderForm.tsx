@@ -4,12 +4,11 @@ import { useState } from 'react';
 import { BusinessUnit } from '@prisma/client';
 
 interface StakeholderFormProps {
-  businessUnit: BusinessUnit;
+  businessUnit?: BusinessUnit;
   onSubmit: (data: {
     name: string;
-    title: string;
     role: string;
-    email: string;
+    email?: string;
   }) => Promise<void>;
   onCancel: () => void;
 }
@@ -17,7 +16,6 @@ interface StakeholderFormProps {
 export function StakeholderForm({ businessUnit, onSubmit, onCancel }: StakeholderFormProps) {
   const [formData, setFormData] = useState({
     name: '',
-    title: '',
     role: '',
     email: '',
   });
@@ -31,7 +29,10 @@ export function StakeholderForm({ businessUnit, onSubmit, onCancel }: Stakeholde
     setIsSubmitting(true);
 
     try {
-      await onSubmit(formData);
+      const payload = formData.email.trim() === ''
+        ? { name: formData.name, role: formData.role }
+        : { ...formData };
+      await onSubmit(payload);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -54,22 +55,6 @@ export function StakeholderForm({ businessUnit, onSubmit, onCancel }: Stakeholde
           placeholder="Enter stakeholder name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Title
-        </label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-          placeholder="Enter job title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
         />
       </div>
 
@@ -101,7 +86,7 @@ export function StakeholderForm({ businessUnit, onSubmit, onCancel }: Stakeholde
           type="email"
           id="email"
           name="email"
-          required
+          // optional
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
           placeholder="Enter email address"
           value={formData.email}
