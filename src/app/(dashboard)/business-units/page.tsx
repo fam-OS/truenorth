@@ -510,10 +510,6 @@ export default function BusinessUnitsPage() {
                   <div key={org.id}>
                     <BusinessUnitList
                       businessUnits={businessUnits.filter(unit => unit.organization.id === org.id)}
-                      onCreateUnit={() => {
-                        setSelectedOrg(org);
-                        setViewMode('createUnit');
-                      }}
                       onSelectUnit={(unit) => {
                         setSelectedUnit(unit);
                         setViewMode('detail');

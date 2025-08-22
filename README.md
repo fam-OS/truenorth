@@ -12,12 +12,13 @@ A web application for managing tasks, goals, and business metrics for tech execu
 
 ## Tech Stack
 
-- Next.js 13+ with App Router
-- TypeScript
-- Prisma ORM
+- Next.js (App Router) — currently Next `15.4.5` with Turbopack for dev
+- React `19.x`, TypeScript `^5`
+- Prisma ORM `^6.13.0`
 - PostgreSQL
-- TailwindCSS
-- Jest & Testing Library
+- Tailwind CSS `^4`
+- Zod `^4` for request validation
+- Jest for backend tests (Node environment)
 
 ## Data Model
 
@@ -27,6 +28,14 @@ A web application for managing tasks, goals, and business metrics for tech execu
 - Business Units have Stakeholders
 - Stakeholders have Goals and Meetings
 - Business Units track Metrics
+
+### Teams
+- Organizations contain Teams
+- Teams have Team Members
+
+### Team Members
+- Fields: `id`, `name`, `email?`, `role?`, `teamId`
+- Note: `email` and `role` are optional (nullable). Multiple members can have a `NULL` email; uniqueness is enforced only for non-null emails per team via a composite unique index `@@unique([teamId, email])`.
 
 ### Task Management
 - Tasks with status tracking
@@ -39,6 +48,9 @@ A web application for managing tasks, goals, and business metrics for tech execu
 - Requirements gathering
 - Progress tracking
 - Multiple status states
+
+### (Planned) Ops Reviews
+- Data concept: Ops Review has a title, owner (Team Member relation), description, quarter, month, year, and Team relation
 
 ## Getting Started
 
@@ -91,12 +103,7 @@ A web application for managing tasks, goals, and business metrics for tech execu
    Stop the development server: 
    ```bash
    pkill -f next
-   ``` 
-
-   Sync the schema changes:
-   ```bash
-   npx prisma migrate dev
-   ``` 
+   ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -145,6 +152,20 @@ A web application for managing tasks, goals, and business metrics for tech execu
 - unit: measurement unit
 - businessUnitId: related business unit
 
+### Teams
+- id: unique identifier
+- name: team name
+- description: optional description
+- organizationId: related organization
+- members: related team members
+
+### Team Members
+- id: unique identifier
+- name: team member name
+- email: optional contact email (nullable)
+- role: optional role (nullable)
+- teamId: related team
+
 ## Running Tests
 
 ```bash
@@ -163,5 +184,42 @@ npm run test:watch
 4. Submit a pull request
 
 ## License
-
 MIT
+
+---
+
+## Development Notes
+
+- Dynamic route params in Next.js App Router (current version) are provided as an async value in some runtimes. In API routes and server components using dynamic segments (e.g., `src/app/api/organizations/[organizationId]/teams/route.ts`, `src/app/teams/[teamId]/page.tsx`), make sure to `await params` before accessing properties:
+
+  ```ts
+  export async function GET(_req: Request, { params }: { params: Promise<{ teamId: string }> }) {
+    const { teamId } = await params;
+    // ...
+  }
+  ```
+
+- When server-fetching internal APIs from a page or route, construct an absolute base URL using request headers to avoid "Invalid URL" errors on the server:
+
+  ```ts
+  import { headers } from 'next/headers';
+  const hdrs = await headers();
+  const host = hdrs.get('x-forwarded-host') || hdrs.get('host') || 'localhost:3000';
+  const proto = hdrs.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  const baseUrl = `${proto}://${host}`;
+  const res = await fetch(`${baseUrl}/api/teams/${teamId}`);
+  ```
+
+## Environment Variables
+
+- `DATABASE_URL` — Postgres connection string (required)
+- `NEXT_PUBLIC_BASE_URL` — optional. If set, client code may use it to prefix API calls; server routes/pages should prefer header-derived base URL as above.
+
+## Prisma
+
+- Apply schema changes and generate client:
+
+  ```bash
+  npx prisma migrate dev --name <migration_name>
+  npx prisma generate
+  ```

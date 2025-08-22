@@ -148,8 +148,8 @@ model Team {
 model TeamMember {
   id       String @id @default(cuid())
   name     String
-  email    String
-  role     String
+  email    String?
+  role     String?
   team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId   String
 

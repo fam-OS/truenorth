@@ -1,33 +1,21 @@
 'use client';
 
 import type { BusinessUnitWithDetails } from '@/types/prisma';
-import { PlusIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, ChartBarIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface BusinessUnitListProps {
   businessUnits: BusinessUnitWithDetails[];
-  onCreateUnit: () => void;
   onSelectUnit: (unit: BusinessUnitWithDetails) => void;
   onAddStakeholder?: (unit: BusinessUnitWithDetails) => void;
 }
 
 export function BusinessUnitList({
   businessUnits,
-  onCreateUnit,
   onSelectUnit,
   onAddStakeholder,
 }: BusinessUnitListProps) {
   return (
     <div className="bg-white shadow rounded-lg">
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg font-medium text-gray-900">Business Units</h2>
-        <button
-          onClick={onCreateUnit}
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Business Unit
-        </button>
-      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
         {businessUnits.map((unit) => (
           <div
@@ -66,11 +54,6 @@ export function BusinessUnitList({
             </div>
           </div>
         ))}
-        {businessUnits.length === 0 && (
-          <div className="col-span-full text-center text-sm text-gray-500 py-6">
-            No business units yet. Create your first one to get started.
-          </div>
-        )}
       </div>
     </div>
   );
