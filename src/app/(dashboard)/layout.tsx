@@ -8,6 +8,7 @@ import {
   BuildingOfficeIcon,
   BuildingStorefrontIcon,
 } from '@heroicons/react/24/outline';
+import { PresentationChartBarIcon } from '@heroicons/react/24/outline';
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
   const pathname = usePathname();
@@ -53,6 +54,10 @@ export default function DashboardLayout({
                 <NavLink href="/business-units">
                   <BuildingStorefrontIcon className="mr-3 h-5 w-5" />
                   Business Units
+                </NavLink>
+                <NavLink href="/ops-reviews">
+                  <PresentationChartBarIcon className="mr-3 h-5 w-5" />
+                  Ops Reviews
                 </NavLink>
               </div>
             </div>

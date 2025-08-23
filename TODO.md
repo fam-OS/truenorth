@@ -4,18 +4,13 @@
 - Done
 
 ##Phase 2 - Teams
-- Ability to add Team to an Organization from the organizations page    
-- Ability to add Team Member to a Team from the teams page
-- Ability to edit Team and Team Member from the teams page
-- Ability to delete Team and Team Member from the teams page
-- Ensure there are tests for teams and team members.  
+- Done
 
 ##Phase 3 - Ops Reviews
-- Add page in the navigation for "Ops Reviews"
-- Add a data concept for Ops Reviews: Ops Review has a title, owner(=team member relationship), description, quarter, month, year, team (relationship)
-- Add a data concept for Ops Review Items: Ops Review Item has a Title, owner(=team member relationship), description, target metric, actual metric, quarter, year, team (relationship) 
+- Done
 
 ##Phase 4 - KPIs and Initiatives
+- Cleanup: remove empty element above list element on business-units page.  Make the list design cohesive across business units and organizations pages.
 - Add an Initiative data concept: name, one line summary, value proposition, implementation details, owner(=team member relationship), release date, organization (relationship) 
 - Add a KPI data concept: KPIs have name, team (relationship), target metric, actual metric, quarter, year, organization (relationship) 
 - KPIs are tied to a Business Unit (relationship) and an Initiative (relationship), so create a junction table for this relationship

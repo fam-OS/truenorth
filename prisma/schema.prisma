@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,66 +7,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Existing Task Models
 model Task {
-  id          String      @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
   description String?
   dueDate     DateTime?
   status      TaskStatus
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   notes       Note[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
 }
 
 model Note {
   id        String   @id @default(cuid())
   content   String
   taskId    String
-  task      Task     @relation(fields: [taskId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id])
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  COMPLETED
-  BLOCKED
-}
-
-// User and Auth Models
 model User {
   id            String         @id @default(cuid())
   email         String         @unique
   name          String
-  organizations Organization[] // User can manage multiple organizations
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  organizations Organization[] @relation("OrganizationToUser")
 }
 
-// Organization Models
 model Organization {
   id            String         @id @default(cuid())
   name          String
   description   String?
-  businessUnits BusinessUnit[]
-  teams         Team[]
-  users         User[]         // Many-to-many relationship with users
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  businessUnits BusinessUnit[]
+  teams         Team[]
+  users         User[]         @relation("OrganizationToUser")
 }
 
 model BusinessUnit {
-  id            String        @id @default(cuid())
-  name          String
-  description   String?
-  orgId         String
-  organization  Organization  @relation(fields: [orgId], references: [id])
-  stakeholders  Stakeholder[]
-  metrics       Metric[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  orgId        String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  organization Organization  @relation(fields: [orgId], references: [id])
+  metrics      Metric[]
+  stakeholders Stakeholder[]
 }
 
 model Stakeholder {
@@ -78,26 +65,26 @@ model Stakeholder {
   email          String
   role           String
   businessUnitId String?
-  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id])
-  goals          Goal[]
-  meetings       Meeting[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  goals          Goal[]
+  meetings       Meeting[]
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id])
 }
 
 model Goal {
-  id              String      @id @default(cuid())
-  title           String
-  description     String
-  startDate       DateTime
-  endDate         DateTime
-  status          GoalStatus
-  stakeholderId   String
-  stakeholder     Stakeholder @relation(fields: [stakeholderId], references: [id])
-  requirements    String?     // Notes for gathering requirements
-  progressNotes   String?     // Additional notes on progress
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  title         String
+  description   String
+  startDate     DateTime
+  endDate       DateTime
+  status        GoalStatus
+  stakeholderId String
+  requirements  String?
+  progressNotes String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
 }
 
 model Meeting {
@@ -105,9 +92,9 @@ model Meeting {
   date          DateTime
   notes         String
   stakeholderId String
-  stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
 }
 
 model Metric {
@@ -117,9 +104,85 @@ model Metric {
   current        Float
   unit           String
   businessUnitId String
-  businessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  businessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
+}
+
+model Team {
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String
+  opsReviews     OpsReview[]
+  OpsReviewItem  OpsReviewItem[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        TeamMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model TeamMember {
+  id                  String          @id @default(cuid())
+  name                String
+  email               String?
+  role                String?
+  teamId              String
+  ownedOpsReviews     OpsReview[]     @relation("OpsReviewOwner")
+  ownedOpsReviewItems OpsReviewItem[] @relation("OpsReviewItemOwner")
+  team                Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, email])
+  @@index([teamId])
+}
+
+model OpsReview {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  quarter     Quarter
+  month       Int?
+  year        Int
+  teamId      String
+  ownerId     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  owner       TeamMember?     @relation("OpsReviewOwner", fields: [ownerId], references: [id])
+  team        Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  items       OpsReviewItem[]
+
+  @@index([teamId])
+  @@index([ownerId])
+}
+
+model OpsReviewItem {
+  id           String      @id @default(cuid())
+  title        String
+  description  String?
+  targetMetric Float?
+  actualMetric Float?
+  quarter      Quarter
+  year         Int
+  opsReviewId  String
+  teamId       String
+  ownerId      String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  opsReview    OpsReview   @relation(fields: [opsReviewId], references: [id], onDelete: Cascade)
+  owner        TeamMember? @relation("OpsReviewItemOwner", fields: [ownerId], references: [id])
+  team         Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([opsReviewId])
+  @@index([teamId])
+  @@index([ownerId])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
 }
 
 enum GoalStatus {
@@ -131,28 +194,9 @@ enum GoalStatus {
   CANCELLED
 }
 
-// Teams and Members
-model Team {
-  id             String        @id @default(cuid())
-  name           String
-  description    String?
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  organizationId String
-
-  members        TeamMember[]
-
-  @@index([organizationId])
-  @@unique([organizationId, name])
-}
-
-model TeamMember {
-  id       String @id @default(cuid())
-  name     String
-  email    String?
-  role     String?
-  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId   String
-
-  @@index([teamId])
-  @@unique([teamId, email])
+enum Quarter {
+  Q1
+  Q2
+  Q3
+  Q4
 }
