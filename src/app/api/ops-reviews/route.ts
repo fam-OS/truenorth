@@ -24,6 +24,7 @@ interface OpsReviewWithRelations {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const orgId = searchParams.get('orgId') || undefined;
     const teamId = searchParams.get('teamId') || undefined;
     const quarter = searchParams.get('quarter') || undefined;
     const year = searchParams.get('year') ? Number(searchParams.get('year')) : undefined;
@@ -36,12 +37,13 @@ export async function GET(request: Request) {
         t.name as "team_name",
         u.id as "owner_id",
         u.name as "owner_name",
-        COUNT(i.id) as "item_count"
+        COUNT(i.id)::int as "item_count"
       FROM "OpsReview" r
       LEFT JOIN "Team" t ON r."teamId" = t.id
       LEFT JOIN "User" u ON r."ownerId" = u.id
       LEFT JOIN "OpsReviewItem" i ON r.id = i."opsReviewId"
       WHERE 
+        (${orgId}::text IS NULL OR t."organizationId" = ${orgId}::text) AND
         (${teamId}::text IS NULL OR r."teamId" = ${teamId}::text) AND
         (${quarter}::text IS NULL OR r.quarter = ${quarter}::"Quarter") AND
         (${year}::int IS NULL OR r.year = ${year}::int)
@@ -49,7 +51,13 @@ export async function GET(request: Request) {
       ORDER BY r.year DESC, r.quarter ASC
     `;
 
-    return NextResponse.json(reviews);
+    // Convert BigInt to number to ensure proper JSON serialization
+    const safeReviews = reviews.map(review => ({
+      ...review,
+      item_count: Number(review.item_count)
+    }));
+
+    return NextResponse.json(safeReviews);
   } catch (error) {
     return handleError(error);
   }

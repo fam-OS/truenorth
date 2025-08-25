@@ -38,7 +38,7 @@ interface OpsReview {
 
 // Fetch function that can be used with React Query
 async function fetchOpsReviews(orgId: string) {
-  const response = await fetch(`/api/ops-reviews?teamId=${orgId}`);
+  const response = await fetch(`/api/ops-reviews?orgId=${orgId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch Ops Reviews');
   }

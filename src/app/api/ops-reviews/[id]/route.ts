@@ -23,10 +23,12 @@ interface OpsReviewWithRelations {
   item_count: number;
 }
 
-export async function GET(_req: Request, context: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id } = await params;
   try {
-    // Properly destructure params after awaiting
-    const { id } = context.params;
     
     const reviews = await prisma.$queryRaw<Array<OpsReviewWithRelations & { [key: string]: any }>>`
       SELECT 
@@ -48,22 +50,49 @@ export async function GET(_req: Request, context: { params: { id: string } }) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
-    // Convert BigInt to number for JSON serialization
+    // Convert BigInt to number for JSON serialization and ensure consistent field names
     const review = reviews[0];
-    const serializedReview = {
+    const serializedReview: Record<string, any> = {
       ...review,
-      item_count: Number(review.item_count)
+      item_count: Number(review.item_count),
+      teamId: review.team_id,
+      teamName: review.team_name,
+      ownerId: review.owner_id,
+      ownerName: review.owner_name
     };
     
-    return NextResponse.json(serializedReview);
+    // Remove the raw fields to avoid confusion
+    delete serializedReview.team_id;
+    delete serializedReview.team_name;
+    delete serializedReview.owner_id;
+    delete serializedReview.owner_name;
+    
+    return new NextResponse(JSON.stringify(serializedReview, replacer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     return handleError(error);
   }
 }
 
-export async function PUT(request: Request, context: { params: { id: string } }) {
+// BigInt replacer function for JSON serialization
+const replacer = (key: string, value: any) => {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  return value;
+};
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  // Make sure to properly destructure the id from params
+  const { id } = await params;
   try {
-    const { id } = context.params;
     const json = await request.json();
     const data = updateOpsReviewSchema.parse(json);
     const now = new Date().toISOString();
@@ -132,7 +161,7 @@ export async function PUT(request: Request, context: { params: { id: string } })
         t.name as "team_name",
         u.id as "owner_id",
         u.name as "owner_name",
-        COUNT(i.id) as "item_count"
+        COUNT(i.id)::integer as "item_count"
       FROM "OpsReview" r
       LEFT JOIN "Team" t ON r."teamId" = t.id
       LEFT JOIN "User" u ON r."ownerId" = u.id
@@ -140,16 +169,41 @@ export async function PUT(request: Request, context: { params: { id: string } })
       WHERE r.id = ${id}::text
       GROUP BY r.id, t.id, u.id, u.name
     `;
+    
+    // Convert BigInt to number for JSON serialization and ensure consistent field names
+    const serializedUpdated: Record<string, any> = {
+      ...updated,
+      item_count: Number(updated.item_count),
+      teamId: updated.team_id,
+      teamName: updated.team_name,
+      ownerId: updated.owner_id,
+      ownerName: updated.owner_name
+    };
+    
+    // Remove the raw fields to avoid confusion
+    delete serializedUpdated.team_id;
+    delete serializedUpdated.team_name;
+    delete serializedUpdated.owner_id;
+    delete serializedUpdated.owner_name;
 
-    return NextResponse.json(updated);
+    // Return the serialized response
+    return new NextResponse(JSON.stringify(serializedUpdated), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     return handleError(error);
   }
 }
 
-export async function DELETE(_request: Request, context: { params: { id: string } }) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id } = await params;
   try {
-    const { id } = context.params;
     
     // First, check if the review exists
     const existingReview = await prisma.$queryRaw<Array<{ id: string }>>`
@@ -165,7 +219,12 @@ export async function DELETE(_request: Request, context: { params: { id: string 
       DELETE FROM "OpsReview" WHERE id = ${id}::text
     `;
     
-    return NextResponse.json({ success: true });
+    return new NextResponse(JSON.stringify({ success: true }, replacer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     return handleError(error);
   }
