@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { Organization, BusinessUnit } from '@prisma/client';
 import { PlusIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
@@ -31,41 +31,42 @@ export function OrganizationList({
           New Organization
         </button>
       </div>
-      <ul role="list" className="divide-y divide-gray-200">
-        {organizations.map((org) => (
-          <li
-            key={org.id}
-            className="hover:bg-gray-50 cursor-pointer"
-            onClick={() => onSelectOrg(org)}
-          >
-            <div className="px-4 py-4 flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-blue-600 truncate">
-                    {org.name}
-                  </p>
-                  <div className="ml-2 flex-shrink-0 flex">
-                    <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {org.businessUnits.length} units
-                    </p>
+      <div className="divide-y divide-gray-200">
+        {organizations.length > 0 ? (
+          organizations.map((org) => (
+            <div key={org.id} className="hover:bg-gray-50">
+              <Link href={`/organizations/${org.id}`} className="block">
+                <div className="px-4 py-4 flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-blue-600 truncate">
+                        {org.name}
+                      </p>
+                      <div className="ml-2 flex-shrink-0 flex">
+                        <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {org.businessUnits.length} units
+                        </p>
+                      </div>
+                    </div>
+                    {org.description && (
+                      <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                        {org.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="ml-4 flex-shrink-0">
+                    <ChevronRightIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                   </div>
                 </div>
-                {org.description && (
-                  <p className="mt-1 text-sm text-gray-500">
-                    {org.description}
-                  </p>
-                )}
-              </div>
-              <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+              </Link>
             </div>
-          </li>
-        ))}
-        {organizations.length === 0 && (
-          <li className="px-4 py-6 text-center text-sm text-gray-500">
+          ))
+        ) : (
+          <div className="px-4 py-6 text-center text-sm text-gray-500">
             No organizations yet. Create your first one to get started.
-          </li>
+          </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 }

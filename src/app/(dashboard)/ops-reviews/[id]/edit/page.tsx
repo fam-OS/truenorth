@@ -1,6 +1,7 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/toast';
 
@@ -15,8 +16,7 @@ interface OpsReview {
   ownerId: string | null;
 }
 
-export default function EditOpsReviewPage() {
-  const { id } = useParams();
+function EditOpsReviewContent({ id }: { id: string }) {
   const router = useRouter();
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +73,7 @@ export default function EditOpsReviewPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!review.title || !review.quarter || !review.year || !review.teamId) {
+    if (!review.title || !review.quarter || review.year === undefined || !review.teamId) {
       showToast({
         title: 'Error',
         description: 'Please fill in all required fields',
@@ -85,20 +85,31 @@ export default function EditOpsReviewPage() {
     setIsSubmitting(true);
 
     try {
+      // Prepare the update data with proper type conversion
+      const updateData: any = {
+        title: review.title,
+        description: review.description || undefined,
+        quarter: review.quarter,
+        year: Number(review.year),
+        teamId: review.teamId,
+      };
+
+      // Only include month if it has a value
+      if (review.month !== undefined && review.month !== null) {
+        updateData.month = Number(review.month);
+      }
+
+      // Only include ownerId if it has a value
+      if (review.ownerId) {
+        updateData.ownerId = review.ownerId;
+      }
+
       const response = await fetch(`/api/ops-reviews/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: review.title,
-          description: review.description || undefined,
-          quarter: review.quarter,
-          year: review.year,
-          month: review.month,
-          teamId: review.teamId,
-          ownerId: review.ownerId || undefined,
-        }),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -282,4 +293,9 @@ export default function EditOpsReviewPage() {
       </form>
     </div>
   );
+}
+
+export default function EditOpsReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  return <EditOpsReviewContent id={id} />;
 }

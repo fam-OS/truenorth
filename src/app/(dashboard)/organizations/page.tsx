@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { OrganizationWithBusinessUnits } from '@/types/prisma';
 import { OrganizationForm } from '@/components/OrganizationForm';
+import { ChevronRightIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<OrganizationWithBusinessUnits[]>([]);
@@ -356,96 +357,92 @@ export default function OrganizationsPage() {
               </button>
             </div>
 
-            <div className="grid gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {organizations.map((org) => (
-                <div
-                  key={org.id}
-                  className="bg-white shadow rounded-lg overflow-hidden"
-                >
-                  <div className="px-6 py-5">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-semibold text-gray-900">{org.name}</h2>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingOrg(org);
-                            setShowCreateOrg(true);
-                          }}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (window.confirm(`Delete organization '${org.name}'? This will remove all business units and associated data.`)) {
-                              setError(null);
-                              const response = await fetch(`/api/organizations/${org.id}`, { method: 'DELETE' });
-                              if (!response.ok) {
-                                setError('Failed to delete organization');
-                              } else {
-                                await fetchOrganizations();
-                              }
-                            }
-                          }}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                    {org.description && (
-                      <p className="mt-1 text-sm text-gray-500">{org.description}</p>
-                    )}
-                  </div>
-
-                  {/* Teams section */}
-                  <div className="border-t border-gray-200">
-                    <div className="px-6 py-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-medium text-gray-900">Teams</h3>
-                        <button
-                          onClick={() => setShowCreateTeamForOrg(org.id)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200"
-                        >
-                          Add Team
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {(orgTeams[org.id] || []).length === 0 ? (
-                          <p className="text-sm text-gray-500">No teams yet.</p>
-                        ) : (
-                          (orgTeams[org.id] || []).map((team) => (
-                            <div key={team.id} className="flex items-center justify-between rounded border p-2">
-                              <div>
-                                <Link href={`/teams/${team.id}`} className="text-sm font-medium text-blue-700 hover:underline">
-                                  {team.name}
-                                </Link>
-                                {team.description && (
-                                  <div className="text-xs text-gray-500">{team.description}</div>
-                                )}
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => setEditTeam({ orgId: org.id, team })}
-                                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    if (window.confirm(`Delete team '${team.name}'?`)) {
-                                      void handleDeleteTeam(org.id, team.id);
-                                    }
-                                  }}
-                                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))
+                <div key={org.id} className="relative group">
+                  <Link 
+                    href={`/organizations/${org.id}`}
+                    className="block rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm hover:border-gray-400 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900">{org.name}</h3>
+                        {org.description && (
+                          <p className="text-sm text-gray-500 mt-1">{org.description}</p>
                         )}
                       </div>
+                      <ChevronRightIcon className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
+                    </div>
+                  </Link>
+                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setEditingOrg(org);
+                        setShowCreateOrg(true);
+                      }}
+                      className="p-1 text-blue-600 hover:text-blue-800 bg-white rounded-full shadow-sm"
+                      title="Edit organization"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (window.confirm(`Delete organization '${org.name}'? This will remove all business units and associated data.`)) {
+                          setError(null);
+                          const response = await fetch(`/api/organizations/${org.id}`, { method: 'DELETE' });
+                          if (!response.ok) {
+                            setError('Failed to delete organization');
+                          } else {
+                            await fetchOrganizations();
+                          }
+                        }
+                      }}
+                      className="p-1 text-red-600 hover:text-red-800 bg-white rounded-full shadow-sm"
+                      title="Delete organization"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-200 mt-3 pt-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium text-gray-900">Teams</h4>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowCreateTeamForOrg(org.id);
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-800"
+                        title="Add team"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {(orgTeams[org.id] || []).length === 0 ? (
+                        <p className="text-xs text-gray-500">No teams yet</p>
+                      ) : (
+                        (orgTeams[org.id] || []).map((team) => (
+                          <div key={team.id} className="text-sm">
+                            <Link 
+                              href={`/teams/${team.id}`} 
+                              className="text-blue-600 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {team.name}
+                            </Link>
+                            {team.description && (
+                              <div className="text-xs text-gray-500 truncate">{team.description}</div>
+                            )}
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>

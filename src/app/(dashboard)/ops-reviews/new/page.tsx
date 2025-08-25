@@ -89,33 +89,17 @@ export default function NewOpsReviewPage() {
   
   // Mutation for creating a new Ops Review
   const createOpsReview = useMutation({
-    mutationFn: async (formData: FormData) => {
+    mutationFn: async (data: any) => {
       if (!currentOrg) {
         throw new Error('No organization selected');
       }
-
-      const teamId = formData.get('teamId') as string;
-      const title = formData.get('title') as string;
-      const description = formData.get('description') as string;
-      const quarter = formData.get('quarter') as string;
-      const year = parseInt(formData.get('year') as string);
-      const month = formData.get('month') ? parseInt(formData.get('month') as string) : null;
-      const ownerId = formData.get('ownerId') as string || null;
 
       const response = await fetch('/api/ops-reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title,
-          description,
-          quarter,
-          year,
-          month,
-          teamId,
-          ownerId,
-        }),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -156,6 +140,7 @@ export default function NewOpsReviewPage() {
     const quarter = formData.get('quarter') as string;
     const year = formData.get('year') as string;
     const title = formData.get('title') as string;
+    const month = formData.get('month');
     
     // Validate required fields
     if (!teamId || !quarter || !year || !title) {
@@ -167,8 +152,19 @@ export default function NewOpsReviewPage() {
       return;
     }
 
+    // Create a properly typed object for submission
+    const submissionData = {
+      title,
+      description: formData.get('description') as string,
+      quarter,
+      year: parseInt(year),
+      teamId,
+      ownerId: formData.get('ownerId') as string || undefined,
+      ...(month ? { month: parseInt(month as string) } : {})
+    };
+
     // Submit the form using the mutation
-    createOpsReview.mutate(formData);
+    createOpsReview.mutate(submissionData as any);
   };
 
   if (isLoading || isOrgLoading) {

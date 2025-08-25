@@ -10,7 +10,7 @@ const createTeamSchema = z.object({
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ organizationId: string }> }
+  { params }: { params: { organizationId: string } }
 ) {
   try {
     const { organizationId } = await params;
@@ -27,7 +27,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ organizationId: string }> }
+  { params }: { params: { organizationId: string } }
 ) {
   try {
     const { organizationId } = await params;

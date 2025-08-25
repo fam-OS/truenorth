@@ -7,6 +7,7 @@ import {
   ClipboardDocumentListIcon,
   BuildingOfficeIcon,
   BuildingStorefrontIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { PresentationChartBarIcon } from '@heroicons/react/24/outline';
 
@@ -58,6 +59,10 @@ export default function DashboardLayout({
                 <NavLink href="/ops-reviews">
                   <PresentationChartBarIcon className="mr-3 h-5 w-5" />
                   Ops Reviews
+                </NavLink>
+                <NavLink href="/teams">
+                  <UserGroupIcon className="mr-3 h-5 w-5" />
+                  Teams
                 </NavLink>
               </div>
             </div>

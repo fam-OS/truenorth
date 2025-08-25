@@ -3,9 +3,35 @@ import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { createOrganizationSchema } from '@/lib/validations/organization';
 
+export async function GET(
+  _request: Request,
+  { params }: { params: { organizationId: string } }
+) {
+  try {
+    const { organizationId } = params;
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: {
+        businessUnits: true,
+      },
+    });
+
+    if (!organization) {
+      return NextResponse.json(
+        { error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(organization);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ organizationId: string }> }
+  { params }: { params: { organizationId: string } }
 ) {
   try {
     // Destructure params at the beginning of the function
@@ -21,7 +47,7 @@ export async function DELETE(
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ organizationId: string }> }
+  { params }: { params: { organizationId: string } }
 ) {
   try {
     const { organizationId } = await params;

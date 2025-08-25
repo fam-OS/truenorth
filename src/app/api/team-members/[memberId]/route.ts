@@ -21,7 +21,7 @@ const updateMemberSchema = z.object({
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
+  { params }: { params: { memberId: string } }
 ) {
   try {
     const { memberId } = await params;
@@ -35,21 +35,23 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
+  { params }: { params: { memberId: string } }
 ) {
   try {
     const { memberId } = await params;
     const json = await request.json();
     const data = updateMemberSchema.parse(json);
 
+    // Build the update data object with proper typing
+    const updateData: any = {};
+    
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email === null ? null : data.email;
+    if (data.role !== undefined) updateData.role = data.role === null ? null : data.role;
+    
     const updated = await prisma.teamMember.update({
       where: { id: memberId },
-      data: {
-        ...(data.name !== undefined ? { name: data.name } : {}),
-        // allow clearing with null and updating with value; skip if omitted
-        ...(data.email !== undefined ? { email: data.email } : {}),
-        ...(data.role !== undefined ? { role: data.role } : {}),
-      },
+      data: updateData
     });
 
     return NextResponse.json(updated);
@@ -63,7 +65,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
+  { params }: { params: { memberId: string } }
 ) {
   try {
     const { memberId } = await params;

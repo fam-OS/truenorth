@@ -10,7 +10,7 @@ const updateBusinessUnitSchema = z.object({
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ businessUnitId: string }> }
+  { params }: { params: { businessUnitId: string } }
 ) {
   try {
     // Destructure params at the beginning of the function
@@ -45,7 +45,7 @@ export async function PUT(
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ businessUnitId: string }> }
+  { params }: { params: { businessUnitId: string } }
 ) {
   try {
     // Destructure params at the beginning of the function
@@ -73,7 +73,7 @@ export async function GET(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ businessUnitId: string }> }
+  { params }: { params: { businessUnitId: string } }
 ) {
   try {
     // Destructure params at the beginning of the function

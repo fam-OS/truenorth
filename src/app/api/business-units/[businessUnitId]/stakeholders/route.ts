@@ -15,7 +15,7 @@ const linkExistingSchema = z.object({
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ businessUnitId: string }> }
+  { params }: { params: { businessUnitId: string } }
 ) {
   try {
     const { businessUnitId } = await params;

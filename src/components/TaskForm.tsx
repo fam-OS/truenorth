@@ -4,18 +4,31 @@ import { useState } from 'react';
 import { Task } from '@prisma/client';
 import { CreateTaskInput, UpdateTaskInput } from '@/lib/validations/task';
 
+export type TaskFormValues = {
+  title: string;
+  description: string;
+  dueDate: string;
+  status: 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
+};
+
 interface TaskFormProps {
   task?: Task;
-  onSubmit: (data: CreateTaskInput | UpdateTaskInput) => Promise<void>;
+  onSubmit: (data: TaskFormValues) => Promise<void>;
   onCancel?: () => void;
 }
 
 export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
-  const [formData, setFormData] = useState<CreateTaskInput | UpdateTaskInput>({
-    title: task?.title ?? '',
-    description: task?.description ?? '',
-    dueDate: task?.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-    status: task?.status ?? 'TODO',
+  const [formData, setFormData] = useState<TaskFormValues>(() => {
+    const dueDate = task?.dueDate 
+      ? new Date(task.dueDate).toISOString().split('T')[0] 
+      : '';
+      
+    return {
+      title: task?.title ?? '',
+      description: task?.description ?? '',
+      dueDate: dueDate ?? '',
+      status: task?.status ?? 'TODO',
+    };
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,13 +40,15 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
     setIsSubmitting(true);
 
     try {
-      const submitData = {
+      // Ensure dueDate is a string (empty string if null/undefined)
+      const submitData: TaskFormValues = {
         ...formData,
-        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+        dueDate: formData.dueDate || ''
       };
       await onSubmit(submitData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError('Failed to save task. Please try again.');
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }

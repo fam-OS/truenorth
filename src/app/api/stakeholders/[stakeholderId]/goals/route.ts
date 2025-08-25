@@ -5,7 +5,7 @@ import { handleError } from '@/lib/api-response';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ stakeholderId: string }> }
+  { params }: { params: { stakeholderId: string } }
 ) {
   try {
     // Destructure params at the beginning of the function
@@ -27,7 +27,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ stakeholderId: string }> }
+  { params }: { params: { stakeholderId: string } }
 ) {
   try {
     // Destructure params at the beginning of the function

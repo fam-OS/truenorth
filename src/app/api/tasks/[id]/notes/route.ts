@@ -5,7 +5,7 @@ import { handleError } from '@/lib/api-response';
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const { id } = await params;
@@ -38,7 +38,7 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const { id } = await params;

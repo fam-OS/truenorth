@@ -11,7 +11,7 @@ const createMemberSchema = z.object({
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ teamId: string }> }
+  { params }: { params: { teamId: string } }
 ) {
   try {
     const { teamId } = await params;
@@ -27,20 +27,23 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ teamId: string }> }
+  { params }: { params: { teamId: string } }
 ) {
   try {
     const { teamId } = await params;
     const json = await request.json();
     const data = createMemberSchema.parse(json);
 
+    const memberData: any = {
+      name: data.name,
+      teamId,
+    };
+    
+    if (data.email) memberData.email = data.email;
+    if (data.role) memberData.role = data.role;
+    
     const member = await prisma.teamMember.create({
-      data: {
-        name: data.name,
-        ...(data.email ? { email: data.email } : {}),
-        ...(data.role ? { role: data.role } : {}),
-        teamId,
-      },
+      data: memberData,
     });
 
     return NextResponse.json(member, { status: 201 });

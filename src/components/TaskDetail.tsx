@@ -9,10 +9,12 @@ type TaskWithNotes = Task & {
   notes: { id: string; content: string; createdAt: Date }[];
 };
 
+type StatusChangeHandler = (status: Task['status']) => Promise<void>;
+
 interface TaskDetailProps {
   task: TaskWithNotes;
   onAddNote: (note: CreateNoteInput) => Promise<void>;
-  onStatusChange: (status: Task['status']) => Promise<void>;
+  onStatusChange: StatusChangeHandler;
   onEdit: () => void;
   onClose: () => void;
 }

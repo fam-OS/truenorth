@@ -3,12 +3,18 @@
 import { useState, useEffect } from 'react';
 import { Task } from '@prisma/client';
 import { TaskList } from '@/components/TaskList';
-import { TaskForm } from '@/components/TaskForm';
+import { TaskForm, TaskFormValues } from '@/components/TaskForm';
 import { TaskDetail } from '@/components/TaskDetail';
-import { CreateTaskInput, UpdateTaskInput } from '@/lib/validations/task';
 
 type TaskWithNotes = Task & {
   notes: { id: string; content: string; createdAt: Date }[];
+};
+
+type TaskUpdateValues = {
+  title?: string;
+  description?: string;
+  dueDate?: string;
+  status?: 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
 };
 
 export default function TasksPage() {
@@ -38,12 +44,15 @@ export default function TasksPage() {
     }
   }
 
-  async function handleCreateTask(data: CreateTaskInput) {
+  async function handleCreateTask(formData: TaskFormValues) {
     try {
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...formData,
+          dueDate: formData.dueDate ? new Date(formData.dueDate) : null
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to create task');
@@ -55,21 +64,50 @@ export default function TasksPage() {
     }
   }
 
-  async function handleUpdateTask(data: UpdateTaskInput) {
+  async function handleUpdateTask(formData: TaskUpdateValues) {
     if (!selectedTask) return;
 
+    const previousTasks = [...tasks];
+    
     try {
+      // Optimistic UI update
+      if (formData.status) {
+        const updatedTasks = tasks.map(task => 
+          task.id === selectedTask.id 
+            ? { ...task, status: formData.status as Task['status'] } 
+            : task
+        );
+        setTasks(updatedTasks);
+        
+        setSelectedTask({
+          ...selectedTask,
+          status: formData.status as Task['status']
+        });
+      }
+
+      const updateData: any = { ...formData };
+      if ('dueDate' in formData) {
+        updateData.dueDate = formData.dueDate ? new Date(formData.dueDate) : null;
+      }
+      
       const response = await fetch(`/api/tasks/${selectedTask.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) throw new Error('Failed to update task');
       
+      // Refresh the tasks to ensure we have the latest data
       await fetchTasks();
       setIsEditing(false);
     } catch (err) {
+      // Revert on error
+      setTasks(previousTasks);
+      if (selectedTask) {
+        const originalTask = previousTasks.find(t => t.id === selectedTask.id);
+        if (originalTask) setSelectedTask(originalTask);
+      }
       throw new Error('Failed to update task');
     }
   }
@@ -156,7 +194,7 @@ export default function TasksPage() {
       ) : (
         <TaskList
           tasks={tasks}
-          onTaskClick={setSelectedTask}
+          onTaskClick={(task) => setSelectedTask(task as TaskWithNotes)}
         />
       )}
     </div>
