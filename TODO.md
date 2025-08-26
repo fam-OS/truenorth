@@ -27,10 +27,8 @@
 ## Reports to relationships, Improvements to Team Member detail and Business Units pages 
 - Done
 
-## Home nav changes
-- Rename "My Organization" to "Home" in navigation.
-- Add Tasks from Tasks page to the "Home" page, and remove the "Tasks" tab from navigation. 
-- Have "Company Information" and "My Organizations" sit at the top of the page alongside one another, with a "My Tasks" section below (and list of Tasks).   
+## Home nav changes 
+- Done  
 
 ## KPIs and Initiatives 
 - Add an Initiative data concept: name, one line summary, value proposition, implementation details, owner(=team member relationship), release date, organization (relationship) 

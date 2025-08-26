@@ -40,17 +40,13 @@ export default function DashboardLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
+              <Link href="/" className="flex-shrink-0 flex items-center">
                 <h1 className="text-xl font-bold">TrueNorth</h1>
-              </div>
+              </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <NavLink href="/tasks">
-                  <ClipboardDocumentListIcon className="mr-3 h-5 w-5" />
-                  Tasks
-                </NavLink>
-                <NavLink href="/organizations">
+                <NavLink href="/">
                   <BuildingOfficeIcon className="mr-3 h-5 w-5" />
-                  My Organizations
+                  Home
                 </NavLink>
                 <NavLink href="/business-units">
                   <BuildingStorefrontIcon className="mr-3 h-5 w-5" />

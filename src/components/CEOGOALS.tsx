@@ -47,7 +47,7 @@ export default function CEOGoals({
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
       <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
         <div>
-          <h2 className="text-lg font-medium text-gray-900">Company Information</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Company Information</h2>
           <p className="mt-1 max-w-2xl text-sm text-gray-500">CEO's top 5 goals this year</p>
         </div>
         {!isEditing ? (
