@@ -14,7 +14,7 @@ describe('Teams API', () => {
     it('returns teams for organization', async () => {
       prismaMock.team.findMany.mockResolvedValue([mockTeam] as any);
       const req = new Request('http://localhost/api/organizations/org1/teams');
-      const res = await GET_ORG_TEAMS(req as any, { params: Promise.resolve({ organizationId: 'org1' }) });
+      const res = await GET_ORG_TEAMS(req as any, { params: { organizationId: 'org1' } });
       const data = await res.json();
       expect(res.status).toBe(200);
       expect(data).toEqual([mockTeam]);
@@ -35,7 +35,7 @@ describe('Teams API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const res = await POST_ORG_TEAM(req as any, { params: Promise.resolve({ organizationId: 'org1' }) });
+      const res = await POST_ORG_TEAM(req as any, { params: { organizationId: 'org1' } });
       const data = await res.json();
       expect(res.status).toBe(201);
       expect(data).toEqual(mockTeam);
@@ -50,7 +50,7 @@ describe('Teams API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      const res = await POST_ORG_TEAM(req as any, { params: Promise.resolve({ organizationId: 'org1' }) });
+      const res = await POST_ORG_TEAM(req as any, { params: { organizationId: 'org1' } });
       expect(res.status).toBe(400);
     });
   });
@@ -69,19 +69,39 @@ describe('Teams API', () => {
 
   describe('PUT /api/teams/[teamId]', () => {
     it('updates a team', async () => {
-      prismaMock.team.update.mockResolvedValue({ ...mockTeam, name: 'Core Platform' } as any);
+      const updatedTeam = { 
+        ...mockTeam, 
+        name: 'Core Platform',
+        description: 'Updated description',
+        organizationId: 'org1'
+      };
+      
+      prismaMock.team.update.mockResolvedValue(updatedTeam as any);
+      
+      const updateData = {
+        name: 'Core Platform',
+        description: 'Updated description',
+        organizationId: 'org1'
+      };
+      
       const req = new Request('http://localhost/api/teams/team1', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Core Platform', description: 'desc' }),
+        body: JSON.stringify(updateData),
       });
+      
       const res = await PUT_TEAM(req as any, { params: { teamId: 'team1' } });
       const data = await res.json();
+      
       expect(res.status).toBe(200);
       expect(data.name).toBe('Core Platform');
       expect(prismaMock.team.update).toHaveBeenCalledWith({
         where: { id: 'team1' },
-        data: { name: 'Core Platform', description: 'desc' },
+        data: {
+          name: 'Core Platform',
+          description: 'Updated description',
+          organizationId: 'org1'
+        },
       });
     });
   });

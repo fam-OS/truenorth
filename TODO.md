@@ -18,11 +18,13 @@
 ##Update 3.3 - Goal bugfixes 
 - Done
 
-##Update 3.3 - Company information and Reports to relationships
-- Task: Add a "Company Information" section to the top of the Organizations page. Display the text "CEO's top 5 Goals this year" with 5 ability to edit and save each goal. These should save to the Goal table.  
+##Update 3.3 - Company information and API tests
+- Task: Make sure we have tests for ops review and ops review items routes 
+
+##Update 3.4 - Reports to relationships
+- Task: Update Readme with data model diagram.
 - Task: Add a "Reports to" (relationship) field to the Stakeholder table, and point to a Stakeholder Id.
 - Task: Add a "Reports to" (relationship) field to the Team Member table, and point to a Team Member Id.
-- Task: Make sure we have tests for ops review and ops review items routes   
 
 ##Update 4 - KPIs and Initiatives 
 - Add an Initiative data concept: name, one line summary, value proposition, implementation details, owner(=team member relationship), release date, organization (relationship) 
