@@ -9,7 +9,11 @@ export async function GET() {
       include: {
         businessUnits: {
           include: {
-            stakeholders: true,
+            stakeholders: {
+              include: {
+                goals: true
+              }
+            },
             metrics: true,
           },
         },

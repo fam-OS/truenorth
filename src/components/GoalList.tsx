@@ -2,8 +2,9 @@
 
 import { Goal } from '@prisma/client';
 import { format } from 'date-fns';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
+import { useState } from 'react';
 
 const statusColors = {
   NOT_STARTED: 'bg-gray-100 text-gray-800',
@@ -17,10 +18,10 @@ const statusColors = {
 interface GoalListProps {
   goals: Goal[];
   onCreateGoal: () => void;
-  onSelectGoal: (goal: Goal) => void;
+  onEditGoal: (goal: Goal) => void;
 }
 
-export function GoalList({ goals, onCreateGoal, onSelectGoal }: GoalListProps) {
+export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
   return (
     <div className="bg-white shadow rounded-lg">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
@@ -38,12 +39,22 @@ export function GoalList({ goals, onCreateGoal, onSelectGoal }: GoalListProps) {
           {goals.map((goal) => (
             <li
               key={goal.id}
-              className="hover:bg-gray-50 cursor-pointer"
-              onClick={() => onSelectGoal(goal)}
+              className="hover:bg-gray-50"
             >
               <div className="px-4 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditGoal(goal);
+                      }}
+                      className="mr-2 text-gray-400 hover:text-gray-600"
+                      title="Edit goal"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </button>
                     <p className="text-sm font-medium text-gray-900">{goal.title}</p>
                     <span
                       className={clsx(

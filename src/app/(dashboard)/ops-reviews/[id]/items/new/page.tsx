@@ -49,6 +49,8 @@ interface Review {
   id: string;
   title: string;
   teamId: string;
+  quarter: string;
+  year: number;
 }
 
 interface PageProps {
@@ -68,19 +70,24 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch review details
         const reviewRes = await fetch(`/api/ops-reviews/${id}`).then(res => res.json());
         if (reviewRes.error) throw new Error(reviewRes.error);
         
-        // Set default team from the review
-        setReview(reviewRes);
+        // Fetch team members
+        const teamMembersRes = await fetch('/api/team-members').then(res => res.ok ? res.json() : []);
         
-        // Initialize with empty arrays for teams and team members
-        // since we don't have the API endpoints
+        // Filter team members for the current review's team
+        const currentTeamMembers = teamMembersRes.filter(
+          (member: any) => member.teamId === reviewRes.teamId
+        );
+        
+        setReview(reviewRes);
+        setTeamMembers(currentTeamMembers);
         setTeams([{ id: reviewRes.teamId, name: reviewRes.team?.name || 'Team' }]);
-        setTeamMembers([]);
         
       } catch (err) {
-        setError('Failed to load review details. Please try again.');
+        setError('Failed to load data. Please try again.');
         console.error('Error fetching data:', err);
       } finally {
         setIsLoading(false);
@@ -133,6 +140,8 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
           actualMetric: formData.get('actualMetric') ? Number(formData.get('actualMetric')) : null,
           teamId: formData.get('teamId'),
           ownerId: formData.get('ownerId') || null,
+          quarter: review.quarter,
+          year: review.year,
         }),
       });
 
@@ -192,13 +201,20 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ownerName">Owner Name</Label>
-              <Input
-                id="ownerName"
-                name="ownerName"
-                placeholder="Enter owner name (optional)"
-              />
-              <input type="hidden" name="ownerId" value="" />
+              <Label htmlFor="ownerId">Owner</Label>
+              <select
+                id="ownerId"
+                name="ownerId"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                defaultValue=""
+              >
+                <option value="">Unassigned</option>
+                {teamMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.user?.name || member.user?.email || `Member ${member.id}`}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">

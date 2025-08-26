@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { BusinessUnitList } from '@/components/BusinessUnitList';
 import { BusinessUnitForm } from '@/components/BusinessUnitForm';
 import { GoalList } from '@/components/GoalList';
-import { GoalForm } from '@/components/GoalForm';
+import { GoalFormModal } from '@/components/GoalFormModal';
 import { StakeholderList } from '@/components/StakeholderList';
 import { StakeholderForm } from '@/components/StakeholderForm';
 import { BusinessUnitEditForm } from '@/components/BusinessUnitEditForm';
@@ -23,6 +23,9 @@ export default function BusinessUnitsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
 
@@ -43,13 +46,23 @@ export default function BusinessUnitsPage() {
       
       setOrganizations(data);
       const units = data.flatMap((org: any) => 
-        (org.businessUnits || []).map((unit: any) => ({
-          ...unit,
-          organization: org,
-          stakeholders: unit.stakeholders || [],
-          metrics: unit.metrics || [],
-          goals: unit.goals || [],
-        }))
+        (org.businessUnits || []).map((unit: any) => {
+          // Flatten goals from all stakeholders
+          const allGoals = (unit.stakeholders || []).flatMap(
+            (stakeholder: any) => (stakeholder.goals || []).map((goal: any) => ({
+              ...goal,
+              stakeholderName: stakeholder.name,
+            }))
+          );
+          
+          return {
+            ...unit,
+            organization: org,
+            stakeholders: unit.stakeholders || [],
+            metrics: unit.metrics || [],
+            goals: allGoals,
+          };
+        })
       );
       setBusinessUnits(units);
 
@@ -179,31 +192,71 @@ export default function BusinessUnitsPage() {
     }
   }
 
-  async function handleCreateGoal(data: { 
-    title: string;
-    description: string;
-    startDate: string;
-    endDate: string;
-    stakeholderId: string;
-    requirements?: string;
-  }) {
+  const handleEditGoal = (goal: any) => {
+    setEditingGoal(goal);
+    setViewMode('editUnit');
+  };
+
+  const handleCreateNewGoal = () => {
+    setEditingGoal(null);
+    setViewMode('createGoal');
+  };
+
+  const handleCreateGoal = async (data: any) => {
     if (!selectedUnit) return;
 
     try {
+      setIsSubmitting(true);
+      setError('');
+      
       const response = await fetch(`/api/business-units/${selectedUnit.id}/goals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error('Failed to create goal');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create goal');
+      }
       
       await fetchData();
       setViewMode('detail');
     } catch (err) {
-      throw new Error('Failed to create goal');
+      console.error('Error creating goal:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create goal');
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  const handleUpdateGoal = async (data: any) => {
+    if (!selectedUnit || !editingGoal) return;
+
+    try {
+      setIsSubmitting(true);
+      setError('');
+      
+      const response = await fetch(`/api/business-units/${selectedUnit.id}/goals/${editingGoal.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update goal');
+      }
+      
+      await fetchData();
+      setViewMode('detail');
+    } catch (err) {
+      console.error('Error updating goal:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update goal');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   async function handleCreateStakeholder(data: {
     name: string;
@@ -230,6 +283,16 @@ export default function BusinessUnitsPage() {
 
   const renderContent = () => {
     switch (viewMode) {
+      case 'createGoal':
+        return selectedUnit ? (
+          <GoalFormModal
+            isOpen={true}
+            onClose={() => setViewMode('detail')}
+            goal={editingGoal || undefined}
+            onSubmit={editingGoal ? handleUpdateGoal : handleCreateGoal}
+            isSubmitting={isSubmitting}
+          />
+        ) : null;
       case 'createUnit':
         return (
           <div>
@@ -337,8 +400,8 @@ export default function BusinessUnitsPage() {
                 </div>
                 <GoalList
                   goals={selectedUnit.goals || []}
-                  onSelectGoal={() => {}}
-                  onCreateGoal={() => setViewMode('createGoal')}
+                  onEditGoal={handleEditGoal}
+                  onCreateGoal={handleCreateNewGoal}
                 />
               </div>
 
@@ -373,7 +436,7 @@ export default function BusinessUnitsPage() {
                         onClick={() => setViewMode('stakeholders')}
                         className="text-sm text-blue-600 hover:text-blue-900"
                       >
-                        View all {selectedUnit.stakeholders.length} stakeholders
+                        View All Stakeholders
                       </button>
                     </div>
                   )}
@@ -381,21 +444,7 @@ export default function BusinessUnitsPage() {
               </div>
             </div>
           </div>
-        ) : null;
-
-      case 'createGoal':
-        return selectedUnit ? (
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Create New Goal for {selectedUnit.name}
-            </h2>
-            <GoalForm
-              businessUnit={selectedUnit}
-              onSubmit={handleCreateGoal}
-              onCancel={() => setViewMode('detail')}
-            />
-          </div>
-        ) : null;
+        ): null;
 
       case 'stakeholders':
         return selectedUnit ? (

@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { createOpsReviewItemSchema } from '@/lib/validations/ops-review-item';
-
-// Initialize Prisma Client with proper typing
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Define the expected response type
 interface OpsReviewItemResponse {
@@ -133,19 +131,26 @@ export async function POST(
   
   try {
     const json = await request.json();
-    const data = createOpsReviewItemSchema.parse({ ...json, opsReviewId: id });
-
-    // First, verify the ops review exists
-    const reviewExists = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM "OpsReview" WHERE id = ${data.opsReviewId}::text
+    // First, verify the ops review exists and get its quarter and year
+    const review = await prisma.$queryRaw<Array<{ id: string; quarter: string; year: number }>>`
+      SELECT id, quarter, year FROM "OpsReview" WHERE id = ${id}::text
     `;
     
-    if (!reviewExists || reviewExists.length === 0) {
+    if (!review || review.length === 0) {
       return NextResponse.json(
         { error: 'Ops Review not found' },
         { status: 404 }
       );
     }
+    
+    // Parse and validate the input data
+    const data = createOpsReviewItemSchema.parse({ 
+      ...json, 
+      opsReviewId: id,
+      // Use the review's quarter and year if not provided in the request
+      quarter: json.quarter || review[0].quarter,
+      year: json.year || review[0].year
+    });
 
     // Create the OpsReviewItem using Prisma's create method
     const created = await prisma.opsReviewItem.create({

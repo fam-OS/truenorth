@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     const orgId = searchParams.get('orgId') || undefined;
     const teamId = searchParams.get('teamId') || undefined;
     const quarter = searchParams.get('quarter') || undefined;
-    const year = searchParams.get('year') ? Number(searchParams.get('year')) : undefined;
+    const year = searchParams.get('year') ? parseInt(searchParams.get('year') as string, 10) : undefined;
 
     // Use raw SQL to fetch reviews with item counts
     const reviews = await prisma.$queryRaw<OpsReviewWithRelations[]>`

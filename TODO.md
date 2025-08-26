@@ -16,15 +16,7 @@
 - Done
 
 ##Update 3.3 - Goal bugfixes 
-- Bugfix: "Failed to create goal" error  
- POST http://localhost:3000/api/business-units/cmen5aoz60000rpx8y2wwdq3i/goals 404 (Not Found)
-handleCreateGoal	@	page.tsx:193
-handleSubmit	@	GoalForm.tsx:38
-<form>		
-GoalForm	@	GoalForm.tsx:47
-<GoalForm>		
-renderContent	@	page.tsx:392
-BusinessUnitsPage	@	page.tsx:544
+- Done
 
 ##Update 3.3 - Company information and Reports to relationships
 - Task: Add a "Company Information" section to the top of the Organizations page. Display the text "CEO's top 5 Goals this year" with 5 ability to edit and save each goal. These should save to the Goal table.  
@@ -68,5 +60,6 @@ BusinessUnitsPage	@	page.tsx:544
 - Visualize the org chart and way your org supports business units and initiatives feature 
 
 Future Updates - 
+- Add an IsActive field to the TeamMember table 
 - On the organization detail page, display a related list of teams and "Add Team" button. 
 - On the team detail page, display a related list of team members and "Add Team Member" button.  

@@ -37,8 +37,20 @@ interface OpsReview {
 }
 
 // Fetch function that can be used with React Query
-async function fetchOpsReviews(orgId: string) {
-  const response = await fetch(`/api/ops-reviews?orgId=${orgId}`);
+interface FetchOpsReviewsParams {
+  orgId: string;
+  year?: number | null;
+  quarter?: string | null;
+}
+
+async function fetchOpsReviews(orgId: string, filters: { year?: number | null; quarter?: string | null }) {
+  const params = new URLSearchParams({
+    orgId,
+    ...(filters.year && { year: filters.year.toString() }),
+    ...(filters.quarter && { quarter: filters.quarter })
+  });
+
+  const response = await fetch(`/api/ops-reviews?${params}`);
   if (!response.ok) {
     throw new Error('Failed to fetch Ops Reviews');
   }
@@ -56,21 +68,37 @@ async function fetchOpsReviews(orgId: string) {
   })) as OpsReview[];
 }
 
+interface FilterState {
+  year: number | null;
+  quarter: string | null;
+}
+
 export default function OpsReviewsPage() {
   const { currentOrg } = useOrganization();
   const { showToast } = useToast();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [filters, setFilters] = useState<FilterState>({
+    year: new Date().getFullYear(),
+    quarter: null
+  });
 
   const {
     data: reviews = [],
     isLoading,
     error
   } = useQuery({
-    queryKey: ['opsReviews', currentOrg?.id],
-    queryFn: () => currentOrg ? fetchOpsReviews(currentOrg.id) : [],
+    queryKey: ['opsReviews', currentOrg?.id, filters.year, filters.quarter],
+    queryFn: () => currentOrg ? fetchOpsReviews(currentOrg.id, filters) : [],
     enabled: !!currentOrg,
   });
+
+  const handleFilterChange = (key: keyof FilterState, value: string | number | null) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value === 'all' ? null : value
+    }));
+  };
 
   // Handle errors
   if (error) {
@@ -90,9 +118,13 @@ export default function OpsReviewsPage() {
     );
   }
 
+  // Generate an array of the last 5 years
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-2xl font-bold">Ops Reviews</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -103,8 +135,52 @@ export default function OpsReviewsPage() {
           href="/ops-reviews/new"
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          New Ops Review
+          New Review
         </Link>
+      </div>
+      
+      {/* Filters */}
+      <div className="bg-white shadow rounded-lg p-4 mb-6">
+        <h2 className="text-sm font-medium text-gray-500 mb-3">FILTERS</h2>
+        <div className="flex flex-wrap gap-4">
+          <div>
+            <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+              Year
+            </label>
+            <select
+              id="year"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              value={filters.year || 'all'}
+              onChange={(e) => handleFilterChange('year', e.target.value === 'all' ? null : parseInt(e.target.value))}
+            >
+              <option value="all">All Years</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label htmlFor="quarter" className="block text-sm font-medium text-gray-700 mb-1">
+              Quarter
+            </label>
+            <select
+              id="quarter"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              value={filters.quarter || 'all'}
+              onChange={(e) => handleFilterChange('quarter', e.target.value === 'all' ? null : e.target.value)}
+            >
+              <option value="all">All Quarters</option>
+              {quarters.map((q) => (
+                <option key={q} value={q}>
+                  {q}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {reviews.length === 0 ? (
