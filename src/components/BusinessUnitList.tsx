@@ -1,7 +1,7 @@
 'use client';
 
 import type { BusinessUnitWithDetails } from '@/types/prisma';
-import { UserGroupIcon, ChartBarIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, ChartBarIcon, PlusIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface BusinessUnitListProps {
   businessUnits: BusinessUnitWithDetails[];
@@ -20,15 +20,21 @@ export function BusinessUnitList({
         {businessUnits.map((unit) => (
           <div
             key={unit.id}
-            className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex flex-col space-y-3 hover:border-gray-400"
+            className="group relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex flex-col space-y-3 hover:border-gray-400"
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <button className="text-left w-full" onClick={() => onSelectUnit(unit)}>
-                  <h3 className="text-sm font-medium text-gray-900">{unit.name}</h3>
-                  {unit.description && (
-                    <p className="text-sm text-gray-500 mt-1">{unit.description}</p>
-                  )}
+                <button
+                  className="text-left w-full flex items-start justify-between"
+                  onClick={() => onSelectUnit(unit)}
+                >
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">{unit.name}</h3>
+                    {unit.description && (
+                      <p className="text-sm text-gray-500 mt-1">{unit.description}</p>
+                    )}
+                  </div>
+                  <ChevronRightIcon className="ml-3 h-4 w-4 text-gray-400 mt-0.5 transition-transform group-hover:translate-x-0.5" />
                 </button>
               </div>
               {onAddStakeholder && (

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/components/ui/toast';
 import { Task } from '@prisma/client';
 import { TaskList } from '@/components/TaskList';
 import { TaskForm, TaskFormValues } from '@/components/TaskForm';
@@ -24,12 +25,9 @@ export default function TasksPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const { showToast } = useToast();
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  async function fetchTasks() {
+  const fetchTasks = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/tasks');
@@ -39,10 +37,15 @@ export default function TasksPage() {
     } catch (err) {
       setError('Failed to load tasks');
       console.error(err);
+      showToast({ title: 'Failed to load tasks', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   async function handleCreateTask(formData: TaskFormValues) {
     try {
@@ -59,7 +62,9 @@ export default function TasksPage() {
       
       await fetchTasks();
       setIsCreating(false);
+      showToast({ title: 'Task created', description: `${formData.title} was created successfully.` });
     } catch (err) {
+      showToast({ title: 'Failed to create task', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to create task');
     }
   }
@@ -85,7 +90,16 @@ export default function TasksPage() {
         });
       }
 
-      const updateData: any = { ...formData };
+      type UpdatePayload = {
+        title?: string;
+        description?: string;
+        dueDate?: Date | null;
+        status?: Task['status'];
+      };
+      const updateData: UpdatePayload = {};
+      if ('title' in formData) updateData.title = formData.title;
+      if ('description' in formData) updateData.description = formData.description;
+      if ('status' in formData && formData.status) updateData.status = formData.status as Task['status'];
       if ('dueDate' in formData) {
         updateData.dueDate = formData.dueDate ? new Date(formData.dueDate) : null;
       }
@@ -101,6 +115,7 @@ export default function TasksPage() {
       // Refresh the tasks to ensure we have the latest data
       await fetchTasks();
       setIsEditing(false);
+      showToast({ title: 'Task updated', description: 'Changes were saved.' });
     } catch (err) {
       // Revert on error
       setTasks(previousTasks);
@@ -108,6 +123,7 @@ export default function TasksPage() {
         const originalTask = previousTasks.find(t => t.id === selectedTask.id);
         if (originalTask) setSelectedTask(originalTask);
       }
+      showToast({ title: 'Failed to update task', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to update task');
     }
   }
@@ -127,7 +143,9 @@ export default function TasksPage() {
       await fetchTasks();
       const updatedTask = tasks.find(t => t.id === selectedTask.id);
       if (updatedTask) setSelectedTask(updatedTask);
+      showToast({ title: 'Note added', description: 'Your note was added.' });
     } catch (err) {
+      showToast({ title: 'Failed to add note', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to add note');
     }
   }

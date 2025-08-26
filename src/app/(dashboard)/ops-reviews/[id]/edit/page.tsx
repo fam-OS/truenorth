@@ -86,12 +86,22 @@ function EditOpsReviewContent({ id }: { id: string }) {
 
     try {
       // Prepare the update data with proper type conversion
-      const updateData: any = {
-        title: review.title,
-        description: review.description || undefined,
-        quarter: review.quarter,
+      type UpdatePayload = {
+        title: string;
+        description?: string;
+        quarter: string;
+        year: number;
+        teamId: string;
+        ownerId?: string;
+        month?: number;
+      };
+      const updateData: UpdatePayload = {
+        title: review.title as string,
+        description: (review.description ?? undefined) as string | undefined,
+        quarter: review.quarter as string,
         year: Number(review.year),
-        teamId: review.teamId,
+        teamId: review.teamId as string,
+        ownerId: (review.ownerId ?? undefined) as string | undefined,
       };
 
       // Only include month if it has a value
@@ -99,7 +109,6 @@ function EditOpsReviewContent({ id }: { id: string }) {
         updateData.month = Number(review.month);
       }
 
-      // Only include ownerId if it has a value
       if (review.ownerId) {
         updateData.ownerId = review.ownerId;
       }

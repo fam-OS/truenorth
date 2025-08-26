@@ -71,6 +71,10 @@ model Stakeholder {
   goals          Goal[]
   meetings       Meeting[]
   businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id])
+  // Self-referential manager relationship
+  reportsToId    String?
+  reportsTo      Stakeholder?  @relation("StakeholderReports", fields: [reportsToId], references: [id])
+  directReports  Stakeholder[] @relation("StakeholderReports")
 }
 
 model Goal {
@@ -130,6 +134,11 @@ model TeamMember {
   email               String?
   role                String?
   teamId              String
+  isActive            Boolean         @default(true)
+  // Self-referential manager relationship
+  reportsToId         String?
+  reportsTo           TeamMember?     @relation("TeamMemberReports", fields: [reportsToId], references: [id])
+  subordinates        TeamMember[]    @relation("TeamMemberReports")
   ownedOpsReviews     OpsReview[]     @relation("OpsReviewOwner")
   ownedOpsReviewItems OpsReviewItem[] @relation("OpsReviewItemOwner")
   team                Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)

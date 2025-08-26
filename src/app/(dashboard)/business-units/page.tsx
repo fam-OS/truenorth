@@ -9,6 +9,7 @@ import { StakeholderList } from '@/components/StakeholderList';
 import { StakeholderForm } from '@/components/StakeholderForm';
 import { BusinessUnitEditForm } from '@/components/BusinessUnitEditForm';
 import type { BusinessUnitWithDetails } from '@/types/prisma';
+import { useToast } from '@/components/ui/toast';
 
 type ViewMode = 'list' | 'detail' | 'createUnit' | 'createGoal' | 'createStakeholder' | 'stakeholders' | 'editUnit' | 'createGlobalStakeholder';
 
@@ -28,6 +29,7 @@ export default function BusinessUnitsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
+  const { showToast } = useToast();
 
   const fetchData = useCallback(async () => {
     if (!isMounted.current) return;
@@ -132,7 +134,9 @@ export default function BusinessUnitsPage() {
       await fetchData();
       setViewMode('list');
       setSelectedOrg(null);
+      showToast({ title: 'Business unit created', description: `${name} was added successfully.` });
     } catch (err) {
+      showToast({ title: 'Failed to create business unit', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to create business unit');
     }
   }
@@ -148,7 +152,9 @@ export default function BusinessUnitsPage() {
       if (!response.ok) throw new Error('Failed to link stakeholder');
       await fetchData();
       setViewMode('stakeholders');
+      showToast({ title: 'Stakeholder linked', description: 'Stakeholder has been linked to the business unit.' });
     } catch (err) {
+      showToast({ title: 'Failed to link stakeholder', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to link stakeholder');
     }
   }
@@ -168,7 +174,9 @@ export default function BusinessUnitsPage() {
       if (!response.ok) throw new Error('Failed to create stakeholder');
       await fetchData();
       setViewMode('list');
+      showToast({ title: 'Stakeholder created', description: `${data.name} was added successfully.` });
     } catch (err) {
+      showToast({ title: 'Failed to create stakeholder', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to create stakeholder');
     }
   }
@@ -187,14 +195,17 @@ export default function BusinessUnitsPage() {
       
       await fetchData();
       setViewMode('detail');
+      showToast({ title: 'Business unit updated', description: 'Changes were saved.' });
     } catch (err) {
+      showToast({ title: 'Failed to update business unit', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to update business unit');
     }
   }
 
   const handleEditGoal = (goal: any) => {
     setEditingGoal(goal);
-    setViewMode('editUnit');
+    // Open the Goal form modal in edit mode
+    setViewMode('createGoal');
   };
 
   const handleCreateNewGoal = () => {
@@ -202,7 +213,7 @@ export default function BusinessUnitsPage() {
     setViewMode('createGoal');
   };
 
-  const handleCreateGoal = async (data: any) => {
+  async function handleCreateGoal(data: any) {
     if (!selectedUnit) return;
 
     try {
@@ -222,9 +233,11 @@ export default function BusinessUnitsPage() {
       
       await fetchData();
       setViewMode('detail');
+      showToast({ title: 'Goal created', description: 'Goal was created successfully.' });
     } catch (err) {
       console.error('Error creating goal:', err);
       setError(err instanceof Error ? err.message : 'Failed to create goal');
+      showToast({ title: 'Failed to create goal', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -250,9 +263,11 @@ export default function BusinessUnitsPage() {
       
       await fetchData();
       setViewMode('detail');
+      showToast({ title: 'Goal updated', description: 'Goal changes were saved.' });
     } catch (err) {
       console.error('Error updating goal:', err);
       setError(err instanceof Error ? err.message : 'Failed to update goal');
+      showToast({ title: 'Failed to update goal', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -276,7 +291,9 @@ export default function BusinessUnitsPage() {
       
       await fetchData();
       setViewMode('stakeholders');
+      showToast({ title: 'Stakeholder added', description: `${data.name} was added to ${selectedUnit.name}.` });
     } catch (err) {
+      showToast({ title: 'Failed to add stakeholder', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       throw new Error('Failed to create stakeholder');
     }
   }
@@ -409,10 +426,10 @@ export default function BusinessUnitsPage() {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Stakeholders</h3>
                   <button
-                    onClick={() => setViewMode('stakeholders')}
+                    onClick={() => setViewMode('createStakeholder')}
                     className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
                   >
-                    View All
+                    New Stakeholder
                   </button>
                 </div>
                 <div className="bg-white shadow overflow-hidden sm:rounded-md">

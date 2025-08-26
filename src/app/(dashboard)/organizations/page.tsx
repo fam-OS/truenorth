@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
 import type { OrganizationWithBusinessUnits } from '@/types/prisma';
 import { OrganizationForm } from '@/components/OrganizationForm';
-import { ChevronRightIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import CEOGoals from '@/components/CEOGOALS';
 
 type Team = { id: string; name: string; description?: string | null };
@@ -19,6 +20,7 @@ export default function OrganizationsPage() {
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
   const abortController = useRef<AbortController | null>(null);
+  const { showToast } = useToast();
 
   // Teams UI state
   const [orgTeams, setOrgTeams] = useState<Record<string, Team[]>>({});
@@ -107,8 +109,10 @@ export default function OrganizationsPage() {
       await fetchOrganizations();
       setShowCreateOrg(false);
       setEditingOrg(null);
+      showToast({ title: `Organization ${editingOrg ? 'updated' : 'created'}`, description: `${data.name} saved successfully.` });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save organization');
+      showToast({ title: 'Failed to save organization', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     }
   };
 
@@ -141,8 +145,10 @@ export default function OrganizationsPage() {
       
       await fetchTeams(orgId);
       setShowCreateTeamForOrg(null);
+      showToast({ title: 'Team created', description: `${data.name} was added successfully.` });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create team');
+      showToast({ title: 'Failed to create team', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     }
   };
 
@@ -158,8 +164,10 @@ export default function OrganizationsPage() {
       
       await fetchTeams(orgId);
       setEditTeam(null);
+      showToast({ title: 'Team updated', description: 'Changes were saved.' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update team');
+      showToast({ title: 'Failed to update team', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     }
   };
 
@@ -171,12 +179,14 @@ export default function OrganizationsPage() {
       if (!response.ok) throw new Error('Failed to delete team');
       
       await fetchTeams(orgId);
+      showToast({ title: 'Team deleted', description: 'Team was removed.' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete team');
+      showToast({ title: 'Failed to delete team', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     }
   };
 
-  const fetchTeams = async (orgId: string) => {
+  const fetchTeams = useCallback(async (orgId: string) => {
     try {
       const res = await fetch(`/api/organizations/${orgId}/teams`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch teams');
@@ -185,7 +195,7 @@ export default function OrganizationsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch teams');
     }
-  };
+  }, []);
 
   // Initial data fetch
   useEffect(() => {
@@ -209,7 +219,7 @@ export default function OrganizationsPage() {
         }
       });
     }
-  }, [organizations]);
+  }, [organizations, orgTeams, fetchTeams]);
 
   // Team form component
   const TeamForm = ({
@@ -368,8 +378,10 @@ export default function OrganizationsPage() {
                                 });
                                 if (!response.ok) throw new Error('Failed to delete organization');
                                 await fetchOrganizations();
+                                showToast({ title: 'Organization deleted', description: `${org.name} was removed.` });
                               } catch (err) {
                                 setError(err instanceof Error ? err.message : 'Failed to delete organization');
+                                showToast({ title: 'Failed to delete organization', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
                               }
                             }
                           }}
@@ -421,7 +433,9 @@ export default function OrganizationsPage() {
                           {orgTeams[org.id].map((team) => (
                             <li key={team.id} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-md">
                               <div>
-                                <span className="text-sm font-medium text-gray-900">{team.name}</span>
+                                <Link href={`/teams/${team.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                                  {team.name}
+                                </Link>
                                 {team.description && (
                                   <p className="text-xs text-gray-500 mt-1">{team.description}</p>
                                 )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 type Member = { id: string; name: string; email: string; role: string };
 
@@ -230,7 +231,11 @@ export function TeamMembers({ teamId }: { teamId: string }) {
               ) : (
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{m.name}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      <Link href={`/team-members/${m.id}`} className="text-blue-600 hover:underline">
+                        {m.name}
+                      </Link>
+                    </div>
                     <div className="text-xs text-gray-500">{m.email}</div>
                   </div>
                   <div className="flex items-center gap-3">

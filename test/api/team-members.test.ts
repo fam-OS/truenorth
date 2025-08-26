@@ -20,7 +20,7 @@ describe('Team Members API', () => {
       expect(res.status).toBe(200);
       expect(data).toEqual([mockMember]);
       expect(prismaMock.teamMember.findMany).toHaveBeenCalledWith({
-        where: { teamId: 'team1' },
+        where: { teamId: 'team1', isActive: true },
         orderBy: { name: 'asc' },
       });
     });

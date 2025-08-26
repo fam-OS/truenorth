@@ -5,6 +5,7 @@ export async function GET() {
   try {
     // Get all team members with their user data
     const teamMembers = await prisma.teamMember.findMany({
+      where: { isActive: true },
       include: {
         team: {
           select: {

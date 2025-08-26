@@ -17,6 +17,12 @@ const updateMemberSchema = z.object({
     .optional()
     .or(z.literal('').transform(() => null))
     .or(z.null()),
+  reportsToId: z
+    .string()
+    .min(1)
+    .optional()
+    .or(z.literal('').transform(() => null))
+    .or(z.null()),
 });
 
 export async function GET(
@@ -43,11 +49,12 @@ export async function PUT(
     const data = updateMemberSchema.parse(json);
 
     // Build the update data object with proper typing
-    const updateData: any = {};
+    const updateData: { name?: string; email?: string | null; role?: string | null; reportsToId?: string | null } = {};
     
     if (data.name !== undefined) updateData.name = data.name;
     if (data.email !== undefined) updateData.email = data.email === null ? null : data.email;
     if (data.role !== undefined) updateData.role = data.role === null ? null : data.role;
+    if (data.reportsToId !== undefined) updateData.reportsToId = data.reportsToId === null ? null : data.reportsToId;
     
     const updated = await prisma.teamMember.update({
       where: { id: memberId },

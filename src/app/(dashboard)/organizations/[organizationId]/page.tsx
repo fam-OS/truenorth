@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { Organization, BusinessUnit } from '@prisma/client';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -9,21 +11,35 @@ type OrganizationWithDetails = Organization & {
   businessUnits: BusinessUnit[];
 };
 
-export default function OrganizationDetailPage({ params }: { params: { organizationId: string } }) {
+export default function OrganizationDetailPage({ params }: { params: Promise<{ organizationId: string }> }) {
   const router = useRouter();
+  const { organizationId } = use(params);
   const [organization, setOrganization] = useState<OrganizationWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [teams, setTeams] = useState<Array<{ id: string; name: string; description?: string | null }>>([]);
+
+  // NoSSR wrapper to render Teams block only on client to avoid hydration mismatch
+  const NoSSR = dynamic(async () => ({
+    default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  }), { ssr: false });
 
   useEffect(() => {
     const fetchOrganization = async () => {
       try {
-        const response = await fetch(`/api/organizations/${params.organizationId}`);
+        const response = await fetch(`/api/organizations/${organizationId}`, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error('Failed to fetch organization');
         }
         const data = await response.json();
         setOrganization(data);
+
+        // Fetch teams separately to avoid relying on included data and to bypass SSR cache issues
+        const teamsRes = await fetch(`/api/organizations/${organizationId}/teams`, { cache: 'no-store' });
+        if (teamsRes.ok) {
+          const teamsData = await teamsRes.json();
+          setTeams(teamsData);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
         console.error('Error fetching organization:', err);
@@ -33,7 +49,7 @@ export default function OrganizationDetailPage({ params }: { params: { organizat
     };
 
     fetchOrganization();
-  }, [params.organizationId]);
+  }, [organizationId]);
 
   if (isLoading) {
     return (
@@ -116,6 +132,30 @@ export default function OrganizationDetailPage({ params }: { params: { organizat
               <p className="mt-1 text-sm text-gray-500">No business units found</p>
             )}
           </div>
+
+          <NoSSR>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Teams</h3>
+              {teams.length > 0 ? (
+                <ul className="mt-2 divide-y divide-gray-200">
+                  {teams.map((team) => (
+                    <li key={team.id} className="py-2">
+                      <div className="flex items-center justify-between">
+                        <Link href={`/teams/${team.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                          {team.name}
+                        </Link>
+                        {team.description && (
+                          <span className="text-sm text-gray-500">{team.description}</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm text-gray-500">No teams found</p>
+              )}
+            </div>
+          </NoSSR>
         </div>
       </div>
     </div>

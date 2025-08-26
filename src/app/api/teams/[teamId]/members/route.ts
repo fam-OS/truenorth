@@ -16,7 +16,7 @@ export async function GET(
   try {
     const { teamId } = await params;
     const members = await prisma.teamMember.findMany({
-      where: { teamId },
+      where: { teamId, isActive: true },
       orderBy: { name: 'asc' },
     });
     return NextResponse.json(members);

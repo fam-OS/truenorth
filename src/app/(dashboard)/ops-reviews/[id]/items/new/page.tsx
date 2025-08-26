@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
-import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
@@ -45,6 +45,11 @@ interface TeamMember {
   };
 }
 
+// API response shape for team members used on this page
+interface ApiTeamMember extends TeamMember {
+  teamId: string;
+}
+
 interface Review {
   id: string;
   title: string;
@@ -66,6 +71,7 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,11 +81,11 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
         if (reviewRes.error) throw new Error(reviewRes.error);
         
         // Fetch team members
-        const teamMembersRes = await fetch('/api/team-members').then(res => res.ok ? res.json() : []);
+        const teamMembersRes: ApiTeamMember[] = await fetch('/api/team-members').then(res => res.ok ? res.json() : []);
         
         // Filter team members for the current review's team
         const currentTeamMembers = teamMembersRes.filter(
-          (member: any) => member.teamId === reviewRes.teamId
+          (member) => member.teamId === reviewRes.teamId
         );
         
         setReview(reviewRes);
@@ -89,13 +95,14 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
       } catch (err) {
         setError('Failed to load data. Please try again.');
         console.error('Error fetching data:', err);
+        showToast({ title: 'Failed to load data', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [id]);
+  }, [id, showToast]);
 
   if (isLoading) {
     return (
@@ -154,9 +161,11 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
       // Redirect back to the review page after successful creation
       router.push(`/ops-reviews/${id}`);
       router.refresh();
+      showToast({ title: 'Item created', description: 'Review item was created successfully.' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create item');
       console.error('Error creating item:', err);
+      showToast({ title: 'Failed to create item', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     }
   };
 

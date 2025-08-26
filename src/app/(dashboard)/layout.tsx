@@ -56,6 +56,10 @@ export default function DashboardLayout({
                   <BuildingStorefrontIcon className="mr-3 h-5 w-5" />
                   Business Units
                 </NavLink>
+                <NavLink href="/stakeholders">
+                  <UserGroupIcon className="mr-3 h-5 w-5" />
+                  Stakeholders
+                </NavLink>
                 <NavLink href="/ops-reviews">
                   <PresentationChartBarIcon className="mr-3 h-5 w-5" />
                   Ops Reviews

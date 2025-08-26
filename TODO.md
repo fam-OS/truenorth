@@ -19,13 +19,18 @@
 - Done
 
 ##Update 3.3 - Company information and API tests
+- Done
 
 ##Update 3.4 - Fix unit tests
-- Task: Fix unit tests 
+- Done
 
-## Reports to relationships
-- Task: Add a "Reports to" (relationship) field to the Stakeholder table, and point to a Stakeholder Id.
-- Task: Add a "Reports to" (relationship) field to the Team Member table, and point to a Team Member Id.
+## Reports to relationships, Improvements to Team Member detail and Business Units pages 
+- Done
+
+## Home nav changes
+- Rename "My Organization" to "Home" in navigation.
+- Add Tasks from Tasks page to the "Home" page, and remove the "Tasks" tab from navigation. 
+- Have "Company Information" and "My Organizations" sit at the top of the page alongside one another, with a "My Tasks" section below (and list of Tasks).   
 
 ## KPIs and Initiatives 
 - Add an Initiative data concept: name, one line summary, value proposition, implementation details, owner(=team member relationship), release date, organization (relationship) 
@@ -65,7 +70,6 @@
 - Visualize the org chart and way your org supports business units and initiatives feature 
 
 ## Additional Updates
-- Add an IsActive field to the TeamMember table 
 - On the organization detail page, display a related list of teams and "Add Team" button. 
 - On the team detail page, display a related list of team members and "Add Team Member" button.  
 
@@ -81,5 +85,8 @@ Account Types determine experience:
     -- Add company logo and CEO goals
     -- Add users to the organization 
 
+Content of Ops Reviews:
+- What makes an ops review successful? 
+- What are the key metrics to measure the success of an ops review? 
 
 

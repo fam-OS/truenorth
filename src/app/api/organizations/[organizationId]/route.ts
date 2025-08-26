@@ -8,11 +8,12 @@ export async function GET(
   { params }: { params: { organizationId: string } }
 ) {
   try {
-    const { organizationId } = params;
+    const { organizationId } = await params;
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
       include: {
         businessUnits: true,
+        teams: true,
       },
     });
 
