@@ -8,7 +8,6 @@ export const createOrganizationSchema = z.object({
 export const createBusinessUnitSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  organizationId: z.string().min(1, 'Organization ID is required'),
 });
 
 export const createStakeholderSchema = z.object({

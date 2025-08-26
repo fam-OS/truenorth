@@ -40,6 +40,15 @@ describe('Ops Reviews API', () => {
       }]);
       expect((prismaMock as any).$queryRaw).toHaveBeenCalled();
     });
+
+    it('lists reviews without any filters', async () => {
+      (prismaMock as any).$queryRaw.mockResolvedValue([]);
+      const req = new Request('http://localhost/api/ops-reviews');
+      const res = await GET_LIST(req as any);
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(Array.isArray(data)).toBe(true);
+    });
   });
 
   describe('POST /api/ops-reviews', () => {
@@ -191,6 +200,13 @@ describe('Ops Reviews API', () => {
       expect((prismaMock as any).opsReview.delete).toHaveBeenCalledWith({ 
         where: { id: 'rev1' } 
       });
+    });
+
+    it('returns 404 on delete when not found', async () => {
+      (prismaMock as any).opsReview.delete.mockRejectedValue({ code: 'P2025' });
+      const req = new Request('http://localhost/api/ops-reviews/missing', { method: 'DELETE' });
+      const res = await DELETE_ONE(req as any, { params: { id: 'missing' } });
+      expect(res.status).toBe(404);
     });
   });
 });

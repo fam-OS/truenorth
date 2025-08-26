@@ -76,33 +76,16 @@ export async function GET(
     }
     
     console.log(`[GET /api/ops-reviews/${id}/items] Fetching items`);
-    
-    // Use raw SQL query to fetch items with related data
-    const items = await prisma.$queryRaw`
-      SELECT 
-        oi.*,
-        tm.name as owner_name,
-        t.name as team_name,
-        r.title as ops_review_title
-      FROM "OpsReviewItem" oi
-      LEFT JOIN "TeamMember" tm ON oi."ownerId" = tm.id
-      LEFT JOIN "Team" t ON oi."teamId" = t.id
-      LEFT JOIN "OpsReview" r ON oi."opsReviewId" = r.id
-      WHERE oi."opsReviewId" = ${id}::text
-      ORDER BY oi."createdAt" DESC
-    `;
-    
-    console.log(`[GET /api/ops-reviews/${id}/items] Found ${Array.isArray(items) ? items.length : 0} items`);
-    
-    // Transform the data to match the expected response format
-    const transformedItems = (Array.isArray(items) ? items : []).map((item: any) => ({
-      ...item,
-      // Ensure date fields are strings for JSON serialization
-      createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: item.updatedAt ? new Date(item.updatedAt).toISOString() : new Date().toISOString()
-    })) as OpsReviewItemResponse[];
-    
-    return NextResponse.json(transformedItems);
+
+    const items = await prisma.opsReviewItem.findMany({
+      where: { opsReviewId: id },
+      include: { owner: true, team: true, opsReview: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    console.log(`[GET /api/ops-reviews/${id}/items] Found ${items.length} items`);
+
+    return NextResponse.json(items);
     
   } catch (error) {
     console.error(`[GET /api/ops-reviews/${id}/items] Error:`, {
@@ -144,7 +127,7 @@ export async function POST(
     }
     
     // Parse and validate the input data
-    const data = createOpsReviewItemSchema.parse({ 
+    const parsed = createOpsReviewItemSchema.parse({ 
       ...json, 
       opsReviewId: id,
       // Use the review's quarter and year if not provided in the request
@@ -152,18 +135,22 @@ export async function POST(
       year: json.year || review[0].year
     });
 
+    // Ensure non-optional values for Prisma types
+    const quarter = parsed.quarter ?? review[0].quarter;
+    const year = (parsed.year ?? review[0].year) as number;
+
     // Create the OpsReviewItem using Prisma's create method
     const created = await prisma.opsReviewItem.create({
       data: {
-        title: data.title,
-        description: data.description || null,
-        targetMetric: data.targetMetric,
-        actualMetric: data.actualMetric,
-        quarter: data.quarter as any, // Using 'as any' to handle the custom enum type
-        year: data.year,
-        opsReview: { connect: { id: data.opsReviewId } },
-        team: { connect: { id: data.teamId } },
-        ...(data.ownerId && { owner: { connect: { id: data.ownerId } } }),
+        title: parsed.title,
+        description: parsed.description || null,
+        targetMetric: parsed.targetMetric,
+        actualMetric: parsed.actualMetric,
+        quarter: quarter as any, // Using 'as any' to handle the custom enum type
+        year: year,
+        opsReview: { connect: { id: parsed.opsReviewId } },
+        team: { connect: { id: parsed.teamId } },
+        ...(parsed.ownerId && { owner: { connect: { id: parsed.ownerId } } }),
       },
       include: {
         owner: {

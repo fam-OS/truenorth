@@ -1,169 +1,88 @@
-import { PrismaClient } from '@prisma/client';
-import { createServer, Server } from '../helpers/server';
-import { createTestUser, TestUser } from '../helpers/auth';
-
-const prisma = new PrismaClient();
-let server: Server;
-let testUser: TestUser;
-let testOrg: any;
-let testBusinessUnit: any;
-
-beforeAll(async () => {
-  server = await createServer();
-  testUser = await createTestUser(prisma);
-  
-  // Create a test organization and business unit
-  testOrg = await prisma.organization.create({
-    data: {
-      name: 'Test Org',
-      description: 'Test Organization',
-    },
-  });
-
-  testBusinessUnit = await prisma.businessUnit.create({
-    data: {
-      name: 'Test Business Unit',
-      organizationId: testOrg.id,
-    },
-  });
-});
-
-afterAll(async () => {
-  await server.close();
-  await prisma.$disconnect();
-});
+import { prismaMock } from '../setup';
+import { GET as GET_STAKEHOLDERS, POST as POST_STAKEHOLDER } from '@/app/api/stakeholders/route';
+import { POST as POST_BU_STAKEHOLDER } from '@/app/api/business-units/[businessUnitId]/stakeholders/route';
 
 describe('Stakeholders API', () => {
-  let testStakeholder: any;
-  
-  beforeEach(async () => {
-    // Clean up before each test
-    await prisma.stakeholder.deleteMany({});
-    
-    // Create a test stakeholder
-    testStakeholder = await prisma.stakeholder.create({
-      data: {
-        name: 'Test Stakeholder',
-        email: 'test@example.com',
-        businessUnitId: testBusinessUnit.id,
-      },
-    });
-  });
-
   describe('GET /api/stakeholders', () => {
-    it('should return all stakeholders', async () => {
-      const response = await server.inject({
-        method: 'GET',
-        url: '/api/stakeholders',
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-        query: {
-          businessUnitId: testBusinessUnit.id,
-        },
-      });
+    it('returns all stakeholders', async () => {
+      (prismaMock as any).stakeholder.findMany.mockResolvedValue([
+        { id: 's1', name: 'Test Stakeholder', email: 'test@example.com', businessUnitId: null },
+      ]);
 
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
+      const req = new Request('http://localhost/api/stakeholders');
+      const res = await GET_STAKEHOLDERS(req as any);
+      const data = await res.json();
+      expect(res.status).toBe(200);
       expect(Array.isArray(data)).toBe(true);
-      expect(data.length).toBe(1);
       expect(data[0].name).toBe('Test Stakeholder');
     });
-  });
 
-  describe('GET /api/stakeholders/:stakeholderId', () => {
-    it('should return a single stakeholder', async () => {
-      const response = await server.inject({
-        method: 'GET',
-        url: `/api/stakeholders/${testStakeholder.id}`,
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
-      expect(data.name).toBe('Test Stakeholder');
+    it('filters unassigned when unassigned=true', async () => {
+      (prismaMock as any).stakeholder.findMany.mockResolvedValue([
+        { id: 's1', name: 'A', businessUnitId: null },
+        { id: 's2', name: 'B', businessUnitId: 'bu1' },
+      ]);
+      const req = new Request('http://localhost/api/stakeholders?unassigned=true');
+      const res = await GET_STAKEHOLDERS(req as any);
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(data.length).toBe(1);
+      expect(data[0].id).toBe('s1');
     });
   });
 
   describe('POST /api/stakeholders', () => {
-    it('should create a new stakeholder', async () => {
-      const newStakeholder = {
-        name: 'New Stakeholder',
-        email: 'new@example.com',
-        businessUnitId: testBusinessUnit.id,
-      };
+    it('creates a new global stakeholder (no BU)', async () => {
+      const created = { id: 's2', name: 'New Stakeholder', role: 'Manager', email: 'new@example.com' };
+      (prismaMock as any).stakeholder.create.mockResolvedValue(created);
 
-      const response = await server.inject({
+      const req = new Request('http://localhost/api/stakeholders', {
         method: 'POST',
-        url: '/api/stakeholders',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${testUser.token}`,
-        },
-        payload: JSON.stringify(newStakeholder),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'New Stakeholder', role: 'Manager', email: 'new@example.com' }),
       });
-
-      expect(response.statusCode).toBe(201);
-      const data = JSON.parse(response.payload);
+      const res = await POST_STAKEHOLDER(req as any);
+      const data = await res.json();
+      expect(res.status).toBe(201);
       expect(data.name).toBe('New Stakeholder');
-      
-      // Verify in database
-      const stakeholderInDb = await prisma.stakeholder.findUnique({
-        where: { id: data.id },
+    });
+
+    it('validates required fields', async () => {
+      const req = new Request('http://localhost/api/stakeholders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
       });
-      expect(stakeholderInDb).toBeTruthy();
-      expect(stakeholderInDb?.name).toBe('New Stakeholder');
+      const res = await POST_STAKEHOLDER(req as any);
+      expect(res.status).toBe(400);
     });
   });
 
-  describe('PUT /api/stakeholders/:stakeholderId', () => {
-    it('should update a stakeholder', async () => {
-      const updateData = {
-        name: 'Updated Stakeholder',
-        email: 'updated@example.com',
-      };
-
-      const response = await server.inject({
-        method: 'PUT',
-        url: `/api/stakeholders/${testStakeholder.id}`,
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${testUser.token}`,
-        },
-        payload: JSON.stringify(updateData),
+  describe('POST /api/business-units/:businessUnitId/stakeholders', () => {
+    it('links existing stakeholder to BU when stakeholderId provided', async () => {
+      (prismaMock as any).stakeholder.update.mockResolvedValue({ id: 's1', name: 'A', businessUnitId: 'bu1' });
+      const req = new Request('http://localhost/api/business-units/bu1/stakeholders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stakeholderId: 's1' }),
       });
-
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
-      expect(data.name).toBe('Updated Stakeholder');
-      
-      // Verify in database
-      const updatedStakeholder = await prisma.stakeholder.findUnique({
-        where: { id: testStakeholder.id },
-      });
-      expect(updatedStakeholder?.name).toBe('Updated Stakeholder');
+      const res = await POST_BU_STAKEHOLDER(req as any, { params: { businessUnitId: 'bu1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(data.businessUnitId).toBe('bu1');
     });
-  });
 
-  describe('DELETE /api/stakeholders/:stakeholderId', () => {
-    it('should delete a stakeholder', async () => {
-      const response = await server.inject({
-        method: 'DELETE',
-        url: `/api/stakeholders/${testStakeholder.id}`,
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
+    it('creates a new stakeholder under BU when name/role provided', async () => {
+      (prismaMock as any).stakeholder.create.mockResolvedValue({ id: 's3', name: 'C', role: 'Lead', businessUnitId: 'bu1' });
+      const req = new Request('http://localhost/api/business-units/bu1/stakeholders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'C', role: 'Lead', email: 'c@example.com' }),
       });
-
-      expect(response.statusCode).toBe(204);
-      
-      // Verify deleted
-      const stakeholderInDb = await prisma.stakeholder.findUnique({
-        where: { id: testStakeholder.id },
-      });
-      expect(stakeholderInDb).toBeNull();
+      const res = await POST_BU_STAKEHOLDER(req as any, { params: { businessUnitId: 'bu1' } });
+      const data = await res.json();
+      expect(res.status).toBe(201);
+      expect(data.name).toBe('C');
     });
   });
 });

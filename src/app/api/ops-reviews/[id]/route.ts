@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { updateOpsReviewSchema } from '@/lib/validations/ops-review';
 import { handleError } from '@/lib/api-response';
 
-const prisma = new PrismaClient();
 
 interface OpsReviewWithRelations {
   id: string;
@@ -204,28 +203,19 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    
-    // First, check if the review exists
-    const existingReview = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM "OpsReview" WHERE id = ${id}::text
-    `;
-    
-    if (!existingReview || existingReview.length === 0) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
+    // Use Prisma client delete so tests can mock prisma.opsReview.delete
+    await prisma.opsReview.delete({ where: { id } });
 
-    // Delete the review (CASCADE will handle related items)
-    await prisma.$executeRaw`
-      DELETE FROM "OpsReview" WHERE id = ${id}::text
-    `;
-    
-    return new NextResponse(JSON.stringify({ success: true }, replacer), {
+    return new NextResponse(JSON.stringify({ success: true }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    // Map not found to 404, else generic error
+    const err = error as any;
+    if (err && err.code === 'P2025') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     return handleError(error);
   }
 }

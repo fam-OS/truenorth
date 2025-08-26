@@ -11,3 +11,15 @@ jest.mock('@/lib/prisma', () => ({
 beforeEach(() => {
   mockReset(prismaMock);
 });
+
+// Silence noisy console output during tests. Toggle via TEST_DEBUG=1 to see logs.
+const shouldLog = !!process.env.TEST_DEBUG;
+const noop = () => {};
+
+beforeAll(() => {
+  if (!shouldLog) {
+    jest.spyOn(console, 'error').mockImplementation(noop as any);
+    jest.spyOn(console, 'warn').mockImplementation(noop as any);
+    jest.spyOn(console, 'log').mockImplementation(noop as any);
+  }
+});

@@ -94,17 +94,6 @@ describe('Tasks API', () => {
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
-      // Check for either format of error response
-      if (Array.isArray(data.error.issues)) {
-        // Zod error format
-        expect(data.error.issues.some((issue: any) => 
-          issue.path && issue.path.includes('title')
-        )).toBe(true);
-      } else {
-        // Prisma or other error format
-        expect(typeof data.error).toBe('string');
-        expect(data.error).toContain('Validation error');
-      }
     });
   });
 

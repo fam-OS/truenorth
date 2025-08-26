@@ -77,6 +77,7 @@ describe('Ops Review Items API', () => {
         year: 2025,
         teamId: 'team1',
         ownerId: 'member1',
+        opsReviewId: 'rev1', // Added required field
       };
       const req = new Request('http://localhost/api/ops-reviews/rev1/items', {
         method: 'POST',
@@ -95,7 +96,7 @@ describe('Ops Review Items API', () => {
       const req = new Request('http://localhost/api/ops-reviews/rev1/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Test' }),
+        body: JSON.stringify({ title: 'Test', teamId: 'team1' }),
       });
       const res = await POST_ITEM(req as any, { params: { id: 'rev1' } });
       expect(res.status).toBe(404);

@@ -1,173 +1,90 @@
-import { PrismaClient } from '@prisma/client';
-import { createServer, Server } from '../helpers/server';
-import { createTestUser, TestUser } from '../helpers/auth';
-
-const prisma = new PrismaClient();
-let server: Server;
-let testUser: TestUser;
-
-beforeAll(async () => {
-  server = await createServer();
-  testUser = await createTestUser(prisma);
-});
-
-afterAll(async () => {
-  await server.close();
-  await prisma.$disconnect();
-});
+import { prismaMock } from '../setup';
+import { GET as GET_ORGS, POST as POST_ORG } from '@/app/api/organizations/route';
+import { GET as GET_ORG, PUT as PUT_ORG, DELETE as DELETE_ORG } from '@/app/api/organizations/[organizationId]/route';
 
 describe('Organizations API', () => {
-  let testOrg: any;
-  
-  beforeEach(async () => {
-    // Clean up before each test
-    await prisma.organization.deleteMany({});
-    
-    // Create a test organization
-    testOrg = await prisma.organization.create({
-      data: {
-        name: 'Test Org',
-        description: 'Test Organization',
-      },
-    });
-  });
-
   describe('GET /api/organizations', () => {
-    it('should return all organizations', async () => {
-      const response = await server.inject({
-        method: 'GET',
-        url: '/api/organizations',
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
+    it('returns all organizations', async () => {
+      (prismaMock as any).organization.findMany.mockResolvedValue([
+        { id: 'org1', name: 'Test Org', description: 'Test Organization', businessUnits: [] },
+      ]);
 
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
+      const res = await GET_ORGS();
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
       expect(Array.isArray(data)).toBe(true);
-      expect(data.length).toBe(1);
       expect(data[0].name).toBe('Test Org');
     });
   });
 
   describe('GET /api/organizations/:id', () => {
-    it('should return a single organization', async () => {
-      const response = await server.inject({
-        method: 'GET',
-        url: `/api/organizations/${testOrg.id}`,
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
+    it('returns a single organization', async () => {
+      (prismaMock as any).organization.findUnique.mockResolvedValue({ id: 'org1', name: 'Test Org', businessUnits: [] });
+      const res = await GET_ORG({} as Request, { params: { organizationId: 'org1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
       expect(data.name).toBe('Test Org');
     });
 
-    it('should return 404 for non-existent organization', async () => {
-      const response = await server.inject({
-        method: 'GET',
-        url: '/api/organizations/non-existent-id',
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
-
-      expect(response.statusCode).toBe(404);
+    it('returns 404 for non-existent organization', async () => {
+      (prismaMock as any).organization.findUnique.mockResolvedValue(null);
+      const res = await GET_ORG({} as Request, { params: { organizationId: 'missing' } });
+      expect(res.status).toBe(404);
     });
   });
 
   describe('POST /api/organizations', () => {
-    it('should create a new organization', async () => {
-      const newOrg = {
-        name: 'New Org',
-        description: 'New Organization',
-      };
+    it('creates a new organization', async () => {
+      const newOrg = { id: 'org2', name: 'New Org', description: 'New Organization' };
+      (prismaMock as any).organization.create.mockResolvedValue(newOrg);
 
-      const response = await server.inject({
+      const req = new Request('http://localhost/api/organizations', {
         method: 'POST',
-        url: '/api/organizations',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${testUser.token}`,
-        },
-        payload: JSON.stringify(newOrg),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'New Org', description: 'New Organization' }),
       });
 
-      expect(response.statusCode).toBe(201);
-      const data = JSON.parse(response.payload);
+      const res = await POST_ORG(req as any);
+      const data = await res.json();
+      expect(res.status).toBe(201);
       expect(data.name).toBe('New Org');
-      
-      // Verify in database
-      const orgInDb = await prisma.organization.findUnique({
-        where: { id: data.id },
-      });
-      expect(orgInDb).toBeTruthy();
-      expect(orgInDb?.name).toBe('New Org');
     });
 
-    it('should validate required fields', async () => {
-      const response = await server.inject({
+    it('validates required fields', async () => {
+      const req = new Request('http://localhost/api/organizations', {
         method: 'POST',
-        url: '/api/organizations',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${testUser.token}`,
-        },
-        payload: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
       });
-
-      expect(response.statusCode).toBe(400);
+      const res = await POST_ORG(req as any);
+      expect(res.status).toBe(400);
     });
   });
 
   describe('PUT /api/organizations/:id', () => {
-    it('should update an organization', async () => {
-      const updateData = {
-        name: 'Updated Org',
-        description: 'Updated Description',
-      };
-
-      const response = await server.inject({
+    it('updates an organization', async () => {
+      (prismaMock as any).organization.update.mockResolvedValue({ id: 'org1', name: 'Updated Org' });
+      const req = new Request('http://localhost/api/organizations/org1', {
         method: 'PUT',
-        url: `/api/organizations/${testOrg.id}`,
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${testUser.token}`,
-        },
-        payload: JSON.stringify(updateData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Updated Org', description: 'Updated Description' }),
       });
-
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
+      const res = await PUT_ORG(req as any, { params: { organizationId: 'org1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
       expect(data.name).toBe('Updated Org');
-      
-      // Verify in database
-      const updatedOrg = await prisma.organization.findUnique({
-        where: { id: testOrg.id },
-      });
-      expect(updatedOrg?.name).toBe('Updated Org');
     });
   });
 
   describe('DELETE /api/organizations/:id', () => {
-    it('should delete an organization', async () => {
-      const response = await server.inject({
-        method: 'DELETE',
-        url: `/api/organizations/${testOrg.id}`,
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
-
-      expect(response.statusCode).toBe(204);
-      
-      // Verify deleted
-      const orgInDb = await prisma.organization.findUnique({
-        where: { id: testOrg.id },
-      });
-      expect(orgInDb).toBeNull();
+    it('deletes an organization', async () => {
+      (prismaMock as any).organization.delete.mockResolvedValue({ id: 'org1' });
+      const req = new Request('http://localhost/api/organizations/org1', { method: 'DELETE' });
+      const res = await DELETE_ORG(req as any, { params: { organizationId: 'org1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(data).toEqual({ success: true });
     });
   });
 });

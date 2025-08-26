@@ -19,20 +19,23 @@
 - Done
 
 ##Update 3.3 - Company information and API tests
-- Task: Make sure we have tests for ops review and ops review items routes 
 
-##Update 3.4 - Reports to relationships
-- Task: Update Readme with data model diagram.
+##Update 3.4 - Fix unit tests
+- Task: Fix unit tests 
+
+## Reports to relationships
 - Task: Add a "Reports to" (relationship) field to the Stakeholder table, and point to a Stakeholder Id.
 - Task: Add a "Reports to" (relationship) field to the Team Member table, and point to a Team Member Id.
 
-##Update 4 - KPIs and Initiatives 
+## KPIs and Initiatives 
 - Add an Initiative data concept: name, one line summary, value proposition, implementation details, owner(=team member relationship), release date, organization (relationship) 
-- Add a KPI data concept: KPIs have name, team (relationship), target metric, actual metric, quarter, year, organization (relationship) 
-- KPIs are tied to a Business Unit (relationship) and an Initiative (relationship), so create a junction table for this relationship
-- Display a list of KPIs on the Initiative page and the Business Unit page          
+- Add a KPI data concept: KPIs have name, team (relationship), target metric, actual metric, quarter, year, organization (relationship), and an Initiative (relationship)
+- Create an Initiative detail page with ability to edit and delete.  Add a related list of KPIs. 
+- Create a KPI detail page with ability to edit and delete. Add a related list of Initiatives. 
+- Update the Business Units page to display a related list of Initiatives. 
+- Task: Update Readme with data model diagram.           
 
-##Update 5 - Executive Dashboard 
+## Executive Dashboard 
 - Add a nav item called "Value Tracker" that points to a new page 
 - "Value Tracker" is an executive dashboard with 
 - Metrics include: 
@@ -41,27 +44,42 @@
 -- a list of KPIs for the selected quarter and year for each Initiative and Business Unit and their actual vs target values 
 -- a list of Ops Reviews for the selected quarter and year and Ops Review Items with their actual vs target values  
 
-##Update 6 - User authentication
+## User authentication
 - Add user authentication to the app
 - Add a user registration page
 - Add a login page
 - Add a logout button
 
-##Update 6.1 - User profile and settings
+## User profile and settings
 - Add a user profile page   
 - Add a user settings page
 - Add a marketing landing page 
 
-##Update 7 - Marketing pages
+## Marketing pages
 - Add a feedback form to the app
 - Add a help page
 - Add a terms of service page
 - Add a privacy policy page 
 
-##Update 8 - Visualizations
+## Visualizations
 - Visualize the org chart and way your org supports business units and initiatives feature 
 
-Future Updates - 
+## Additional Updates
 - Add an IsActive field to the TeamMember table 
 - On the organization detail page, display a related list of teams and "Add Team" button. 
 - On the team detail page, display a related list of team members and "Add Team Member" button.  
+
+## Problems to solve 
+- Share the CEO's strategic vision with leaders throughout the company. 
+- Connect initiative bets to actual ROI results 
+- Make it easy to measure success of teams at all levels and all disciplines 
+- Connect company goals to people management strategies 
+
+Account Types determine experience:
+- Individual 
+- Organization
+    -- Add company logo and CEO goals
+    -- Add users to the organization 
+
+
+

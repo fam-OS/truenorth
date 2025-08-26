@@ -1,157 +1,71 @@
-import { PrismaClient } from '@prisma/client';
-import { createServer, Server } from '../helpers/server';
-import { createTestUser, TestUser } from '../helpers/auth';
-
-const prisma = new PrismaClient();
-let server: Server;
-let testUser: TestUser;
-let testOrg: any;
-
-beforeAll(async () => {
-  server = await createServer();
-  testUser = await createTestUser(prisma);
-  
-  // Create a test organization
-  testOrg = await prisma.organization.create({
-    data: {
-      name: 'Test Org',
-      description: 'Test Organization',
-    },
-  });
-});
-
-afterAll(async () => {
-  await server.close();
-  await prisma.$disconnect();
-});
+import { prismaMock } from '../setup';
+import { GET as GET_BU, PUT as PUT_BU, DELETE as DELETE_BU } from '@/app/api/business-units/[businessUnitId]/route';
+import { GET as GET_ORG_BUs, POST as POST_ORG_BU } from '@/app/api/organizations/[organizationId]/business-units/route';
 
 describe('Business Units API', () => {
-  let testBusinessUnit: any;
-  
-  beforeEach(async () => {
-    // Clean up before each test
-    await prisma.businessUnit.deleteMany({});
-    
-    // Create a test business unit
-    testBusinessUnit = await prisma.businessUnit.create({
-      data: {
-        name: 'Test Business Unit',
-        description: 'Test Business Unit Description',
-        organizationId: testOrg.id,
-      },
-    });
-  });
-
   describe('GET /api/organizations/:organizationId/business-units', () => {
-    it('should return all business units for an organization', async () => {
-      const response = await server.inject({
-        method: 'GET',
-        url: `/api/organizations/${testOrg.id}/business-units`,
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
+    it('returns all business units for an organization', async () => {
+      (prismaMock as any).businessUnit.findMany.mockResolvedValue([
+        { id: 'bu1', name: 'Test Business Unit' },
+      ]);
 
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
+      const res = await GET_ORG_BUs({} as Request, { params: { organizationId: 'org1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
       expect(Array.isArray(data)).toBe(true);
-      expect(data.length).toBe(1);
       expect(data[0].name).toBe('Test Business Unit');
     });
   });
 
   describe('GET /api/business-units/:businessUnitId', () => {
-    it('should return a single business unit', async () => {
-      const response = await server.inject({
-        method: 'GET',
-        url: `/api/business-units/${testBusinessUnit.id}`,
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
+    it('returns a single business unit', async () => {
+      (prismaMock as any).businessUnit.findUnique.mockResolvedValue({ id: 'bu1', name: 'Test Business Unit' });
+      const res = await GET_BU({} as Request, { params: { businessUnitId: 'bu1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
       expect(data.name).toBe('Test Business Unit');
     });
   });
 
   describe('POST /api/organizations/:organizationId/business-units', () => {
-    it('should create a new business unit', async () => {
-      const newBU = {
-        name: 'New Business Unit',
-        description: 'New Business Unit Description',
-      };
+    it('creates a new business unit', async () => {
+      const created = { id: 'bu2', name: 'New Business Unit' };
+      (prismaMock as any).businessUnit.create.mockResolvedValue(created);
 
-      const response = await server.inject({
+      const req = new Request('http://localhost/api/organizations/org1/business-units', {
         method: 'POST',
-        url: `/api/organizations/${testOrg.id}/business-units`,
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${testUser.token}`,
-        },
-        payload: JSON.stringify(newBU),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'New Business Unit', description: 'Desc' }),
       });
-
-      expect(response.statusCode).toBe(201);
-      const data = JSON.parse(response.payload);
+      const res = await POST_ORG_BU(req as any, { params: { organizationId: 'org1' } });
+      const data = await res.json();
+      expect(res.status).toBe(201);
       expect(data.name).toBe('New Business Unit');
-      
-      // Verify in database
-      const buInDb = await prisma.businessUnit.findUnique({
-        where: { id: data.id },
-      });
-      expect(buInDb).toBeTruthy();
-      expect(buInDb?.name).toBe('New Business Unit');
     });
   });
 
   describe('PUT /api/business-units/:businessUnitId', () => {
-    it('should update a business unit', async () => {
-      const updateData = {
-        name: 'Updated Business Unit',
-        description: 'Updated Description',
-      };
-
-      const response = await server.inject({
+    it('updates a business unit', async () => {
+      (prismaMock as any).businessUnit.update.mockResolvedValue({ id: 'bu1', name: 'Updated Business Unit' });
+      const req = new Request('http://localhost/api/business-units/bu1', {
         method: 'PUT',
-        url: `/api/business-units/${testBusinessUnit.id}`,
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${testUser.token}`,
-        },
-        payload: JSON.stringify(updateData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Updated Business Unit', description: 'Updated Description' }),
       });
-
-      expect(response.statusCode).toBe(200);
-      const data = JSON.parse(response.payload);
+      const res = await PUT_BU(req as any, { params: { businessUnitId: 'bu1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
       expect(data.name).toBe('Updated Business Unit');
-      
-      // Verify in database
-      const updatedBU = await prisma.businessUnit.findUnique({
-        where: { id: testBusinessUnit.id },
-      });
-      expect(updatedBU?.name).toBe('Updated Business Unit');
     });
   });
 
   describe('DELETE /api/business-units/:businessUnitId', () => {
-    it('should delete a business unit', async () => {
-      const response = await server.inject({
-        method: 'DELETE',
-        url: `/api/business-units/${testBusinessUnit.id}`,
-        headers: {
-          authorization: `Bearer ${testUser.token}`,
-        },
-      });
-
-      expect(response.statusCode).toBe(204);
-      
-      // Verify deleted
-      const buInDb = await prisma.businessUnit.findUnique({
-        where: { id: testBusinessUnit.id },
-      });
-      expect(buInDb).toBeNull();
+    it('deletes a business unit', async () => {
+      (prismaMock as any).businessUnit.delete.mockResolvedValue({ id: 'bu1' });
+      const res = await DELETE_BU({} as Request, { params: { businessUnitId: 'bu1' } });
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(data).toEqual({ success: true });
     });
   });
 });
