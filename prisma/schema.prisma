@@ -46,6 +46,8 @@ model Organization {
   businessUnits BusinessUnit[]
   teams         Team[]
   users         User[]         @relation("OrganizationToUser")
+  initiatives   Initiative[]
+  kpis          Kpi[]
 }
 
 model BusinessUnit {
@@ -123,6 +125,7 @@ model Team {
   OpsReviewItem  OpsReviewItem[]
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members        TeamMember[]
+  kpis           Kpi[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -142,6 +145,7 @@ model TeamMember {
   ownedOpsReviews     OpsReview[]     @relation("OpsReviewOwner")
   ownedOpsReviewItems OpsReviewItem[] @relation("OpsReviewItemOwner")
   team                Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  ownedInitiatives    Initiative[]    @relation("InitiativeOwner")
 
   @@unique([teamId, email])
   @@index([teamId])
@@ -209,4 +213,46 @@ enum Quarter {
   Q2
   Q3
   Q4
+}
+
+model Initiative {
+  id                    String      @id @default(cuid())
+  name                  String
+  summary               String?     // one-line summary
+  valueProposition      String?
+  implementationDetails String?
+  releaseDate           DateTime?
+  organizationId        String
+  ownerId               String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner                 TeamMember?  @relation("InitiativeOwner", fields: [ownerId], references: [id])
+  kpis                  Kpi[]
+
+  @@index([organizationId])
+  @@index([ownerId])
+}
+
+model Kpi {
+  id             String        @id @default(cuid())
+  name           String
+  targetMetric   Float?
+  actualMetric   Float?
+  quarter        Quarter
+  year           Int
+  organizationId String
+  teamId         String
+  initiativeId   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  team           Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  initiative     Initiative?   @relation(fields: [initiativeId], references: [id])
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@index([initiativeId])
 }

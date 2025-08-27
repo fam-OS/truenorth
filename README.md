@@ -22,6 +22,61 @@ A web application for managing tasks, goals, and business metrics for tech execu
 
 ## Data Model
 
+### Diagram
+
+```mermaid
+erDiagram
+  Organization ||--o{ BusinessUnit : has
+  Organization ||--o{ Team : has
+  Organization }o--o{ User : members
+  Organization ||--o{ Initiative : has
+  Organization ||--o{ Kpi : has
+
+  BusinessUnit }o--|| Organization : belongs_to
+  BusinessUnit ||--o{ Stakeholder : has
+  BusinessUnit ||--o{ Metric : has
+
+  Stakeholder }o--|| BusinessUnit : belongs_to
+  Stakeholder ||--o{ Goal : has
+  Stakeholder ||--o{ Meeting : has
+  Stakeholder }o--o{ Stakeholder : reports_to
+
+  Team }o--|| Organization : belongs_to
+  Team ||--o{ TeamMember : has
+  Team ||--o{ OpsReview : has
+  Team ||--o{ OpsReviewItem : has
+  Team ||--o{ Kpi : has
+
+  TeamMember }o--|| Team : belongs_to
+  TeamMember ||--o{ OpsReview : owns
+  TeamMember ||--o{ OpsReviewItem : owns
+  TeamMember ||--o{ Initiative : owns
+  TeamMember }o--o{ TeamMember : manages
+
+  OpsReview }o--|| Team : belongs_to
+  OpsReview ||--o{ OpsReviewItem : has
+  OpsReview }o--o{ TeamMember : owner
+
+  OpsReviewItem }o--|| OpsReview : belongs_to
+  OpsReviewItem }o--|| Team : belongs_to
+  OpsReviewItem }o--o{ TeamMember : owner
+
+  Initiative }o--|| Organization : belongs_to
+  Initiative }o--o{ TeamMember : owner
+  Initiative ||--o{ Kpi : has
+
+  Kpi }o--|| Organization : belongs_to
+  Kpi }o--|| Team : belongs_to
+  Kpi }o--o{ Initiative : links_to
+
+  Goal }o--|| Stakeholder : belongs_to
+  Meeting }o--|| Stakeholder : belongs_to
+  Metric }o--|| BusinessUnit : belongs_to
+  User }o--o{ Organization : member_of
+```
+
+The diagram reflects the relations defined in `prisma/schema.prisma`, including optional links like `Kpi.initiativeId` and owners on `Initiative`, `OpsReview`, and `OpsReviewItem`.
+
 ### Organization Structure
 - Users manage multiple Organizations
 - Organizations contain Business Units

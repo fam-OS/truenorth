@@ -31,12 +31,7 @@
 - Done  
 
 ## KPIs and Initiatives 
-- Add an Initiative data concept: name, one line summary, value proposition, implementation details, owner(=team member relationship), release date, organization (relationship) 
-- Add a KPI data concept: KPIs have name, team (relationship), target metric, actual metric, quarter, year, organization (relationship), and an Initiative (relationship)
-- Create an Initiative detail page with ability to edit and delete.  Add a related list of KPIs. 
-- Create a KPI detail page with ability to edit and delete. Add a related list of Initiatives. 
-- Update the Business Units page to display a related list of Initiatives. 
-- Task: Update Readme with data model diagram.           
+- Create a contributing.md file and document the conventions for error handling, validation, and Prisma usage for api routes.         
 
 ## Executive Dashboard 
 - Add a nav item called "Value Tracker" that points to a new page 
@@ -60,7 +55,7 @@
 
 ## Marketing pages
 - Add a feedback form to the app
-- Add a help page
+- Add a help page 
 - Add a terms of service page
 - Add a privacy policy page 
 
