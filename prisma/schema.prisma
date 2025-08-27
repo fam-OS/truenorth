@@ -38,16 +38,17 @@ model User {
 }
 
 model Organization {
-  id            String         @id @default(cuid())
-  name          String
-  description   String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  businessUnits BusinessUnit[]
-  teams         Team[]
-  users         User[]         @relation("OrganizationToUser")
-  initiatives   Initiative[]
-  kpis          Kpi[]
+  id                String             @id @default(cuid())
+  name              String
+  description       String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  businessUnits     BusinessUnit[]
+  teams             Team[]
+  users             User[]             @relation("OrganizationToUser")
+  initiatives       Initiative[]
+  kpis              Kpi[]
+  headcountTrackers HeadcountTracker[]
 }
 
 model BusinessUnit {
@@ -119,15 +120,16 @@ model Metric {
 }
 
 model Team {
-  id             String          @id @default(cuid())
-  name           String
-  description    String?
-  organizationId String
-  opsReviews     OpsReview[]
-  OpsReviewItem  OpsReviewItem[]
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  members        TeamMember[]
-  kpis           Kpi[]
+  id                String             @id @default(cuid())
+  name              String
+  description       String?
+  organizationId    String
+  opsReviews        OpsReview[]
+  OpsReviewItem     OpsReviewItem[]
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members           TeamMember[]
+  kpis              Kpi[]
+  headcountTrackers HeadcountTracker[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -231,10 +233,10 @@ enum InitiativeStatus {
 }
 
 model Initiative {
-  id                    String    @id @default(cuid())
+  id                    String            @id @default(cuid())
   name                  String
   type                  InitiativeType?
-  atRisk                Boolean   @default(false)
+  atRisk                Boolean           @default(false)
   status                InitiativeStatus?
   summary               String? // one-line summary
   valueProposition      String?
@@ -243,8 +245,8 @@ model Initiative {
   organizationId        String
   ownerId               String?
   businessUnitId        String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   owner        TeamMember?   @relation("InitiativeOwner", fields: [ownerId], references: [id])
@@ -256,23 +258,51 @@ model Initiative {
   @@index([businessUnitId])
 }
 
-model Kpi {
+model HeadcountTracker {
   id             String   @id @default(cuid())
-  name           String
-  targetMetric   Float?
-  actualMetric   Float?
-  forecastedRevenue Float?
-  actualRevenue     Float?
-  metTarget      Boolean?
-  metTargetPercent Float?
-  quarter        Quarter
-  year           Int
-  organizationId String
   teamId         String
-  initiativeId   String?
-  businessUnitId String?
+  organizationId String?
+  year           Int
+  role           String
+  level          String
+  salary         Decimal  @db.Decimal(12, 2)
+  q1Forecast     Int      @default(0)
+  q1Actual       Int      @default(0)
+  q2Forecast     Int      @default(0)
+  q2Actual       Int      @default(0)
+  q3Forecast     Int      @default(0)
+  q3Actual       Int      @default(0)
+  q4Forecast     Int      @default(0)
+  q4Actual       Int      @default(0)
+  notes          String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([organizationId])
+  @@index([year])
+}
+
+model Kpi {
+  id                String   @id @default(cuid())
+  name              String
+  targetMetric      Float?
+  actualMetric      Float?
+  forecastedRevenue Float?
+  actualRevenue     Float?
+  metTarget         Boolean?
+  metTargetPercent  Float?
+  quarter           Quarter
+  year              Int
+  organizationId    String
+  teamId            String
+  initiativeId      String?
+  businessUnitId    String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
