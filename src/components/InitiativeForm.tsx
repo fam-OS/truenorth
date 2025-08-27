@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 
+type BusinessUnitOption = { id: string; name: string };
+
 export type InitiativeFormValues = {
   name: string;
   summary?: string;
@@ -11,6 +13,7 @@ export type InitiativeFormValues = {
   releaseDate?: string; // yyyy-mm-dd
   organizationId: string; // from context
   ownerId?: string;
+  businessUnitId?: string;
 };
 
 export type InitiativeOwnerOption = {
@@ -36,6 +39,8 @@ export function InitiativeForm({
   const [owners, setOwners] = useState<InitiativeOwnerOption[]>([]);
   const [loadingOwners, setLoadingOwners] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [businessUnits, setBusinessUnits] = useState<BusinessUnitOption[]>([]);
+  const [loadingBUs, setLoadingBUs] = useState(false);
 
   const [form, setForm] = useState<InitiativeFormValues>(() => ({
     name: defaultValues?.name ?? '',
@@ -47,10 +52,31 @@ export function InitiativeForm({
       : '',
     organizationId: defaultValues?.organizationId ?? currentOrg?.id ?? '',
     ownerId: defaultValues?.ownerId ?? undefined,
+    businessUnitId: defaultValues?.businessUnitId ?? undefined,
   }));
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, organizationId: currentOrg?.id ?? '' }));
+  }, [currentOrg?.id]);
+
+  useEffect(() => {
+    async function loadBusinessUnits() {
+      if (!currentOrg?.id) return;
+      try {
+        setLoadingBUs(true);
+        const res = await fetch(`/api/organizations/${currentOrg.id}/business-units`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to load business units');
+        const data = await res.json();
+        const mapped: BusinessUnitOption[] = data.map((b: any) => ({ id: b.id, name: b.name }));
+        setBusinessUnits(mapped);
+      } catch (e) {
+        console.error(e);
+        setError('Failed to load business units');
+      } finally {
+        setLoadingBUs(false);
+      }
+    }
+    loadBusinessUnits();
   }, [currentOrg?.id]);
 
   useEffect(() => {
@@ -171,6 +197,22 @@ export function InitiativeForm({
           </select>
           {loadingOwners && <p className="text-sm text-gray-500 mt-1">Loading owners…</p>}
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700" htmlFor="businessUnitId">Business Unit</label>
+        <select
+          id="businessUnitId"
+          className={inputClasses}
+          value={form.businessUnitId || ''}
+          onChange={(e) => setForm({ ...form, businessUnitId: e.target.value || undefined })}
+        >
+          <option value="">None</option>
+          {businessUnits.map((bu) => (
+            <option key={bu.id} value={bu.id}>{bu.name}</option>
+          ))}
+        </select>
+        {loadingBUs && <p className="text-sm text-gray-500 mt-1">Loading business units…</p>}
       </div>
 
       <div className="flex justify-end gap-3">

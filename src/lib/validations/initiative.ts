@@ -16,6 +16,11 @@ export const createInitiativeSchema = z.object({
     .optional()
     .nullable()
     .transform((v) => (v ? v : undefined)),
+  businessUnitId: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => (v ? v : undefined)),
 });
 
 export const updateInitiativeSchema = createInitiativeSchema.partial();

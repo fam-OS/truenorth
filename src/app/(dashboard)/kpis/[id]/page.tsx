@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { KpiForm, KpiFormValues } from '@/components/KpiForm';
+import { useToast } from '@/components/ui/toast';
 
 function useKpi(id?: string) {
   return useQuery({
@@ -23,6 +24,7 @@ export default function KpiDetailPage() {
   const params = useParams<{ id: string }>();
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: kpi, isLoading } = useKpi(id);
 
@@ -38,6 +40,7 @@ export default function KpiDetailPage() {
       return;
     }
     await queryClient.invalidateQueries({ queryKey: ['kpi', id] });
+    showToast({ title: 'KPI updated', description: 'Your changes have been saved.' });
   }
 
   async function handleDelete() {

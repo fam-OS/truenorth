@@ -10,11 +10,16 @@ import { OrganizationForm } from '@/components/OrganizationForm';
 import CEOGoals from '@/components/CEOGOALS';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { OrganizationWithBusinessUnits } from '@/types/prisma';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 type TaskWithNotes = Task & { notes: { id: string; content: string; createdAt?: Date }[] };
 type Team = { id: string; name: string; description?: string | null };
+type BusinessUnit = { id: string; name: string };
+type Initiative = { id: string; name: string; releaseDate?: string | Date | null; owner?: { name?: string | null } | null };
+type Kpi = { id: string; name: string; quarter: 'Q1'|'Q2'|'Q3'|'Q4'; year: number; initiativeId?: string | null; metTargetPercent?: number | null };
 
 export default function DashboardPage() {
+  const { currentOrg } = useOrganization();
   const [tasks, setTasks] = useState<TaskWithNotes[]>([]);
   const [organizations, setOrganizations] = useState<OrganizationWithBusinessUnits[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +32,7 @@ export default function DashboardPage() {
   const [showCreateOrg, setShowCreateOrg] = useState(false);
   const [editingOrg, setEditingOrg] = useState<OrganizationWithBusinessUnits | null>(null);
   const [orgTeams, setOrgTeams] = useState<Record<string, Team[]>>({});
+  const [orgBusinessUnits, setOrgBusinessUnits] = useState<Record<string, BusinessUnit[]>>({});
   const [showCreateTeamForOrg, setShowCreateTeamForOrg] = useState<string | null>(null);
   const [editTeam, setEditTeam] = useState<{ orgId: string; team: Team } | null>(null);
   const [ceoGoals, setCeoGoals] = useState<{ id?: string; description: string }[]>([
@@ -40,6 +46,7 @@ export default function DashboardPage() {
   // lifecycle helpers for fetch cancellation
   const isMounted = useRef(false);
   const abortController = useRef<AbortController | null>(null);
+  const vtAbort = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -69,6 +76,18 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // fetch business units for each org (for Value Tracker filter)
+  const fetchBusinessUnits = useCallback(async (orgId: string) => {
+    try {
+      const res = await fetch(`/api/organizations/${orgId}/business-units`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch business units');
+      const data: BusinessUnit[] = await res.json();
+      setOrgBusinessUnits((prev) => ({ ...prev, [orgId]: data }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch business units');
+    }
+  }, []);
+
   useEffect(() => {
     isMounted.current = true;
     void fetchData();
@@ -94,9 +113,74 @@ export default function DashboardPage() {
     if (organizations.length > 0) {
       organizations.forEach((org) => {
         if (!orgTeams[org.id]) fetchTeams(org.id);
+        if (!orgBusinessUnits[org.id]) fetchBusinessUnits(org.id);
       });
     }
-  }, [organizations, orgTeams, fetchTeams]);
+  }, [organizations, orgTeams, orgBusinessUnits, fetchTeams, fetchBusinessUnits]);
+
+  // Value Tracker state
+  const [selectedBU, setSelectedBU] = useState<string | undefined>(undefined); // undefined means All
+  const [selectedQuarter, setSelectedQuarter] = useState<'Q1'|'Q2'|'Q3'|'Q4'|'ALL'>('ALL');
+  const [selectedYear, setSelectedYear] = useState<number | 'ALL'>('ALL');
+  const [vtInitiatives, setVtInitiatives] = useState<Initiative[]>([]);
+  const [vtKpis, setVtKpis] = useState<Kpi[]>([]);
+  const [vtLoading, setVtLoading] = useState(false);
+
+  // Removed inline BU creation UI/state
+
+  // Fetch Value Tracker data
+  const fetchValueTracker = useCallback(async (orgId?: string, buId?: string, q?: string | 'ALL', y?: number | 'ALL') => {
+    if (!orgId) { setVtInitiatives([]); setVtKpis([]); return; }
+    try {
+      setVtLoading(true);
+      if (vtAbort.current) vtAbort.current.abort();
+      vtAbort.current = new AbortController();
+      const paramsInitiatives = new URLSearchParams({ orgId });
+      if (buId) paramsInitiatives.set('businessUnitId', buId);
+      const paramsKpis = new URLSearchParams({ orgId });
+      if (buId) paramsKpis.set('businessUnitId', buId);
+      if (q && q !== 'ALL') paramsKpis.set('quarter', q);
+      if (y && y !== 'ALL') paramsKpis.set('year', String(y));
+      const [iRes, kRes] = await Promise.all([
+        fetch(`/api/initiatives?${paramsInitiatives.toString()}`, { cache: 'no-store', signal: vtAbort.current.signal }),
+        fetch(`/api/kpis?${paramsKpis.toString()}`, { cache: 'no-store', signal: vtAbort.current.signal }),
+      ]);
+      if (!iRes.ok) throw new Error('Failed to fetch initiatives');
+      if (!kRes.ok) throw new Error('Failed to fetch KPIs');
+      const [iData, kData] = await Promise.all([iRes.json(), kRes.json()]);
+      setVtInitiatives(iData || []);
+      setVtKpis(kData || []);
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return;
+      setError(e instanceof Error ? e.message : 'Failed to load Value Tracker');
+    } finally {
+      setVtLoading(false);
+    }
+  }, []);
+
+  // Trigger VT fetch when selections change or orgs/business units load
+  useEffect(() => {
+    const orgId = currentOrg?.id || organizations[0]?.id;
+    void fetchValueTracker(orgId, selectedBU, selectedQuarter, selectedYear);
+  }, [currentOrg, organizations, selectedBU, selectedQuarter, selectedYear, fetchValueTracker]);
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const groupInitiativesByMonth = (items: Initiative[]) => {
+    const groups: Record<string, Initiative[]> = {};
+    items.forEach((it) => {
+      const d = it.releaseDate ? new Date(it.releaseDate) : undefined;
+      const key = d ? monthNames[d.getMonth()] : 'No Release Date';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(it);
+    });
+    // order by month order when possible, keep 'No Release Date' last
+    const orderedKeys = Object.keys(groups).sort((a, b) => {
+      if (a === 'No Release Date') return 1;
+      if (b === 'No Release Date') return -1;
+      return monthNames.indexOf(a) - monthNames.indexOf(b);
+    });
+    return { groups, orderedKeys };
+  };
 
   // CRUD handlers copied from Organizations page
   const handleSaveOrganization = async (data: { name: string; description?: string }) => {
@@ -465,6 +549,123 @@ export default function DashboardPage() {
           )}
 
           {/* Removed duplicated summary row to avoid double content on Home */}
+
+          {/* Value Tracker */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Value Tracker</h2>
+            </div>
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Unit</label>
+                <select
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  value={selectedBU || ''}
+                  onChange={(e) => setSelectedBU(e.target.value || undefined)}
+                >
+                  <option value="">All Business Units</option>
+                  {(currentOrg?.id || organizations[0]?.id) && orgBusinessUnits[(currentOrg?.id || organizations[0]?.id) as string]?.map((bu) => (
+                    <option key={bu.id} value={bu.id}>{bu.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quarter</label>
+                <select
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  value={selectedQuarter}
+                  onChange={(e) => setSelectedQuarter((e.target.value || 'ALL') as any)}
+                >
+                  <option value="">All</option>
+                  <option value="Q1">Q1</option>
+                  <option value="Q2">Q2</option>
+                  <option value="Q3">Q3</option>
+                  <option value="Q4">Q4</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <select
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  value={selectedYear === 'ALL' ? '' : String(selectedYear)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSelectedYear(v ? parseInt(v, 10) : 'ALL');
+                  }}
+                >
+                  <option value="">All</option>
+                  {Array.from({ length: 7 }).map((_, idx) => {
+                    const y = new Date().getFullYear() - 3 + idx;
+                    return <option key={y} value={y}>{y}</option>;
+                  })}
+                </select>
+              </div>
+            </div>
+
+            {vtLoading ? (
+              <div className="min-h-[120px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Initiatives by Release Month */}
+                <div>
+                  <h3 className="text-md font-semibold mb-2">Initiatives by Release Month</h3>
+                  {vtInitiatives.length === 0 ? (
+                    <p className="text-gray-500">No initiatives for the selected Business Unit.</p>
+                  ) : (
+                    (() => {
+                      const { groups, orderedKeys } = groupInitiativesByMonth(vtInitiatives);
+                      return (
+                        <div className="space-y-3">
+                          {orderedKeys.map((month) => (
+                            <div key={month} className="border rounded-md">
+                              <div className="px-3 py-2 bg-gray-50 font-medium">{month}</div>
+                              <ul className="divide-y">
+                                {groups[month].map((i) => (
+                                  <li key={i.id} className="px-3 py-2 flex items-center justify-between">
+                                    <Link href={`/initiatives/${i.id}`} className="text-sm text-blue-600 hover:underline">
+                                      {i.name}
+                                    </Link>
+                                    <span className="text-xs text-gray-500">{i.owner?.name || ''}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()
+                  )}
+                </div>
+
+                {/* KPIs for selection */}
+                <div>
+                  <h3 className="text-md font-semibold mb-2">KPIs</h3>
+                  {vtKpis.length === 0 ? (
+                    <p className="text-gray-500">No KPIs for the selected filters.</p>
+                  ) : (
+                    <ul className="divide-y rounded-md border">
+                      {vtKpis.map((k) => (
+                        <li key={k.id} className="px-3 py-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-800">{k.name}</span>
+                              {typeof k.metTargetPercent === 'number' && (
+                                <span className="text-xs text-gray-600">% to Target: {k.metTargetPercent.toFixed(0)}%</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">{k.quarter} {k.year}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* My Tasks */}
           <div className="bg-white shadow rounded-lg p-6">

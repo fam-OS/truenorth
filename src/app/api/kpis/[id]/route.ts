@@ -26,11 +26,42 @@ export async function GET(
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const json = await request.json();
-    const data = updateKpiSchema.parse(json);
+    const parsed = updateKpiSchema.parse(json);
+
+    // If metrics are being updated, recompute derived fields
+    const { targetMetric, actualMetric, organizationId, teamId, initiativeId, businessUnitId, ...rest } = parsed as any;
+    let computed: { metTarget?: boolean; metTargetPercent?: number } = {};
+    const hasActual = typeof actualMetric === 'number';
+    const hasTarget = typeof targetMetric === 'number';
+
+    // Load existing metrics if only one is provided so we can recompute
+    let newActual = actualMetric as number | undefined;
+    let newTarget = targetMetric as number | undefined;
+    if (hasActual || hasTarget) {
+      const existing = await prisma.kpi.findUnique({
+        where: { id: params.id },
+        select: { actualMetric: true, targetMetric: true },
+      });
+      if (!hasActual) newActual = existing?.actualMetric ?? undefined;
+      if (!hasTarget) newTarget = existing?.targetMetric ?? undefined;
+      if (typeof newActual === 'number' && typeof newTarget === 'number') {
+        computed.metTarget = newActual >= newTarget;
+        computed.metTargetPercent = newTarget !== 0 ? (newActual / newTarget) * 100 : undefined;
+      }
+    }
 
     const updated = await prisma.kpi.update({
       where: { id: params.id },
-      data,
+      data: {
+        ...rest,
+        ...(hasTarget ? { targetMetric } : {}),
+        ...(hasActual ? { actualMetric } : {}),
+        ...computed,
+        ...(organizationId ? { organization: { connect: { id: organizationId } } } : {}),
+        ...(teamId ? { team: { connect: { id: teamId } } } : {}),
+        ...(initiativeId ? { initiative: { connect: { id: initiativeId } } } : {}),
+        ...(businessUnitId ? { businessUnit: { connect: { id: businessUnitId } } } : {}),
+      },
       include: { team: true, initiative: true },
     });
 

@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { InitiativeForm, InitiativeFormValues } from '@/components/InitiativeForm';
+import { useToast } from '@/components/ui/toast';
 
 function useInitiative(id?: string) {
   return useQuery({
@@ -41,6 +42,7 @@ export default function InitiativeDetailPage() {
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { data: initiative, isLoading } = useInitiative(id);
   const { data: kpis = [], isLoading: kpisLoading } = useKpis({
     organizationId: currentOrg?.id,
@@ -68,6 +70,7 @@ export default function InitiativeDetailPage() {
     }
     await queryClient.invalidateQueries({ queryKey: ['initiative', id] });
     setIsEditing(false);
+    showToast({ title: 'Initiative updated', description: 'Your changes have been saved.' });
   }
 
   async function handleDelete() {

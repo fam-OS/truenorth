@@ -28,9 +28,21 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const json = await request.json();
     const data = updateInitiativeSchema.parse(json);
 
+    const { organizationId, ownerId, businessUnitId, ...rest } = data as any;
+    const updateData: any = { ...rest };
+    if (organizationId) {
+      updateData.organization = { connect: { id: organizationId } };
+    }
+    if (ownerId !== undefined) {
+      updateData.owner = ownerId ? { connect: { id: ownerId } } : { disconnect: true };
+    }
+    if (businessUnitId !== undefined) {
+      updateData.businessUnit = businessUnitId ? { connect: { id: businessUnitId } } : { disconnect: true };
+    }
+
     const updated = await prisma.initiative.update({
       where: { id: params.id },
-      data,
+      data: updateData,
       include: { organization: true, owner: true },
     });
 

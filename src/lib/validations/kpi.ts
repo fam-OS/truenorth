@@ -15,6 +15,11 @@ export const createKpiSchema = z.object({
     .optional()
     .nullable()
     .transform((v) => (v ? v : undefined)),
+  businessUnitId: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => (v ? v : undefined)),
 });
 
 export const updateKpiSchema = createKpiSchema.partial();
