@@ -7,6 +7,8 @@ export type KpiFormValues = {
   name: string;
   targetMetric?: number;
   actualMetric?: number;
+  forecastedRevenue?: number;
+  actualRevenue?: number;
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
   year: number;
   organizationId: string;
@@ -39,6 +41,8 @@ export function KpiForm({
     name: defaultValues?.name ?? '',
     targetMetric: defaultValues?.targetMetric,
     actualMetric: defaultValues?.actualMetric,
+    forecastedRevenue: (defaultValues as any)?.forecastedRevenue,
+    actualRevenue: (defaultValues as any)?.actualRevenue,
     quarter: (defaultValues?.quarter as KpiFormValues['quarter']) ?? 'Q1',
     year: defaultValues?.year ?? currentYear,
     organizationId: defaultValues?.organizationId ?? currentOrg?.id ?? '',
@@ -130,6 +134,31 @@ export function KpiForm({
         <div>
           <label className="block text-sm font-medium text-gray-700" htmlFor="actualMetric">Actual</label>
           <input id="actualMetric" type="number" step="any" className={input} value={form.actualMetric ?? ''} onChange={(e) => setForm({ ...form, actualMetric: e.target.value === '' ? undefined : Number(e.target.value) })} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700" htmlFor="forecastedRevenue">Forecasted Revenue</label>
+          <input
+            id="forecastedRevenue"
+            type="number"
+            step="any"
+            className={input}
+            value={form.forecastedRevenue ?? ''}
+            onChange={(e) => setForm({ ...form, forecastedRevenue: e.target.value === '' ? undefined : Number(e.target.value) })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700" htmlFor="actualRevenue">Actual Revenue</label>
+          <input
+            id="actualRevenue"
+            type="number"
+            step="any"
+            className={input}
+            value={form.actualRevenue ?? ''}
+            onChange={(e) => setForm({ ...form, actualRevenue: e.target.value === '' ? undefined : Number(e.target.value) })}
+          />
         </div>
       </div>
 

@@ -217,9 +217,16 @@ enum Quarter {
   Q4
 }
 
+enum InitiativeType {
+  CAPITALIZABLE
+  OPERATIONAL_EFFICIENCY
+  KTLO
+}
+
 model Initiative {
   id                    String    @id @default(cuid())
   name                  String
+  type                  InitiativeType?
   summary               String? // one-line summary
   valueProposition      String?
   implementationDetails String?
@@ -245,6 +252,8 @@ model Kpi {
   name           String
   targetMetric   Float?
   actualMetric   Float?
+  forecastedRevenue Float?
+  actualRevenue     Float?
   metTarget      Boolean?
   metTargetPercent Float?
   quarter        Quarter

@@ -167,7 +167,11 @@ export default async function OpsReviewDetailPage({
                     <div key={item.id} className="border rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium">{item.title}</h3>
+                          <h3 className="font-medium">
+                            <Link href={`/ops-reviews/${id}/items/${item.id}`} className="hover:underline">
+                              {item.title}
+                            </Link>
+                          </h3>
                           {item.description && (
                             <p className="text-sm text-gray-500 line-clamp-2">
                               {item.description}

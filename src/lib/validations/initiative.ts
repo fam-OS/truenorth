@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
+const initiativeTypeEnum = z.enum(['CAPITALIZABLE', 'OPERATIONAL_EFFICIENCY', 'KTLO']);
+
 export const createInitiativeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  type: initiativeTypeEnum.optional(),
   summary: z.string().optional(),
   valueProposition: z.string().optional(),
   implementationDetails: z.string().optional(),

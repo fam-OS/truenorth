@@ -2,9 +2,9 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Organization, BusinessUnit } from '@prisma/client';
+import { useToast } from '@/components/ui/toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 type OrganizationWithDetails = Organization & {
@@ -18,13 +18,17 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ o
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [teams, setTeams] = useState<Array<{ id: string; name: string; description?: string | null }>>([]);
+  const [showAddTeam, setShowAddTeam] = useState(false);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [newTeamDescription, setNewTeamDescription] = useState('');
+  const [isSavingTeam, setIsSavingTeam] = useState(false);
+  const [teamFormError, setTeamFormError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const { showToast } = useToast();
 
-  // NoSSR wrapper to render Teams block only on client to avoid hydration mismatch
-  const NoSSR = dynamic(async () => ({
-    default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  }), { ssr: false });
 
   useEffect(() => {
+    setMounted(true);
     const fetchOrganization = async () => {
       try {
         const response = await fetch(`/api/organizations/${organizationId}`, { cache: 'no-store' });
@@ -133,9 +137,100 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ o
             )}
           </div>
 
-          <NoSSR>
+            {mounted && (
             <div>
               <h3 className="text-sm font-medium text-gray-500">Teams</h3>
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-sm text-gray-500">Manage teams for this organization.</p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTeam((v) => !v)}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {showAddTeam ? 'Cancel' : 'Add Team'}
+                </button>
+              </div>
+
+              {showAddTeam && (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setTeamFormError(null);
+                    if (!newTeamName.trim()) {
+                      setTeamFormError('Team name is required');
+                      showToast({ title: 'Validation error', description: 'Team name is required', type: 'destructive' });
+                      return;
+                    }
+                    try {
+                      setIsSavingTeam(true);
+                      const res = await fetch(`/api/organizations/${organizationId}/teams`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newTeamName.trim(), description: newTeamDescription.trim() || null }),
+                      });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error || 'Failed to create team');
+                      }
+                      const created = await res.json();
+                      setTeams((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+                      setNewTeamName('');
+                      setNewTeamDescription('');
+                      setShowAddTeam(false);
+                      showToast({ title: 'Team created', description: 'New team has been added.' });
+                    } catch (err) {
+                      setTeamFormError(err instanceof Error ? err.message : 'An error occurred');
+                      showToast({ title: 'Failed to create team', description: err instanceof Error ? err.message : 'An error occurred', type: 'destructive' });
+                    } finally {
+                      setIsSavingTeam(false);
+                    }
+                  }}
+                  className="mt-3 bg-gray-50 border border-gray-200 rounded-md p-4"
+                >
+                  {teamFormError && (
+                    <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-700">{teamFormError}</div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="team-name" className="block text-sm font-medium text-gray-700">Team Name</label>
+                      <input
+                        id="team-name"
+                        type="text"
+                        required
+                        value={newTeamName}
+                        onChange={(e) => setNewTeamName(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="team-description" className="block text-sm font-medium text-gray-700">Description</label>
+                      <input
+                        id="team-description"
+                        type="text"
+                        value={newTeamDescription}
+                        onChange={(e) => setNewTeamDescription(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddTeam(false); setTeamFormError(null); }}
+                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingTeam}
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                    >
+                      {isSavingTeam ? 'Saving...' : 'Create Team'}
+                    </button>
+                  </div>
+                </form>
+              )}
               {teams.length > 0 ? (
                 <ul className="mt-2 divide-y divide-gray-200">
                   {teams.map((team) => (
@@ -155,7 +250,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ o
                 <p className="mt-1 text-sm text-gray-500">No teams found</p>
               )}
             </div>
-          </NoSSR>
+            )}
         </div>
       </div>
     </div>

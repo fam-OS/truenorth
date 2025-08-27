@@ -13,7 +13,18 @@ export const createOpsReviewItemSchema = z.object({
   opsReviewId: z.string().min(1),
 });
 
-export const updateOpsReviewItemSchema = createOpsReviewItemSchema.partial();
+// Update schema allows clearing some fields by accepting null
+export const updateOpsReviewItemSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  targetMetric: z.number().nullable().optional(),
+  actualMetric: z.number().nullable().optional(),
+  quarter: Quarter.optional(),
+  year: z.number().int().min(2000).max(3000).optional(),
+  teamId: z.string().min(1).optional(),
+  ownerId: z.string().min(1).nullable().optional(),
+  opsReviewId: z.string().min(1).optional(),
+});
 
 export type CreateOpsReviewItemInput = z.infer<typeof createOpsReviewItemSchema>;
 export type UpdateOpsReviewItemInput = z.infer<typeof updateOpsReviewItemSchema>;

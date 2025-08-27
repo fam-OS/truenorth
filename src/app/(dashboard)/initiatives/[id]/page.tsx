@@ -127,6 +127,7 @@ export default function InitiativeDetailPage() {
           <InitiativeForm
             defaultValues={{
               name: initiative.name,
+              type: initiative.type ?? undefined,
               summary: initiative.summary ?? undefined,
               valueProposition: initiative.valueProposition ?? undefined,
               implementationDetails: initiative.implementationDetails ?? undefined,
@@ -165,6 +166,15 @@ export default function InitiativeDetailPage() {
             <div>
               <h2 className="text-sm font-medium text-gray-500">OWNER</h2>
               <p className="mt-1 text-gray-900">{initiative.owner?.name || 'Unassigned'}</p>
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-gray-500">TYPE</h2>
+              <p className="mt-1 text-gray-900">
+                {initiative.type === 'CAPITALIZABLE' && 'Capitalizable'}
+                {initiative.type === 'OPERATIONAL_EFFICIENCY' && 'Operational Efficiency'}
+                {initiative.type === 'KTLO' && 'KTLO'}
+                {!initiative.type && '—'}
+              </p>
             </div>
           </div>
         )}

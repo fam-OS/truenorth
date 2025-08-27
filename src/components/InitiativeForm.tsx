@@ -7,6 +7,7 @@ type BusinessUnitOption = { id: string; name: string };
 
 export type InitiativeFormValues = {
   name: string;
+  type?: 'CAPITALIZABLE' | 'OPERATIONAL_EFFICIENCY' | 'KTLO';
   summary?: string;
   valueProposition?: string;
   implementationDetails?: string;
@@ -44,6 +45,7 @@ export function InitiativeForm({
 
   const [form, setForm] = useState<InitiativeFormValues>(() => ({
     name: defaultValues?.name ?? '',
+    type: (defaultValues as any)?.type ?? undefined,
     summary: defaultValues?.summary ?? '',
     valueProposition: defaultValues?.valueProposition ?? '',
     implementationDetails: defaultValues?.implementationDetails ?? '',
@@ -133,6 +135,21 @@ export function InitiativeForm({
           required
           placeholder="e.g., Launch new partner portal"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700" htmlFor="type">Type</label>
+        <select
+          id="type"
+          className={inputClasses}
+          value={form.type || ''}
+          onChange={(e) => setForm({ ...form, type: (e.target.value || undefined) as any })}
+        >
+          <option value="">None</option>
+          <option value="CAPITALIZABLE">Capitalizable</option>
+          <option value="OPERATIONAL_EFFICIENCY">Operational Efficiency</option>
+          <option value="KTLO">KTLO</option>
+        </select>
       </div>
 
       <div>

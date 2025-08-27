@@ -6,6 +6,8 @@ export const createKpiSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   targetMetric: z.number().optional(),
   actualMetric: z.number().optional(),
+  forecastedRevenue: z.number().optional(),
+  actualRevenue: z.number().optional(),
   quarter: quarterEnum,
   year: z.number().int(),
   organizationId: z.string().min(1, 'Organization ID is required'),

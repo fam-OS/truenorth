@@ -83,6 +83,8 @@ export default function KpiDetailPage() {
             name: kpi.name,
             targetMetric: kpi.targetMetric ?? undefined,
             actualMetric: kpi.actualMetric ?? undefined,
+            forecastedRevenue: kpi.forecastedRevenue ?? undefined,
+            actualRevenue: kpi.actualRevenue ?? undefined,
             quarter: kpi.quarter,
             year: kpi.year,
             organizationId: kpi.organizationId,

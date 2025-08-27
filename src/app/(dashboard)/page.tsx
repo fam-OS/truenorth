@@ -15,8 +15,8 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 type TaskWithNotes = Task & { notes: { id: string; content: string; createdAt?: Date }[] };
 type Team = { id: string; name: string; description?: string | null };
 type BusinessUnit = { id: string; name: string };
-type Initiative = { id: string; name: string; releaseDate?: string | Date | null; owner?: { name?: string | null } | null };
-type Kpi = { id: string; name: string; quarter: 'Q1'|'Q2'|'Q3'|'Q4'; year: number; initiativeId?: string | null; metTargetPercent?: number | null };
+type Initiative = { id: string; name: string; releaseDate?: string | Date | null; owner?: { name?: string | null } | null; type?: 'CAPITALIZABLE' | 'OPERATIONAL_EFFICIENCY' | 'KTLO' | null };
+type Kpi = { id: string; name: string; quarter: 'Q1'|'Q2'|'Q3'|'Q4'; year: number; initiativeId?: string | null; metTargetPercent?: number | null; forecastedRevenue?: number | null; actualRevenue?: number | null };
 
 export default function DashboardPage() {
   const { currentOrg } = useOrganization();
@@ -625,9 +625,18 @@ export default function DashboardPage() {
                               <ul className="divide-y">
                                 {groups[month].map((i) => (
                                   <li key={i.id} className="px-3 py-2 flex items-center justify-between">
-                                    <Link href={`/initiatives/${i.id}`} className="text-sm text-blue-600 hover:underline">
-                                      {i.name}
-                                    </Link>
+                                    <div className="flex items-center gap-2">
+                                      <Link href={`/initiatives/${i.id}`} className="text-sm text-blue-600 hover:underline">
+                                        {i.name}
+                                      </Link>
+                                      {i.type && (
+                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 border">
+                                          {i.type === 'CAPITALIZABLE' && 'Capitalizable'}
+                                          {i.type === 'OPERATIONAL_EFFICIENCY' && 'Operational Efficiency'}
+                                          {i.type === 'KTLO' && 'KTLO'}
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="text-xs text-gray-500">{i.owner?.name || ''}</span>
                                   </li>
                                 ))}
@@ -654,6 +663,18 @@ export default function DashboardPage() {
                               <span className="text-sm text-gray-800">{k.name}</span>
                               {typeof k.metTargetPercent === 'number' && (
                                 <span className="text-xs text-gray-600">% to Target: {k.metTargetPercent.toFixed(0)}%</span>
+                              )}
+                              <div className="text-xs text-gray-600 mt-0.5">
+                                <span className="mr-3">Forecasted: {k.forecastedRevenue ?? '—'}</span>
+                                <span>Actual: {k.actualRevenue ?? '—'}</span>
+                              </div>
+                              {typeof k.forecastedRevenue === 'number' && typeof k.actualRevenue === 'number' && k.forecastedRevenue !== 0 && (
+                                <div className="mt-1 w-40 bg-gray-100 rounded h-2 overflow-hidden">
+                                  <div
+                                    className="bg-green-500 h-2"
+                                    style={{ width: `${Math.min(100, (k.actualRevenue / k.forecastedRevenue) * 100).toFixed(0)}%` }}
+                                  />
+                                </div>
                               )}
                             </div>
                             <span className="text-xs text-gray-500">{k.quarter} {k.year}</span>
