@@ -8,6 +8,8 @@ type BusinessUnitOption = { id: string; name: string };
 export type InitiativeFormValues = {
   name: string;
   type?: 'CAPITALIZABLE' | 'OPERATIONAL_EFFICIENCY' | 'KTLO';
+  atRisk?: boolean;
+  status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED';
   summary?: string;
   valueProposition?: string;
   implementationDetails?: string;
@@ -46,6 +48,8 @@ export function InitiativeForm({
   const [form, setForm] = useState<InitiativeFormValues>(() => ({
     name: defaultValues?.name ?? '',
     type: (defaultValues as any)?.type ?? undefined,
+    atRisk: (defaultValues as any)?.atRisk ?? false,
+    status: (defaultValues as any)?.status ?? undefined,
     summary: defaultValues?.summary ?? '',
     valueProposition: defaultValues?.valueProposition ?? '',
     implementationDetails: defaultValues?.implementationDetails ?? '',
@@ -87,8 +91,9 @@ export function InitiativeForm({
         setLoadingOwners(true);
         const res = await fetch('/api/team-members');
         if (!res.ok) throw new Error('Failed to load team members');
-        const data = await res.json();
-        const mapped: InitiativeOwnerOption[] = data.map((m: any) => ({
+        const raw = await res.json();
+        const list: any[] = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+        const mapped: InitiativeOwnerOption[] = list.map((m: any) => ({
           id: m.id,
           name: m.user?.name ?? m.name ?? 'Unknown',
           email: m.user?.email ?? m.email ?? '',
@@ -150,6 +155,37 @@ export function InitiativeForm({
           <option value="OPERATIONAL_EFFICIENCY">Operational Efficiency</option>
           <option value="KTLO">KTLO</option>
         </select>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700" htmlFor="status">Status</label>
+          <select
+            id="status"
+            className={inputClasses}
+            value={form.status || ''}
+            onChange={(e) => setForm({ ...form, status: (e.target.value || undefined) as any })}
+          >
+            <option value="">None</option>
+            <option value="NOT_STARTED">Not Started</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="ON_HOLD">On Hold</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+
+        <div className="flex items-center pt-6">
+          <input
+            id="atRisk"
+            type="checkbox"
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            checked={!!form.atRisk}
+            onChange={(e) => setForm({ ...form, atRisk: e.target.checked })}
+          />
+          <label htmlFor="atRisk" className="ml-2 block text-sm text-gray-700">
+            At Risk
+          </label>
+        </div>
       </div>
 
       <div>

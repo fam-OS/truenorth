@@ -11,6 +11,7 @@ type TeamMember = {
   role: string | null;
   teamId: string;
   reportsToId: string | null;
+  user?: { name?: string } | null;
 };
 
 export default function TeamMemberDetailPage() {
@@ -42,11 +43,13 @@ export default function TeamMemberDetailPage() {
         const m: TeamMember = await mRes.json();
         if (!mounted.current) return;
         setMember(m);
-        // Fetch team members for the same team (ignore errors but try best)
-        const listRes = await fetch(`/api/teams/${m.teamId}/members`, { cache: "no-store" });
+        // Fetch all members and filter by this team, normalizing response shape
+        const listRes = await fetch(`/api/team-members`, { cache: "no-store" });
         if (listRes.ok) {
-          const list: TeamMember[] = await listRes.json();
-          if (mounted.current) setTeamMembers(list);
+          const raw = await listRes.json();
+          const list: TeamMember[] = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+          const sameTeam = list.filter((tm) => tm.teamId === m.teamId && tm.id !== m.id);
+          if (mounted.current) setTeamMembers(sameTeam);
         }
       } catch (err) {
         if (mounted.current) {
@@ -191,7 +194,7 @@ export default function TeamMemberDetailPage() {
             <option value="">— None —</option>
             {managerOptions.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name}
+                {m.user?.name || m.name}
               </option>
             ))}
           </select>

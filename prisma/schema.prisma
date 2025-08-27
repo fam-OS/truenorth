@@ -223,10 +223,19 @@ enum InitiativeType {
   KTLO
 }
 
+enum InitiativeStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+}
+
 model Initiative {
   id                    String    @id @default(cuid())
   name                  String
   type                  InitiativeType?
+  atRisk                Boolean   @default(false)
+  status                InitiativeStatus?
   summary               String? // one-line summary
   valueProposition      String?
   implementationDetails String?

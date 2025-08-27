@@ -48,21 +48,17 @@ export default function DashboardLayout({
                   <BuildingOfficeIcon className="mr-3 h-5 w-5" />
                   Home
                 </NavLink>
-                <NavLink href="/business-units">
-                  <BuildingStorefrontIcon className="mr-3 h-5 w-5" />
-                  Business Units
+                <NavLink href="/units-stakeholders">
+                  <BuildingOfficeIcon className="mr-3 h-5 w-5" />
+                  Business Units & Stakeholders
                 </NavLink>
-                <NavLink href="/initiatives">
-                  <ClipboardDocumentListIcon className="mr-3 h-5 w-5" />
-                  Initiatives
-                </NavLink>
-                <NavLink href="/kpis">
+                <NavLink href="/initiatives-kpis">
                   <PresentationChartBarIcon className="mr-3 h-5 w-5" />
-                  KPIs
+                  Initiatives & KPIs
                 </NavLink>
-                <NavLink href="/stakeholders">
+                <NavLink href="/teams">
                   <UserGroupIcon className="mr-3 h-5 w-5" />
-                  Stakeholders
+                  Team & Financial Management
                 </NavLink>
                 <NavLink href="/ops-reviews">
                   <PresentationChartBarIcon className="mr-3 h-5 w-5" />

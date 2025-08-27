@@ -11,6 +11,7 @@ import CEOGoals from '@/components/CEOGOALS';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { OrganizationWithBusinessUnits } from '@/types/prisma';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { Tooltip } from '@/components/ui/tooltip';
 
 type TaskWithNotes = Task & { notes: { id: string; content: string; createdAt?: Date }[] };
 type Team = { id: string; name: string; description?: string | null };
@@ -630,11 +631,22 @@ export default function DashboardPage() {
                                         {i.name}
                                       </Link>
                                       {i.type && (
-                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 border">
-                                          {i.type === 'CAPITALIZABLE' && 'Capitalizable'}
-                                          {i.type === 'OPERATIONAL_EFFICIENCY' && 'Operational Efficiency'}
-                                          {i.type === 'KTLO' && 'KTLO'}
-                                        </span>
+                                        <Tooltip
+                                          content={`Initiative Type: ${
+                                            i.type === 'CAPITALIZABLE'
+                                              ? 'Capitalizable'
+                                              : i.type === 'OPERATIONAL_EFFICIENCY'
+                                              ? 'Operational Efficiency'
+                                              : 'KTLO'
+                                          }`}
+                                          side="top"
+                                        >
+                                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 border">
+                                            {i.type === 'CAPITALIZABLE' && 'Capitalizable'}
+                                            {i.type === 'OPERATIONAL_EFFICIENCY' && 'Operational Efficiency'}
+                                            {i.type === 'KTLO' && 'KTLO'}
+                                          </span>
+                                        </Tooltip>
                                       )}
                                     </div>
                                     <span className="text-xs text-gray-500">{i.owner?.name || ''}</span>
@@ -669,12 +681,17 @@ export default function DashboardPage() {
                                 <span>Actual: {k.actualRevenue ?? '—'}</span>
                               </div>
                               {typeof k.forecastedRevenue === 'number' && typeof k.actualRevenue === 'number' && k.forecastedRevenue !== 0 && (
-                                <div className="mt-1 w-40 bg-gray-100 rounded h-2 overflow-hidden">
-                                  <div
-                                    className="bg-green-500 h-2"
-                                    style={{ width: `${Math.min(100, (k.actualRevenue / k.forecastedRevenue) * 100).toFixed(0)}%` }}
-                                  />
-                                </div>
+                                <Tooltip
+                                  content={`${((k.actualRevenue / k.forecastedRevenue) * 100).toFixed(0)}% of forecast (${k.actualRevenue} / ${k.forecastedRevenue})`}
+                                  side="top"
+                                >
+                                  <div className="mt-1 w-40 bg-gray-100 rounded h-2 overflow-hidden">
+                                    <div
+                                      className="bg-green-500 h-2"
+                                      style={{ width: `${Math.min(100, (k.actualRevenue / k.forecastedRevenue) * 100).toFixed(0)}%` }}
+                                    />
+                                  </div>
+                                </Tooltip>
                               )}
                             </div>
                             <span className="text-xs text-gray-500">{k.quarter} {k.year}</span>

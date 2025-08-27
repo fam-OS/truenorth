@@ -128,12 +128,15 @@ export default function InitiativeDetailPage() {
             defaultValues={{
               name: initiative.name,
               type: initiative.type ?? undefined,
+              atRisk: initiative.atRisk ?? false,
+              status: initiative.status ?? undefined,
               summary: initiative.summary ?? undefined,
               valueProposition: initiative.valueProposition ?? undefined,
               implementationDetails: initiative.implementationDetails ?? undefined,
               releaseDate: initiative.releaseDate,
               organizationId: initiative.organizationId,
               ownerId: initiative.ownerId ?? undefined,
+              businessUnitId: initiative.businessUnitId ?? undefined,
             }}
             onSubmit={handleUpdate}
             onCancel={() => setIsEditing(false)}
@@ -175,6 +178,20 @@ export default function InitiativeDetailPage() {
                 {initiative.type === 'KTLO' && 'KTLO'}
                 {!initiative.type && '—'}
               </p>
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-gray-500">STATUS</h2>
+              <p className="mt-1 text-gray-900">
+                {initiative.status === 'NOT_STARTED' && 'Not Started'}
+                {initiative.status === 'IN_PROGRESS' && 'In Progress'}
+                {initiative.status === 'ON_HOLD' && 'On Hold'}
+                {initiative.status === 'COMPLETED' && 'Completed'}
+                {!initiative.status && '—'}
+              </p>
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-gray-500">AT RISK</h2>
+              <p className="mt-1 text-gray-900">{initiative.atRisk ? 'Yes' : 'No'}</p>
             </div>
           </div>
         )}
