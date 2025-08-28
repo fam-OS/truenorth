@@ -49,6 +49,7 @@ model Organization {
   initiatives       Initiative[]
   kpis              Kpi[]
   headcountTrackers HeadcountTracker[]
+  costs             Cost[]
 }
 
 model BusinessUnit {
@@ -130,6 +131,7 @@ model Team {
   members           TeamMember[]
   kpis              Kpi[]
   headcountTrackers HeadcountTracker[]
+  costs             Cost[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -274,6 +276,40 @@ model HeadcountTracker {
   q3Actual       Int      @default(0)
   q4Forecast     Int      @default(0)
   q4Actual       Int      @default(0)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([organizationId])
+  @@index([year])
+}
+
+/// Cost Manager models and enums
+enum CostType {
+  SOFTWARE
+  TRAINING
+  SALARY
+  OTHER
+}
+
+model Cost {
+  id             String   @id @default(cuid())
+  teamId         String
+  organizationId String?
+  year           Int
+  type           CostType
+  q1Forecast     Decimal  @default(0) @db.Decimal(12, 2)
+  q1Actual       Decimal  @default(0) @db.Decimal(12, 2)
+  q2Forecast     Decimal  @default(0) @db.Decimal(12, 2)
+  q2Actual       Decimal  @default(0) @db.Decimal(12, 2)
+  q3Forecast     Decimal  @default(0) @db.Decimal(12, 2)
+  q3Actual       Decimal  @default(0) @db.Decimal(12, 2)
+  q4Forecast     Decimal  @default(0) @db.Decimal(12, 2)
+  q4Actual       Decimal  @default(0) @db.Decimal(12, 2)
   notes          String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

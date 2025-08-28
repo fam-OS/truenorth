@@ -41,6 +41,7 @@ export default function TeamsPage() {
   const [hcLoading, setHcLoading] = useState(false);
   const currentYear = new Date().getFullYear();
   const [hcSubmitting, setHcSubmitting] = useState(false);
+  const [hcFormOpen, setHcFormOpen] = useState(true);
   const [editing, setEditing] = useState<Record<string, Partial<HeadcountRow>>>({});
   const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
   const [hcForm, setHcForm] = useState({
@@ -113,7 +114,12 @@ export default function TeamsPage() {
   }, [currentYear]);
 
   function currency(n: number) {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(n);
   }
 
   const headcountSummary = useMemo(() => {
@@ -330,26 +336,26 @@ export default function TeamsPage() {
               <div className="p-6 text-sm text-gray-500">Loading headcount…</div>
             ) : (
               <>
-              <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
-                <div>
+              <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm items-start">
+                <div className="min-w-0">
                   <div className="text-gray-500">Total Forecast HC</div>
-                  <div className="font-semibold">{headcountSummary.forecastHC}</div>
+                  <div className="font-semibold truncate leading-snug" title={`${headcountSummary.forecastHC}`}>{headcountSummary.forecastHC}</div>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-gray-500">Total Actual HC</div>
-                  <div className="font-semibold">{headcountSummary.actualHC}</div>
+                  <div className="font-semibold truncate leading-snug" title={`${headcountSummary.actualHC}`}>{headcountSummary.actualHC}</div>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-gray-500">HC Variance</div>
-                  <div className="font-semibold">{headcountSummary.hcVariance}</div>
+                  <div className="font-semibold truncate leading-snug" title={`${headcountSummary.hcVariance}`}>{headcountSummary.hcVariance}</div>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-gray-500">Forecast Salary</div>
-                  <div className="font-semibold">{currency(headcountSummary.forecastSalary)}</div>
+                  <div className="font-semibold truncate leading-snug" title={currency(headcountSummary.forecastSalary)}>{currency(headcountSummary.forecastSalary)}</div>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-gray-500">Actual Salary</div>
-                  <div className="font-semibold">{currency(headcountSummary.actualSalary)}</div>
+                  <div className="font-semibold truncate leading-snug" title={currency(headcountSummary.actualSalary)}>{currency(headcountSummary.actualSalary)}</div>
                 </div>
               </div>
             {headcount.length === 0 ? (
@@ -382,8 +388,20 @@ export default function TeamsPage() {
                       const teamName = teams.find((t) => t.id === r.teamId)?.name || '—';
                       return (
                         <tr key={r.id} className="align-top">
-                          <td className="px-3 py-2 whitespace-nowrap">{teamName}</td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 whitespace-nowrap cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
+                            {isEditing ? (
+                              <select className="w-36 border rounded px-2 py-1" value={(edit.teamId ?? r.teamId) || ''}
+                                onChange={(e) => changeEdit(r.id, 'teamId', e.target.value)}>
+                                <option value="">—</option>
+                                {teams.map((t) => (
+                                  <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span>{teamName}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
                             {isEditing ? (
                               <input className="w-36 border rounded px-2 py-1" value={edit.role ?? r.role}
                                 onChange={(e) => changeEdit(r.id, 'role', e.target.value)} />
@@ -391,7 +409,7 @@ export default function TeamsPage() {
                               <span>{r.role}</span>
                             )}
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
                             {isEditing ? (
                               <input className="w-28 border rounded px-2 py-1" value={edit.level ?? r.level}
                                 onChange={(e) => changeEdit(r.id, 'level', e.target.value)} />
@@ -399,7 +417,7 @@ export default function TeamsPage() {
                               <span>{r.level}</span>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-right">
+                          <td className="px-3 py-2 text-right cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
                             {isEditing ? (
                               <input type="number" step="0.01" className="w-28 border rounded px-2 py-1 text-right" value={edit.salary ?? r.salary}
                                 onChange={(e) => changeEdit(r.id, 'salary', e.target.value)} />
@@ -408,7 +426,7 @@ export default function TeamsPage() {
                             )}
                           </td>
                           {(['q1Forecast','q1Actual','q2Forecast','q2Actual','q3Forecast','q3Actual','q4Forecast','q4Actual'] as const).map((field) => (
-                            <td key={field} className="px-3 py-2 text-right">
+                            <td key={field} className="px-3 py-2 text-right cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
                               {isEditing ? (
                                 <input type="number" className="w-20 border rounded px-2 py-1 text-right" value={(edit as any)[field] ?? (r as any)[field]}
                                   onChange={(e) => changeEdit(r.id, field as any, Number(e.target.value))} />
@@ -451,8 +469,20 @@ export default function TeamsPage() {
 
           {/* Headcount Tracker (Create) */}
           <div className="bg-white shadow rounded-lg lg:col-span-2">
-            <div className="px-4 py-3 border-b font-medium">Headcount Tracker — Add Record</div>
-            <form onSubmit={submitHeadcount} className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="px-4 py-3 border-b flex items-center gap-2">
+              <div className="font-medium">Headcount Tracker — Add Record</div>
+              <button
+                type="button"
+                onClick={() => setHcFormOpen((v) => !v)}
+                className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                aria-expanded={hcFormOpen}
+                aria-controls="headcount-add-form"
+              >
+                {hcFormOpen ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {hcFormOpen && (
+            <form id="headcount-add-form" onSubmit={submitHeadcount} className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
                 <label className="block text-gray-600 mb-1">Team</label>
                 <select
@@ -540,6 +570,7 @@ export default function TeamsPage() {
                 <div className="text-xs text-gray-500">Adds a headcount line that rolls into the manager totals above.</div>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}

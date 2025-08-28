@@ -28,18 +28,16 @@
 - Done
 ## Nav cleanup 
 - Done
-
 ## Headcount Manager:
-- Add data concept "Heacount Tracker" with fields for role, level, salary, Q1 forecast, Q1 actual, Q2 forecast, Q2 actual, Q3 forecast, Q3 actual, Q4 forecast, Q4 actual
-- Wire "Headcount Manager" to the UI displaying total forecast, total actual, total headcount, headcount variance, salary variance.  Add it under the header "Team Planning". Place below the Teams and Team Members sections on the Team & Financial Management page.
-
-## Financial Tracker
-- Add data concept "Cost Manager" with fields for Type (Software, Training, Salary, other), Q1 forecast, Q1 actual, Q2 forecast, Q2 actual, Q3 forecast, Q3 actual, Q4 forecast, Q4 actual
-- Wire Cost manager to the UI "Cost Manager" displaying total forecast, total actual, total variance. Add it under "Headcount Manager" on the Team & Financial Management page.
+- Done
+## Financial Tracker 
+- Add api tests for the new financial and team management data concepts 
+- Update Readme to include data seeding instructions
+- Done 
 
 ## Straggler items
-- Reports to on Team Member detail page
-
+- Fix reports to on Team Member detail page
+- Debug Initiatives, Ops Reviews data
 
 ## Fix Vercel deployment issue 
 
@@ -246,6 +244,12 @@
 - Initiatives page:  Build a dynamic gannt chart based on the release date of initiatives, indicating which BU is supported. 
 
 ## Production preparedness
+
+## Integrations
+- Push email to the app (google, microsoft plugins?)
+- Push calendar to the app (google, microsoft plugins?)
+- Push documents to the app (google, microsoft plugins?)
+- Push files to the app (google, microsoft plugins?)
 
 Account Types determine experience:
 - Individual 

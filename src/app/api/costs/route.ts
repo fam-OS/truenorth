@@ -1,0 +1,56 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { handleError } from '@/lib/api-response';
+import { upsertCostSchema } from '@/lib/validations/cost';
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const teamId = searchParams.get('teamId') || undefined;
+    const organizationId = searchParams.get('organizationId') || undefined;
+    const yearParam = searchParams.get('year');
+    const year = yearParam ? Number(yearParam) : undefined;
+
+    const items = await prisma.cost.findMany({
+      where: {
+        teamId,
+        organizationId,
+        year,
+      },
+      orderBy: [{ teamId: 'asc' }, { year: 'asc' }, { type: 'asc' }],
+    });
+
+    return NextResponse.json(items);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const json = await request.json();
+    const data = upsertCostSchema.parse(json);
+
+    const created = await prisma.cost.create({
+      data: {
+        teamId: data.teamId,
+        organizationId: data.organizationId ?? undefined,
+        year: data.year,
+        type: data.type,
+        q1Forecast: (data.q1Forecast ?? 0) as any,
+        q1Actual: (data.q1Actual ?? 0) as any,
+        q2Forecast: (data.q2Forecast ?? 0) as any,
+        q2Actual: (data.q2Actual ?? 0) as any,
+        q3Forecast: (data.q3Forecast ?? 0) as any,
+        q3Actual: (data.q3Actual ?? 0) as any,
+        q4Forecast: (data.q4Forecast ?? 0) as any,
+        q4Actual: (data.q4Actual ?? 0) as any,
+        notes: data.notes ?? undefined,
+      },
+    });
+
+    return NextResponse.json(created, { status: 201 });
+  } catch (error) {
+    return handleError(error);
+  }
+}

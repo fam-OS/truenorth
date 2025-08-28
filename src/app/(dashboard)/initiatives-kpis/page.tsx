@@ -1,23 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOrganization } from '@/contexts/OrganizationContext';
 
-function useInitiatives(params: { orgId?: string; ownerId?: string }) {
-  const { orgId, ownerId } = params;
+function useInitiatives(params: { orgId?: string; ownerId?: string; businessUnitId?: string }) {
+  const { orgId, ownerId, businessUnitId } = params;
   return useQuery({
-    queryKey: ['initiatives', orgId, ownerId],
+    queryKey: ['initiatives', orgId, ownerId, businessUnitId],
     queryFn: async () => {
-      if (!orgId) return [] as any[];
-      const search = new URLSearchParams({ orgId });
+      const search = new URLSearchParams();
+      if (orgId) search.set('orgId', orgId);
       if (ownerId) search.set('ownerId', ownerId);
+      if (businessUnitId) search.set('businessUnitId', businessUnitId);
       const res = await fetch(`/api/initiatives?${search.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch initiatives');
       return res.json();
     },
-    enabled: !!orgId,
+    // Initiatives should load even without org selection
+    enabled: true,
   });
 }
 
@@ -54,8 +56,8 @@ export default function InitiativesAndKpisPage() {
   const { currentOrg } = useOrganization();
 
   // Initiatives filters
-  const [initFilters, setInitFilters] = useState<{ year: number | null; quarter: string | null; ownerId: string }>(
-    { year: new Date().getFullYear(), quarter: null, ownerId: '' }
+  const [initFilters, setInitFilters] = useState<{ year: number | null; quarter: string | null; ownerId: string; businessUnitId: string }>(
+    { year: new Date().getFullYear(), quarter: null, ownerId: '', businessUnitId: '' }
   );
 
   // KPIs filters
@@ -63,7 +65,11 @@ export default function InitiativesAndKpisPage() {
     { teamId: '', quarter: null, year: new Date().getFullYear() }
   );
 
-  const { data: initiatives = [], isLoading: initsLoading } = useInitiatives({ orgId: currentOrg?.id, ownerId: initFilters.ownerId || undefined });
+  const { data: initiatives = [], isLoading: initsLoading } = useInitiatives({
+    orgId: currentOrg?.id,
+    ownerId: initFilters.ownerId || undefined,
+    businessUnitId: initFilters.businessUnitId || undefined,
+  });
   const { data: members = [], isLoading: membersLoading } = useTeamMembers();
   const { data: kpis = [], isLoading: kpisLoading } = useKpis({
     orgId: currentOrg?.id,
@@ -75,10 +81,36 @@ export default function InitiativesAndKpisPage() {
   const years = useMemo(() => Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i), []);
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 
-  const orgMembers = useMemo(() => {
-    if (!currentOrg) return [] as any[];
-    return (members || []).filter((m: any) => m.team?.organization?.id === currentOrg.id);
-  }, [members, currentOrg]);
+  // Owner filter should list all members (not scoped to current org)
+  const allMembers = useMemo(() => (members || []), [members]);
+
+  // Load all organizations and their business units to populate BU filter
+  const [allBusinessUnits, setAllBusinessUnits] = useState<Array<{ id: string; name: string; orgId: string }>>([]);
+  useEffect(() => {
+    let aborted = false;
+    const loadBUs = async () => {
+      try {
+        const orgRes = await fetch('/api/organizations', { cache: 'no-store' });
+        if (!orgRes.ok) throw new Error('Failed to fetch organizations');
+        const orgs: Array<{ id: string; name: string }> = await orgRes.json();
+        const buLists = await Promise.all(
+          orgs.map(async (o) => {
+            const buRes = await fetch(`/api/organizations/${o.id}/business-units`, { cache: 'no-store' });
+            if (!buRes.ok) return [] as any[];
+            const bus: Array<{ id: string; name: string }> = await buRes.json();
+            return bus.map((b) => ({ id: b.id, name: b.name, orgId: o.id }));
+          })
+        );
+        if (!aborted) setAllBusinessUnits(buLists.flat());
+      } catch {
+        if (!aborted) setAllBusinessUnits([]);
+      }
+    };
+    void loadBUs();
+    return () => {
+      aborted = true;
+    };
+  }, []);
 
   // Client-side filtered initiatives
   const filteredInitiatives = useMemo(() => {
@@ -99,16 +131,12 @@ export default function InitiativesAndKpisPage() {
     });
   }, [initiatives, initFilters]);
 
-  if (!currentOrg) {
-    return <p className="p-6 text-sm text-gray-500">Select an organization to view initiatives and KPIs.</p>;
-  }
-
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Initiatives & KPIs</h1>
-          <p className="mt-1 text-sm text-gray-500">Overview for {currentOrg.name}</p>
+          {currentOrg && <p className="mt-1 text-sm text-gray-500">Overview for {currentOrg.name}</p>}
         </div>
         <div className="flex gap-2">
           <Link href="/initiatives/new" className="inline-flex items-center px-3 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">New Initiative</Link>
@@ -124,7 +152,7 @@ export default function InitiativesAndKpisPage() {
         </div>
         <div className="bg-white shadow rounded-lg p-4">
           <h3 className="text-sm font-medium text-gray-500 mb-3">FILTERS</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="init-year">Year</label>
               <select id="init-year" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value={initFilters.year || 'all'} onChange={(e) => setInitFilters((f) => ({ ...f, year: e.target.value === 'all' ? null : parseInt(e.target.value) }))}>
@@ -143,8 +171,24 @@ export default function InitiativesAndKpisPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="init-owner">Owner</label>
               <select id="init-owner" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value={initFilters.ownerId || 'all'} onChange={(e) => setInitFilters((f) => ({ ...f, ownerId: e.target.value === 'all' ? '' : e.target.value }))} disabled={membersLoading}>
                 <option value="all">All Owners</option>
-                {orgMembers.map((m: any) => (
-                  <option key={m.id} value={m.id}>{m.user?.name || m.name} {m.team?.name ? `— ${m.team.name}` : ''}</option>
+                {allMembers.map((m: any) => (
+                  <option key={m.id} value={m.id}>
+                    {(m.user?.name || m.name) + (m.team?.name ? ` — ${m.team.name}` : '')}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="init-bu">Business Unit</label>
+              <select
+                id="init-bu"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                value={initFilters.businessUnitId || 'all'}
+                onChange={(e) => setInitFilters((f) => ({ ...f, businessUnitId: e.target.value === 'all' ? '' : e.target.value }))}
+              >
+                <option value="all">All Business Units</option>
+                {allBusinessUnits.map((bu) => (
+                  <option key={bu.id} value={bu.id}>{bu.name}</option>
                 ))}
               </select>
             </div>
@@ -186,7 +230,7 @@ export default function InitiativesAndKpisPage() {
         )}
       </section>
 
-      {/* KPIs section */}
+      {/* KPIs section (still org-scoped) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">KPIs</h2>
@@ -216,7 +260,14 @@ export default function InitiativesAndKpisPage() {
           </div>
         </div>
 
-        {kpisLoading ? (
+        {!currentOrg ? (
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div className="px-4 py-5 sm:p-6 text-center">
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Select an organization to view KPIs</h3>
+              <p className="mt-1 text-sm text-gray-500">KPIs are scoped to a specific organization.</p>
+            </div>
+          </div>
+        ) : kpisLoading ? (
           <div className="flex items-center justify-center min-h-[160px]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div>
         ) : kpis.length === 0 ? (
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
