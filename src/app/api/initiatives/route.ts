@@ -35,11 +35,22 @@ export async function POST(request: Request) {
     const json = await request.json();
     const data = createInitiativeSchema.parse(json);
 
+    // Allow defaulting organization from URL if not passed in body
+    const { searchParams } = new URL(request.url);
+    const orgIdFromUrl = searchParams.get('orgId') || undefined;
+
     const { organizationId, ownerId, businessUnitId, ...rest } = data as any;
     const createData: any = { ...rest };
-    if (organizationId) {
-      createData.organization = { connect: { id: organizationId } };
+    const finalOrgId = organizationId || orgIdFromUrl;
+    if (!finalOrgId) {
+      return NextResponse.json({ error: 'organizationId is required' }, { status: 400 });
     }
+    // Ensure organization exists to avoid nested connect failures
+    const org = await prisma.organization.findUnique({ where: { id: finalOrgId } });
+    if (!org) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 400 });
+    }
+    createData.organization = { connect: { id: finalOrgId } };
     if (ownerId !== undefined) {
       createData.owner = ownerId ? { connect: { id: ownerId } } : undefined;
     }

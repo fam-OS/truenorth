@@ -31,13 +31,13 @@
 ## Headcount Manager:
 - Done
 ## Financial Tracker 
-- Add api tests for the new financial and team management data concepts 
-- Update Readme to include data seeding instructions
 - Done 
 
 ## Straggler items
+- Add api tests for the new financial and team management data concepts 
+- Update Readme to include data seeding instructions
 - Fix reports to on Team Member detail page
-- Debug Initiatives, Ops Reviews data
+- Saved goals not retained in database / on refresh 
 
 ## Fix Vercel deployment issue 
 
@@ -222,15 +222,11 @@
 
 
 
-## User authentication
-- Add user authentication to the app
-- Add a user registration page
+## User experience
+- Add user authentication to the app. Allow signups by email/password and Google signups. 
 - Add a login page
-- Add a logout button
-
-## User profile and settings
-- Add a user profile page   
-- Add a user settings page
+- Add a user settings page.  User should should be able to update their name, email, password, and close account. 
+- Add a logout button for logged in users
 - Add a marketing landing page. The sub header should be: ROI Tracker and Team Management for Leaders at all levels
 
 ## Marketing pages

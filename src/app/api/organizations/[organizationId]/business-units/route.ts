@@ -9,11 +9,12 @@ export async function GET(
 ) {
   try {
     // Destructure params at the beginning of the function
-    const { organizationId } = await params;
+    const { organizationId } = params;
+    console.log('[BU.GET] organizationId param =', organizationId);
     
     const businessUnits = await prisma.businessUnit.findMany({
       where: {
-        organization: { id: organizationId },
+        orgId: organizationId,
       },
       include: {
         stakeholders: true,
@@ -21,8 +22,11 @@ export async function GET(
       },
     });
 
+    console.log('[BU.GET] found businessUnits =', businessUnits.length);
+
     return NextResponse.json(businessUnits);
   } catch (error) {
+    console.error('[BU.GET] error', error);
     return handleError(error);
   }
 }
@@ -33,7 +37,8 @@ export async function POST(
 ) {
   try {
     // Destructure params at the beginning of the function
-    const { organizationId } = await params;
+    const { organizationId } = params;
+    console.log('[BU.POST] organizationId param =', organizationId);
     const json = await request.json();
     const data = createBusinessUnitSchema.parse(json);
 
@@ -49,8 +54,11 @@ export async function POST(
       },
     });
 
+    console.log('[BU.POST] created businessUnit id =', businessUnit.id);
+
     return NextResponse.json(businessUnit, { status: 201 });
   } catch (error) {
+    console.error('[BU.POST] error', error);
     return handleError(error);
   }
 }

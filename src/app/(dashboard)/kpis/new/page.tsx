@@ -9,7 +9,8 @@ export default function NewKpiPage() {
   const { currentOrg } = useOrganization();
 
   async function handleCreate(values: KpiFormValues) {
-    const res = await fetch('/api/kpis', {
+    const url = currentOrg?.id ? `/api/kpis?orgId=${currentOrg.id}` : '/api/kpis';
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(values),

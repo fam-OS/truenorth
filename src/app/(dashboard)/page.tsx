@@ -520,28 +520,24 @@ export default function DashboardPage() {
 
           {/* Create/Edit Organization Modal */}
           {showCreateOrg && (
-            <div className="fixed z-10 inset-0 overflow-y-auto">
-              <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-                  <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-                </div>
-                <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
-                  &#8203;
-                </span>
-                <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                  <div>
-                    <div className="mt-3 text-center sm:mt-0 sm:text-left">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900">{editingOrg ? 'Edit Organization' : 'Create Organization'}</h3>
-                      <div className="mt-4">
-                        <OrganizationForm
-                          organization={editingOrg || undefined}
-                          onSubmit={handleSaveOrganization}
-                          onCancel={() => {
-                            setShowCreateOrg(false);
-                            setEditingOrg(null);
-                          }}
-                        />
-                      </div>
+            <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-gray-500/75" aria-hidden="true"></div>
+
+              {/* Dialog content wrapper */}
+              <div className="flex min-h-full items-center justify-center p-4 text-center">
+                <div className="relative z-50 w-full sm:max-w-lg text-left align-middle">
+                  <div className="overflow-hidden rounded-lg bg-white p-6 shadow-xl">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">{editingOrg ? 'Edit Organization' : 'Create Organization'}</h3>
+                    <div className="mt-4">
+                      <OrganizationForm
+                        organization={editingOrg || undefined}
+                        onSubmit={handleSaveOrganization}
+                        onCancel={() => {
+                          setShowCreateOrg(false);
+                          setEditingOrg(null);
+                        }}
+                      />
                     </div>
                   </div>
                 </div>

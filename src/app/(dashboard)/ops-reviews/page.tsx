@@ -79,7 +79,7 @@ export default function OpsReviewsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<FilterState>({
-    year: new Date().getFullYear(),
+    year: null,
     quarter: null
   });
 
@@ -108,6 +108,19 @@ export default function OpsReviewsPage() {
       description: 'Failed to load Team Ops Reviews',
       type: 'destructive',
     });
+  }
+
+  if (!currentOrg) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:p-6 text-center">
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Select an organization to view Team Ops Reviews</h3>
+            <p className="mt-1 text-sm text-gray-500">Team Ops Reviews are scoped to a specific organization.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {

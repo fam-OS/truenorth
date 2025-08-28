@@ -47,6 +47,8 @@ describe('KPIs API', () => {
         initiativeId: null,
       } as any;
 
+      // Route validates the organization exists
+      (prismaMock as any).organization.findUnique.mockResolvedValue({ id: 'org1', name: 'Org' });
       (prismaMock as any).kpi.create.mockResolvedValue({ id: 'k2', ...payload, team: { id: 't1' }, initiative: null });
 
       const req = new Request('http://localhost/api/kpis', {

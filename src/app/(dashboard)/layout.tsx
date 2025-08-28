@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { PresentationChartBarIcon } from '@heroicons/react/24/outline';
 import { Squares2X2Icon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
   const pathname = usePathname();
@@ -36,9 +37,11 @@ export default function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
+  const { currentOrg, setCurrentOrg } = useOrganization();
   const [open, setOpen] = useState(false);
   const launcherRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   // App entries (exclude Home)
   const apps = useMemo(
@@ -75,6 +78,22 @@ export default function DashboardLayout({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Load organizations for the header selector
+  const [orgs, setOrgs] = useState<Array<{ id: string; name: string }>>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/organizations', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setOrgs(data);
+      } catch {}
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -171,6 +190,29 @@ export default function DashboardLayout({
               <Link href="/" className="flex-shrink-0 flex items-center">
                 <h1 className="text-xl font-bold">TrueNorth</h1>
               </Link>
+            </div>
+            <div className="flex items-center">
+              {/* spacer to keep left cluster */}
+            </div>
+            <div className="flex items-center gap-3">
+              {orgs.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="global-org" className="text-sm text-gray-600">Org</label>
+                  <select
+                    id="global-org"
+                    value={currentOrg?.id || ''}
+                    onChange={(e) => {
+                      const o = orgs.find(x => x.id === e.target.value);
+                      if (o) setCurrentOrg({ id: o.id, name: o.name });
+                    }}
+                    className="block rounded-md border-gray-300 bg-white py-1.5 pl-2 pr-8 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    {orgs.map((o) => (
+                      <option key={o.id} value={o.id}>{o.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>

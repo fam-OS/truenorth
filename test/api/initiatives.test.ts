@@ -33,6 +33,8 @@ describe('Initiatives API', () => {
         releaseDate: null,
         ownerId: null,
       };
+      // Route validates the organization exists
+      (prismaMock as any).organization.findUnique.mockResolvedValue({ id: 'org1', name: 'Org' });
       (prismaMock as any).initiative.create.mockResolvedValue({ id: 'i2', ...payload, owner: null, organization: { id: 'org1' } });
 
       const req = new Request('http://localhost/api/initiatives', {

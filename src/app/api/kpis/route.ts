@@ -39,6 +39,17 @@ export async function POST(request: Request) {
 
     // derive computed fields from provided metrics
     const { targetMetric, actualMetric, organizationId, teamId, initiativeId, businessUnitId, ...rest } = data as any;
+    // Default organization from URL if not provided in body
+    const { searchParams } = new URL(request.url);
+    const orgIdFromUrl = searchParams.get('orgId') || undefined;
+    const finalOrgId = organizationId || orgIdFromUrl;
+    if (!finalOrgId) {
+      return NextResponse.json({ error: 'organizationId is required' }, { status: 400 });
+    }
+    const org = await prisma.organization.findUnique({ where: { id: finalOrgId } });
+    if (!org) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 400 });
+    }
     let metTarget: boolean | undefined = undefined;
     let metTargetPercent: number | undefined = undefined;
     if (typeof actualMetric === 'number' && typeof targetMetric === 'number') {
@@ -57,7 +68,7 @@ export async function POST(request: Request) {
         actualMetric,
         metTarget,
         metTargetPercent,
-        organization: { connect: { id: organizationId } },
+        ...(finalOrgId ? { organization: { connect: { id: finalOrgId } } } : {}),
         team: { connect: { id: teamId } },
         ...(initiativeId ? { initiative: { connect: { id: initiativeId } } } : {}),
         ...(businessUnitId ? { businessUnit: { connect: { id: businessUnitId } } } : {}),

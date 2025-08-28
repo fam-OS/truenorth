@@ -70,11 +70,13 @@ export function InitiativeForm({
       if (!currentOrg?.id) return;
       try {
         setLoadingBUs(true);
+        console.log('[InitiativeForm] loading BUs for orgId =', currentOrg.id);
         const res = await fetch(`/api/organizations/${currentOrg.id}/business-units`, { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to load business units');
         const data = await res.json();
         const mapped: BusinessUnitOption[] = data.map((b: any) => ({ id: b.id, name: b.name }));
         setBusinessUnits(mapped);
+        console.log('[InitiativeForm] BUs loaded count =', mapped.length);
       } catch (e) {
         console.error(e);
         setError('Failed to load business units');
@@ -121,6 +123,7 @@ export function InitiativeForm({
       setError('Please select an organization.');
       return;
     }
+    console.log('[InitiativeForm] submit with organizationId =', form.organizationId, 'businessUnitId =', form.businessUnitId);
     await onSubmit({ ...form, releaseDate: form.releaseDate || undefined });
   }
 

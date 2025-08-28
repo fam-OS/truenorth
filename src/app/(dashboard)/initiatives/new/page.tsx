@@ -9,7 +9,8 @@ export default function NewInitiativePage() {
   const { currentOrg } = useOrganization();
 
   async function handleCreate(values: InitiativeFormValues) {
-    const res = await fetch('/api/initiatives', {
+    const url = currentOrg?.id ? `/api/initiatives?orgId=${currentOrg.id}` : '/api/initiatives';
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(values),

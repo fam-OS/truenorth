@@ -57,12 +57,12 @@ export default function InitiativesAndKpisPage() {
 
   // Initiatives filters
   const [initFilters, setInitFilters] = useState<{ year: number | null; quarter: string | null; ownerId: string; businessUnitId: string }>(
-    { year: new Date().getFullYear(), quarter: null, ownerId: '', businessUnitId: '' }
+    { year: null, quarter: null, ownerId: '', businessUnitId: '' }
   );
 
   // KPIs filters
   const [kpiFilters, setKpiFilters] = useState<{ teamId: string; quarter: string | null; year: number | null }>(
-    { teamId: '', quarter: null, year: new Date().getFullYear() }
+    { teamId: '', quarter: null, year: null }
   );
 
   const { data: initiatives = [], isLoading: initsLoading } = useInitiatives({
@@ -131,6 +131,23 @@ export default function InitiativesAndKpisPage() {
     });
   }, [initiatives, initFilters]);
 
+  // Build active filters summary for banner
+  const initActiveFilterParts = useMemo(() => {
+    const parts: string[] = [];
+    if (initFilters.year) parts.push(`Year: ${initFilters.year}`);
+    if (initFilters.quarter) parts.push(`Quarter: ${initFilters.quarter}`);
+    if (initFilters.ownerId) {
+      const owner = allMembers.find((m: any) => m.id === initFilters.ownerId);
+      const ownerName = owner ? (owner.user?.name || owner.name || owner.email || owner.id) : initFilters.ownerId;
+      parts.push(`Owner: ${ownerName}`);
+    }
+    if (initFilters.businessUnitId) {
+      const bu = allBusinessUnits.find((b) => b.id === initFilters.businessUnitId);
+      parts.push(`Business Unit: ${bu?.name || initFilters.businessUnitId}`);
+    }
+    return parts;
+  }, [initFilters, allMembers, allBusinessUnits]);
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-10">
       <div className="flex items-center justify-between">
@@ -194,6 +211,16 @@ export default function InitiativesAndKpisPage() {
             </div>
           </div>
         </div>
+
+        {initActiveFilterParts.length > 0 && (
+          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
+            <span className="font-medium">Active filters:</span>
+            <span className="ml-1">{initActiveFilterParts.join(' • ')}</span>
+            {Array.isArray(initiatives) && initiatives.length > filteredInitiatives.length && (
+              <span className="ml-2">({initiatives.length - filteredInitiatives.length} hidden)</span>
+            )}
+          </div>
+        )}
 
         {initsLoading ? (
           <div className="flex items-center justify-center min-h-[160px]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div>

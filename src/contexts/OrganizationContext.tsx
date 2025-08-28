@@ -20,18 +20,49 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load the last selected organization from localStorage on initial load
+  // Load the last selected organization from localStorage, or default to user's org
   useEffect(() => {
-    try {
-      const savedOrg = localStorage.getItem('currentOrg');
-      if (savedOrg) {
-        setCurrentOrg(JSON.parse(savedOrg));
+    let cancelled = false;
+    const init = async () => {
+      try {
+        const savedOrg = localStorage.getItem('currentOrg');
+        if (savedOrg) {
+          if (!cancelled) setCurrentOrg(JSON.parse(savedOrg));
+          return;
+        }
+
+        // Try to get logged-in user's default org
+        try {
+          const meRes = await fetch('/api/me', { cache: 'no-store' });
+          if (meRes.ok) {
+            const me = await meRes.json();
+            const defaultOrg = me?.organization || me?.defaultOrganization || null;
+            if (defaultOrg && !cancelled) {
+              setCurrentOrg({ id: defaultOrg.id, name: defaultOrg.name });
+              return;
+            }
+          }
+        } catch {}
+
+        // Fallback: select the first available organization automatically
+        try {
+          const orgRes = await fetch('/api/organizations', { cache: 'no-store' });
+          if (orgRes.ok) {
+            const orgs: Array<{ id: string; name: string }> = await orgRes.json();
+            if (orgs.length >= 1 && !cancelled) {
+              setCurrentOrg({ id: orgs[0].id, name: orgs[0].name });
+              return;
+            }
+          }
+        } catch {}
+      } catch (error) {
+        console.error('Failed to initialize organization', error);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to load organization from localStorage', error);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+    init();
+    return () => { cancelled = true; };
   }, []);
 
   // Save the current organization to localStorage whenever it changes
