@@ -10,7 +10,7 @@ const updateStakeholderSchema = z.object({
   reportsToId: z.string().cuid().nullable().optional(),
 });
 
-export async function GET(_request: Request, { params }: { params: { stakeholderId: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ stakeholderId: string }> }) {
   try {
     const { stakeholderId } = await params;
     const stakeholder = await prisma.stakeholder.findUnique({ where: { id: stakeholderId } });
@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: { stakeholder
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { stakeholderId: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ stakeholderId: string }> }) {
   try {
     const { stakeholderId } = await params;
     const body = await request.json();

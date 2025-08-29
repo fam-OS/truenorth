@@ -64,7 +64,7 @@ export default function FeatureRequestPage() {
       
       // Hide success message after 5 seconds
       setTimeout(() => setSuccess(false), 5000);
-    } catch (error) {
+    } catch {
       setError('An error occurred while submitting your request');
     } finally {
       setLoading(false);
@@ -97,7 +97,7 @@ export default function FeatureRequestPage() {
       {success && (
         <div className="mb-6 rounded-md bg-green-50 p-4">
           <div className="text-sm text-green-700">
-            Thank you! Your feature request has been submitted successfully. We'll review it and consider it for future updates.
+            Thank you! Your feature request has been submitted successfully. We&apos;ll review it and consider it for future updates.
           </div>
         </div>
       )}
@@ -166,7 +166,7 @@ export default function FeatureRequestPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Describe the feature you'd like to see. What should it do? How should it work?"
+              placeholder="Describe the feature you&apos;d like to see. What should it do? How should it work?"
               required
             />
           </div>
@@ -189,7 +189,7 @@ export default function FeatureRequestPage() {
             <h3 className="text-sm font-medium text-blue-800 mb-2">Tips for great feature requests:</h3>
             <ul className="text-sm text-blue-700 space-y-1">
               <li>• Be specific about what you want the feature to do</li>
-              <li>• Explain the problem you're trying to solve</li>
+              <li>• Explain the problem you&apos;re trying to solve</li>
               <li>• Consider how it might work with existing features</li>
               <li>• Include any relevant examples or mockups if you have them</li>
             </ul>
@@ -223,7 +223,7 @@ export default function FeatureRequestPage() {
               <span className="text-blue-600 font-medium text-xs">2</span>
             </div>
             <div>
-              <strong>Evaluation:</strong> We'll assess feasibility, impact, and alignment with our roadmap
+              <strong>Evaluation:</strong> We&apos;ll assess feasibility, impact, and alignment with our roadmap
             </div>
           </div>
           <div className="flex items-start">
@@ -231,7 +231,7 @@ export default function FeatureRequestPage() {
               <span className="text-blue-600 font-medium text-xs">3</span>
             </div>
             <div>
-              <strong>Updates:</strong> We'll update you on the status and timeline if we decide to implement it
+              <strong>Updates:</strong> We&apos;ll update you on the status and timeline if we decide to implement it
             </div>
           </div>
         </div>

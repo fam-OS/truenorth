@@ -5,7 +5,7 @@ import { updateOpsReviewItemSchema } from '@/lib/validations/ops-review-item';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   const { id, itemId } = await params;
   try {
@@ -24,7 +24,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   const { id, itemId } = await params;
   try {
@@ -76,7 +76,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   const { id, itemId } = await params;
   try {

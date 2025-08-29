@@ -5,11 +5,12 @@ import { updateKpiSchema } from '@/lib/validations/kpi';
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const kpi = await prisma.kpi.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { team: true, initiative: true },
     });
 
@@ -23,8 +24,9 @@ export async function GET(
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const json = await request.json();
     const parsed = updateKpiSchema.parse(json);
 
@@ -39,7 +41,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     let newTarget = targetMetric as number | undefined;
     if (hasActual || hasTarget) {
       const existing = await prisma.kpi.findUnique({
-        where: { id: params.id },
+        where: { id: id },
         select: { actualMetric: true, targetMetric: true },
       });
       if (!hasActual) newActual = existing?.actualMetric ?? undefined;
@@ -51,7 +53,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const updated = await prisma.kpi.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...rest,
         ...(hasTarget ? { targetMetric } : {}),
@@ -74,9 +76,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await prisma.kpi.delete({ where: { id: params.id } });
+    const { id } = await params;
+    await prisma.kpi.delete({ where: { id: id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

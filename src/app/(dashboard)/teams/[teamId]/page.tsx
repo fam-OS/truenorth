@@ -18,7 +18,6 @@ type Team = {
 };
 
 function TeamPageContent({ teamId }: { teamId: string }) {
-  const router = useRouter();
   const [team, setTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);

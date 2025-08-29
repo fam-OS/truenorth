@@ -4,7 +4,6 @@ import { Goal } from '@prisma/client';
 import { format } from 'date-fns';
 import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { useState } from 'react';
 
 const statusColors = {
   NOT_STARTED: 'bg-gray-100 text-gray-800',

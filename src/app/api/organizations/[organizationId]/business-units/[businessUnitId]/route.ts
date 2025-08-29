@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { organizationId: string; businessUnitId: string } }
+  { params }: { params: Promise<{ organizationId: string; businessUnitId: string }> }
 ) {
   try {
     // Destructure params at the beginning of the function
@@ -29,7 +29,7 @@ const updateBusinessUnitSchema = z.object({
 
 export async function PUT(
   request: Request,
-  { params }: { params: { organizationId: string; businessUnitId: string } }
+  { params }: { params: Promise<{ organizationId: string; businessUnitId: string }> }
 ) {
   try {
     const { businessUnitId } = await params;

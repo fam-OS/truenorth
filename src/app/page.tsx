@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import DashboardLayout from './(dashboard)/layout';
 import DashboardPage from './(dashboard)/page';
 
@@ -30,8 +31,14 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <header className="flex justify-between items-center py-6">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">TrueNorth</h1>
+          <div className="flex items-center space-x-3">
+            <Image 
+              src="/truenorth-logo.svg" 
+              alt="TrueNorth Logo" 
+              width={200}
+              height={60}
+              className="h-10 w-auto"
+            />
           </div>
           <div className="flex items-center space-x-4">
             <Link

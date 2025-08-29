@@ -11,7 +11,7 @@ const updateTeamSchema = z.object({
 
 export async function GET(
   _request: Request,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   try {
     const { teamId } = await params;
@@ -28,7 +28,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   try {
     const { teamId } = await params;
@@ -53,7 +53,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   try {
     const { teamId } = await params;

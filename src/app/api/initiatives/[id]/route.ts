@@ -5,11 +5,12 @@ import { updateInitiativeSchema } from '@/lib/validations/initiative';
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const initiative = await prisma.initiative.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { organization: true, owner: true, kpis: true },
     });
 
@@ -23,8 +24,9 @@ export async function GET(
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const json = await request.json();
     const data = updateInitiativeSchema.parse(json);
 
@@ -41,7 +43,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const updated = await prisma.initiative.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: { organization: true, owner: true },
     });
@@ -55,9 +57,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await prisma.initiative.delete({ where: { id: params.id } });
+    const { id } = await params;
+    await prisma.initiative.delete({ where: { id: id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

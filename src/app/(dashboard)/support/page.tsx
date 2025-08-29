@@ -64,7 +64,7 @@ export default function SupportPage() {
       
       // Hide success message after 5 seconds
       setTimeout(() => setSuccess(false), 5000);
-    } catch (error) {
+    } catch {
       setError('An error occurred while submitting your request');
     } finally {
       setLoading(false);
@@ -97,7 +97,7 @@ export default function SupportPage() {
       {success && (
         <div className="mb-6 rounded-md bg-green-50 p-4">
           <div className="text-sm text-green-700">
-            Thank you! Your support request has been submitted successfully. We'll respond within 24 hours.
+            Thank you! Your support request has been submitted successfully. We&apos;ll respond within 24 hours.
           </div>
         </div>
       )}
@@ -193,7 +193,7 @@ export default function SupportPage() {
             <ul className="text-sm text-blue-700 space-y-1">
               <li>• Be specific about what you were doing when the issue occurred</li>
               <li>• Include any error messages you saw</li>
-              <li>• Mention which browser and device you're using</li>
+              <li>• Mention which browser and device you&apos;re using</li>
               <li>• For account issues, include your email address</li>
             </ul>
           </div>

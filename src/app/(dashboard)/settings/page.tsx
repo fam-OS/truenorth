@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
-  const router = useRouter();
   
   const [name, setName] = useState(session?.user?.name || '');
   const [email, setEmail] = useState(session?.user?.email || '');

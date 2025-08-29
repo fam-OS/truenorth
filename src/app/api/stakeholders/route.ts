@@ -16,7 +16,6 @@ export async function POST(request: Request) {
 
     // After running Prisma migration + generate, types will align. Until then, suppress mismatch.
     const stakeholder = await prisma.stakeholder.create({
-      // @ts-expect-error Pending Prisma client regeneration
       data: {
         name: data.name,
         role: data.role,

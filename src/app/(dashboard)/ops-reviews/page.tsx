@@ -76,8 +76,6 @@ interface FilterState {
 export default function OpsReviewsPage() {
   const { currentOrg } = useOrganization();
   const { showToast } = useToast();
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<FilterState>({
     year: null,
     quarter: null

@@ -61,9 +61,9 @@ interface OpsReview {
 export default async function OpsReviewDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     // Fetch the Ops Review with its items and related data

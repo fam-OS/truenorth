@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { format } from 'date-fns';
 import { Task } from '@prisma/client';
 import { ClockIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';

@@ -120,6 +120,7 @@ model Organization {
   kpis              Kpi[]
   headcountTrackers HeadcountTracker[]
   costs             Cost[]
+  ceoGoals          CeoGoal[]
 }
 
 model BusinessUnit {
@@ -419,4 +420,16 @@ model Kpi {
   @@index([teamId])
   @@index([initiativeId])
   @@index([businessUnitId])
+}
+
+model CeoGoal {
+  id             String       @id @default(cuid())
+  description    String
+  order          Int          @default(0)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }

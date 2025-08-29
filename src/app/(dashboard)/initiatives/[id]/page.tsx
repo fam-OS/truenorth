@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -36,13 +36,16 @@ function useKpis(params: { organizationId?: string; initiativeId?: string }) {
   });
 }
 
-export default function InitiativeDetailPage() {
-  const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+export default function InitiativeDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = React.use(params);
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const router = useRouter();
   const { data: initiative, isLoading } = useInitiative(id);
   const { data: kpis = [], isLoading: kpisLoading } = useKpis({
     organizationId: currentOrg?.id,

@@ -14,10 +14,10 @@ type GoalUpdateData = {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { businessUnitId: string; goalId: string } }
+  { params }: { params: Promise<{ businessUnitId: string; goalId: string }> }
 ) {
   try {
-    const { businessUnitId, goalId } = params;
+    const { businessUnitId, goalId } = await params;
     const json = await request.json();
 
     // Verify the goal exists and belongs to the business unit

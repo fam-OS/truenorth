@@ -19,9 +19,9 @@ const CardContent = ({ children, className = '' }: { children: React.ReactNode; 
 export default async function OpsReviewItemDetailPage({
   params,
 }: {
-  params: { id: string; itemId: string };
+  params: Promise<{ id: string; itemId: string }>;
 }) {
-  const { id, itemId } = params;
+  const { id, itemId } = await params;
 
   // Fetch the item with related entities
   const item = await prisma.opsReviewItem.findUnique({

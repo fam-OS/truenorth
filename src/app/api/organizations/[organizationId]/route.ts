@@ -5,7 +5,7 @@ import { createOrganizationSchema } from '@/lib/validations/organization';
 
 export async function GET(
   _request: Request,
-  { params }: { params: { organizationId: string } }
+  { params }: { params: Promise<{ organizationId: string }> }
 ) {
   try {
     const { organizationId } = await params;
@@ -32,7 +32,7 @@ export async function GET(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { organizationId: string } }
+  { params }: { params: Promise<{ organizationId: string }> }
 ) {
   try {
     // Destructure params at the beginning of the function
@@ -48,7 +48,7 @@ export async function DELETE(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { organizationId: string } }
+  { params }: { params: Promise<{ organizationId: string }> }
 ) {
   try {
     const { organizationId } = await params;

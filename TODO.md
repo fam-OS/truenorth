@@ -36,13 +36,8 @@
 - Done
 ## Marketing pages
 - Done 
-
-## Straggler items
-- Fix reports to on Team Member detail page
-- Saved goals not retained in database / on refresh 
-
 ## Production preparedness
-- 
+- Fix deployment issues 
 
 Content of Ops Reviews:
 - What makes an ops review successful? 

@@ -21,7 +21,7 @@ type Team = {
 export default function NewOpsReviewPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);

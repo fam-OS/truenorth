@@ -7,7 +7,6 @@ import type { Task } from '@prisma/client';
 import { TaskList } from '@/components/TaskList';
 import { useToast } from '@/components/ui/toast';
 import { OrganizationForm } from '@/components/OrganizationForm';
-import CEOGoals from '@/components/CEOGOALS';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { OrganizationWithBusinessUnits } from '@/types/prisma';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -36,18 +35,12 @@ export default function DashboardPage() {
   const [orgBusinessUnits, setOrgBusinessUnits] = useState<Record<string, BusinessUnit[]>>({});
   const [showCreateTeamForOrg, setShowCreateTeamForOrg] = useState<string | null>(null);
   const [editTeam, setEditTeam] = useState<{ orgId: string; team: Team } | null>(null);
-  const [ceoGoals, setCeoGoals] = useState<{ id?: string; description: string }[]>([
-    { description: '' },
-    { description: '' },
-    { description: '' },
-    { description: '' },
-    { description: '' },
-  ]);
 
   // lifecycle helpers for fetch cancellation
   const isMounted = useRef(false);
   const abortController = useRef<AbortController | null>(null);
   const vtAbort = useRef<AbortController | null>(null);
+
 
   const fetchData = useCallback(async () => {
     try {
@@ -66,6 +59,7 @@ export default function DashboardPage() {
       if (isMounted.current) {
         setTasks(tasksData || []);
         setOrganizations(orgsData || []);
+        
       }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') {
@@ -97,6 +91,7 @@ export default function DashboardPage() {
       if (abortController.current) abortController.current.abort();
     };
   }, [fetchData]);
+
 
   // fetch teams for each org
   const fetchTeams = useCallback(async (orgId: string) => {
@@ -258,15 +253,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSaveCEOGoals = async (goals: { id?: string; description: string }[]) => {
-    try {
-      // TODO: Integrate API when available
-      setCeoGoals(goals);
-    } catch (error) {
-      console.error('Failed to save CEO goals:', error);
-      throw error;
-    }
-  };
 
   // Local TeamForm component (from Organizations page)
   const TeamForm = ({
@@ -344,7 +330,6 @@ export default function DashboardPage() {
     );
   };
 
-  const topOrg = organizations[0];
   const myTasks = tasks.slice(0, 5);
 
   return (
@@ -361,11 +346,17 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          {/* Organizations page content: CEO Goals + Organizations list */}
+          {/* Organizations page content: Tasks + Organizations list */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* CEO Goals */}
-            <div>
-              <CEOGoals initialGoals={ceoGoals} onSave={handleSaveCEOGoals} />
+            {/* My Tasks */}
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div className="px-4 py-5 sm:px-6">
+                <h2 className="text-xl font-semibold text-gray-900">My Tasks</h2>
+                <p className="mt-1 max-w-2xl text-sm text-gray-500">Your current tasks and assignments</p>
+              </div>
+              <div className="border-t border-gray-200">
+                <TaskList tasks={tasks} onTaskClick={() => {}} />
+              </div>
             </div>
 
             {/* Organizations Section */}
@@ -701,20 +692,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* My Tasks */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">My Tasks</h2>
-              <Link href="/tasks" className="text-sm text-blue-600 hover:text-blue-700">
-                Open Tasks
-              </Link>
-            </div>
-            {myTasks.length > 0 ? (
-              <TaskList tasks={myTasks as any} onTaskClick={() => { /* no-op on home */ }} />
-            ) : (
-              <p className="text-gray-500">No tasks yet.</p>
-            )}
-          </div>
         </>
       )}
     </div>

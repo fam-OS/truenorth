@@ -27,7 +27,7 @@ const updateMemberSchema = z.object({
 
 export async function GET(
   _request: Request,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
     const { memberId } = await params;
@@ -41,7 +41,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
     const { memberId } = await params;
@@ -72,7 +72,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
     const { memberId } = await params;

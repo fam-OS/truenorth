@@ -3,9 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { upsertCostSchema } from '@/lib/validations/cost';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
     const data = upsertCostSchema.partial({ teamId: true, year: true, type: true }).parse(json);
 
@@ -35,9 +35,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await prisma.cost.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {

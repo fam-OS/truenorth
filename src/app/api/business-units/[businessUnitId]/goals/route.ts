@@ -4,10 +4,10 @@ import { handleError } from '@/lib/api-response';
 
 export async function POST(
   request: Request,
-  { params }: { params: { businessUnitId: string } }
+  { params }: { params: Promise<{ businessUnitId: string }> }
 ) {
   try {
-    const { businessUnitId } = params;
+    const { businessUnitId } = await params;
     const json = await request.json();
 
     // Validate business unit exists

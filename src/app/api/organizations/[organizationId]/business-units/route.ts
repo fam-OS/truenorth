@@ -5,11 +5,11 @@ import { handleError } from '@/lib/api-response';
 
 export async function GET(
   request: Request,
-  { params }: { params: { organizationId: string } }
+  { params }: { params: Promise<{ organizationId: string }> }
 ) {
   try {
     // Destructure params at the beginning of the function
-    const { organizationId } = params;
+    const { organizationId } = await params;
     console.log('[BU.GET] organizationId param =', organizationId);
     
     const businessUnits = await prisma.businessUnit.findMany({
@@ -33,11 +33,11 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { organizationId: string } }
+  { params }: { params: Promise<{ organizationId: string }> }
 ) {
   try {
     // Destructure params at the beginning of the function
-    const { organizationId } = params;
+    const { organizationId } = await params;
     console.log('[BU.POST] organizationId param =', organizationId);
     const json = await request.json();
     const data = createBusinessUnitSchema.parse(json);

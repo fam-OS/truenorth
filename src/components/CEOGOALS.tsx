@@ -93,8 +93,8 @@ export default function CEOGoals({
                     type="text"
                     value={goal.description}
                     onChange={(e) => handleGoalChange(index, e.target.value)}
+                    placeholder="Increase company&apos;s annual recurring revenue to $50M by end of 2024"
                     className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    placeholder="Enter goal description"
                   />
                 ) : (
                   <span className={!goal.description ? 'text-gray-400' : ''}>

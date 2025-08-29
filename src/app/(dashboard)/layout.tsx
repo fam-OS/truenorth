@@ -2,11 +2,11 @@
 
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   ClipboardDocumentListIcon,
   BuildingOfficeIcon,
-  BuildingStorefrontIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { PresentationChartBarIcon } from '@heroicons/react/24/outline';
@@ -14,24 +14,6 @@ import { Squares2X2Icon, ChevronDownIcon, CogIcon, QuestionMarkCircleIcon } from
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSession, signOut } from 'next-auth/react';
 
-function NavLink({ href, children }: { href: string; children: ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const isActive = pathname === href;
-
-  return (
-    <Link
-      href={href}
-      className={`${
-        isActive
-          ? 'bg-gray-100 text-gray-900'
-          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-      } group flex items-center px-3 py-2 text-sm font-medium rounded-md`}
-    >
-      {children}
-    </Link>
-  );
-}
 
 export default function DashboardLayout({
   children,
@@ -56,7 +38,6 @@ export default function DashboardLayout({
         { href: '/initiatives-kpis', label: 'Initiatives & KPIs', icon: PresentationChartBarIcon, desc: 'Plan, execute, and measure outcomes' },
         { href: '/teams', label: 'Team Management', icon: UserGroupIcon, desc: 'Headcount, roles, and team setup' },
         { href: '/ops-reviews', label: 'Team Ops Reviews', icon: PresentationChartBarIcon, desc: 'Quarterly operational reviews' },
-        { href: '/feature-request', label: 'Feature Request', icon: ClipboardDocumentListIcon, desc: 'Suggest new features and improvements' },
       ].sort((a, b) => a.label.localeCompare(b.label)),
     []
   );
@@ -148,26 +129,27 @@ export default function DashboardLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
-              <div ref={launcherRef} className="flex items-center mr-2 relative">
-                <button
-                  type="button"
-                  aria-haspopup="menu"
-                  aria-expanded={open}
-                  aria-controls="app-launcher-menu"
-                  onClick={() => setOpen((v) => !v)}
-                  className="inline-flex items-center gap-1 px-2 py-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  title="Open app launcher"
-                >
-                  <Squares2X2Icon className="h-6 w-6 text-gray-700" />
-                  <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
-                </button>
-                {open && (
-                  <div
-                    id="app-launcher-menu"
-                    role="menu"
-                    aria-label="Applications"
-                    className="absolute top-12 left-0 z-50 w-80 rounded-md border bg-white shadow-lg p-1"
+              {session && (
+                <div ref={launcherRef} className="flex items-center mr-2 relative">
+                  <button
+                    type="button"
+                    aria-haspopup="menu"
+                    aria-expanded={open}
+                    aria-controls="app-launcher-menu"
+                    onClick={() => setOpen((v) => !v)}
+                    className="inline-flex items-center gap-1 px-2 py-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    title="Open app launcher"
                   >
+                    <Squares2X2Icon className="h-6 w-6 text-gray-700" />
+                    <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  </button>
+                  {open && (
+                    <div
+                      id="app-launcher-menu"
+                      role="menu"
+                      aria-label="Applications"
+                      className="absolute top-12 left-0 z-50 w-80 rounded-md border bg-white shadow-lg p-1"
+                    >
                     <div className="px-3 py-2 text-xs font-semibold text-gray-500">Applications</div>
                     <ul className="max-h-96 overflow-auto py-1">
                       {apps.map(({ href, label, icon: Icon, desc }, i) => {
@@ -194,17 +176,18 @@ export default function DashboardLayout({
                         );
                       })}
                     </ul>
-                    <Link
-                href="/api/auth/signin"
-                className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Sign in
-              </Link>
-            </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <Link href="/" className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold">TrueNorth</h1>
+                <Image 
+                  src="/truenorth-logo.svg" 
+                  alt="TrueNorth Logo" 
+                  width={200}
+                  height={60}
+                  className="h-14 w-auto"
+                />
               </Link>
             </div>
             <div className="flex items-center">
