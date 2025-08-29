@@ -29,17 +29,19 @@ model Note {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  organizations Organization[] @relation("OrganizationToUser")
-  accounts      Account[]
-  sessions      Session[]
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String?
+  emailVerified   DateTime?
+  image           String?
+  passwordHash    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  organizations   Organization[]   @relation("OrganizationToUser")
+  accounts        Account[]
+  sessions        Session[]
+  featureRequests FeatureRequest[]
+  supportRequests SupportRequest[]
 }
 
 model Account {
@@ -75,6 +77,34 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model FeatureRequest {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  category    String
+  priority    String   @default("medium")
+  useCase     String?  @db.Text
+  status      String   @default("submitted")
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SupportRequest {
+  id          String   @id @default(cuid())
+  subject     String
+  category    String
+  priority    String   @default("medium")
+  description String   @db.Text
+  steps       String?  @db.Text
+  status      String   @default("open")
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Organization {

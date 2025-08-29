@@ -81,7 +81,7 @@ export default function Home() {
         <div className="py-20">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Everything you need to manage your business
+              Everything you need to make your team better operators
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Comprehensive tools designed for leaders who want to track performance, 

@@ -10,7 +10,7 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { PresentationChartBarIcon } from '@heroicons/react/24/outline';
-import { Squares2X2Icon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { Squares2X2Icon, ChevronDownIcon, CogIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -41,7 +41,9 @@ export default function DashboardLayout({
   const { currentOrg, setCurrentOrg } = useOrganization();
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const launcherRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -54,6 +56,7 @@ export default function DashboardLayout({
         { href: '/initiatives-kpis', label: 'Initiatives & KPIs', icon: PresentationChartBarIcon, desc: 'Plan, execute, and measure outcomes' },
         { href: '/teams', label: 'Team Management', icon: UserGroupIcon, desc: 'Headcount, roles, and team setup' },
         { href: '/ops-reviews', label: 'Team Ops Reviews', icon: PresentationChartBarIcon, desc: 'Quarterly operational reviews' },
+        { href: '/feature-request', label: 'Feature Request', icon: ClipboardDocumentListIcon, desc: 'Suggest new features and improvements' },
       ].sort((a, b) => a.label.localeCompare(b.label)),
     []
   );
@@ -100,15 +103,20 @@ export default function DashboardLayout({
   // Close on outside click
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (!open) return;
       const target = e.target as Node;
-      if (launcherRef.current && !launcherRef.current.contains(target)) {
+      if (open && launcherRef.current && !launcherRef.current.contains(target)) {
         setOpen(false);
+      }
+      if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setUserMenuOpen(false);
       }
     }
     function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setUserMenuOpen(false);
+      }
       if (!open) return;
-      if (e.key === 'Escape') setOpen(false);
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         setFocusedIndex((prev) => {
@@ -238,12 +246,56 @@ export default function DashboardLayout({
                       {session.user.name || session.user.email}
                     </span>
                   </div>
-                  <button
-                    onClick={() => signOut()}
-                    className="inline-flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  >
-                    Sign out
-                  </button>
+                  
+                  <div ref={userMenuRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                      className="inline-flex items-center rounded-md bg-gray-100 px-2 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      title="User menu"
+                    >
+                      <CogIcon className="h-4 w-4" />
+                    </button>
+                    
+                    {userMenuOpen && (
+                      <div className="absolute right-0 top-10 z-50 w-48 rounded-md border bg-white shadow-lg py-1">
+                        <Link
+                          href="/settings"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <CogIcon className="h-4 w-4 mr-3 text-gray-500" />
+                          Settings
+                        </Link>
+                        <Link
+                          href="/feature-request"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <ClipboardDocumentListIcon className="h-4 w-4 mr-3 text-gray-500" />
+                          Feature Request
+                        </Link>
+                        <Link
+                          href="/support"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <QuestionMarkCircleIcon className="h-4 w-4 mr-3 text-gray-500" />
+                          Support
+                        </Link>
+                        <hr className="my-1" />
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            signOut();
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Sign out
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : status === 'unauthenticated' ? (
                 <Link

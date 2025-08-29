@@ -5,6 +5,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { QueryClientProvider } from "@/providers/QueryClientProvider";
 import { AuthSessionProvider } from "@/providers/SessionProvider";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,12 +21,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning className={`${inter.className} bg-gray-100 text-gray-900`}>
+      <body suppressHydrationWarning className={`${inter.className} bg-gray-100 text-gray-900 min-h-screen flex flex-col`}>
         <AuthSessionProvider>
           <QueryClientProvider>
             <ToastProvider>
               <OrganizationProvider>
-                {children}
+                <div className="flex-1">
+                  {children}
+                </div>
+                <Footer />
               </OrganizationProvider>
             </ToastProvider>
           </QueryClientProvider>
