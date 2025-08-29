@@ -34,7 +34,6 @@
 - Done 
 
 ## Straggler items
-- Add api tests for the new financial and team management data concepts 
 - Update Readme to include data seeding instructions
 - Fix reports to on Team Member detail page
 - Saved goals not retained in database / on refresh 
@@ -223,11 +222,10 @@
 
 
 ## User experience
-- Add user authentication to the app. Allow signups by email/password and Google signups. 
-- Add a login page
-- Add a user settings page.  User should should be able to update their name, email, password, and close account. 
-- Add a logout button for logged in users
+- Protect dashboard routes (middleware or getServerSession)
+- Store user data in your Prisma User model 
 - Add a marketing landing page. The sub header should be: ROI Tracker and Team Management for Leaders at all levels
+- Add a user settings page.  User should should be able to update their name, email, password, and close account.
 
 ## Marketing pages
 - Add a feature request form to the app

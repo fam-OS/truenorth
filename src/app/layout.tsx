@@ -4,6 +4,7 @@ import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { QueryClientProvider } from "@/providers/QueryClientProvider";
+import { AuthSessionProvider } from "@/providers/SessionProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,13 +21,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.className} bg-gray-100 text-gray-900`}>
-        <QueryClientProvider>
-          <ToastProvider>
-            <OrganizationProvider>
-              {children}
-            </OrganizationProvider>
-          </ToastProvider>
-        </QueryClientProvider>
+        <AuthSessionProvider>
+          <QueryClientProvider>
+            <ToastProvider>
+              <OrganizationProvider>
+                {children}
+              </OrganizationProvider>
+            </ToastProvider>
+          </QueryClientProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

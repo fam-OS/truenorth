@@ -12,6 +12,7 @@ import {
 import { PresentationChartBarIcon } from '@heroicons/react/24/outline';
 import { Squares2X2Icon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useSession, signOut } from 'next-auth/react';
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
   const pathname = usePathname();
@@ -38,6 +39,7 @@ export default function DashboardLayout({
   children: ReactNode;
 }) {
   const { currentOrg, setCurrentOrg } = useOrganization();
+  const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
   const launcherRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
@@ -184,7 +186,13 @@ export default function DashboardLayout({
                         );
                       })}
                     </ul>
-                  </div>
+                    <Link
+                href="/api/auth/signin"
+                className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Sign in
+              </Link>
+            </div>
                 )}
               </div>
               <Link href="/" className="flex-shrink-0 flex items-center">
@@ -213,6 +221,38 @@ export default function DashboardLayout({
                   </select>
                 </div>
               )}
+              {status === 'loading' && (
+                <div className="text-sm text-gray-600">Loading...</div>
+              )}
+              {status === 'authenticated' && session?.user ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    {session.user.image && (
+                      <img
+                        src={session.user.image}
+                        alt={session.user.name || 'User'}
+                        className="h-8 w-8 rounded-full"
+                      />
+                    )}
+                    <span className="text-sm text-gray-700">
+                      {session.user.name || session.user.email}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => signOut()}
+                    className="inline-flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : status === 'unauthenticated' ? (
+                <Link
+                  href="/api/auth/signin"
+                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Sign in
+                </Link>
+              ) : null}
             </div>
           </div>
         </div>
