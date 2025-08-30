@@ -1,14 +1,23 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 
 export async function GET() {
+  let prisma: PrismaClient | null = null;
+  
   try {
     console.log('Testing database connection...');
     console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
     console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
     
-    // Test Prisma client initialization
-    console.log('Testing Prisma client...');
+    // Test with connection pooling for serverless
+    console.log('Creating Prisma client with connection pooling...');
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL + '?pgbouncer=true&connection_limit=1'
+        }
+      }
+    });
     
     // Simple database test
     const userCount = await prisma.user.count();
@@ -17,7 +26,7 @@ export async function GET() {
     return NextResponse.json({ 
       success: true, 
       userCount,
-      message: 'Database connection working',
+      message: 'Database connection working with pooling',
       hasDbUrl: !!process.env.DATABASE_URL
     });
   } catch (error) {
@@ -36,5 +45,9 @@ export async function GET() {
       },
       { status: 500 }
     );
+  } finally {
+    if (prisma) {
+      await prisma.$disconnect();
+    }
   }
 }
