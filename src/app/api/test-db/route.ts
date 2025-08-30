@@ -9,12 +9,15 @@ export async function GET() {
     console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
     console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
     
-    // Test with connection pooling for serverless
-    console.log('Creating Prisma client with connection pooling...');
+    // Test with Supabase connection pooler URL
+    console.log('Creating Prisma client with Supabase pooler...');
+    const poolerUrl = process.env.DATABASE_URL?.replace(':5432/', ':6543/') + '?pgbouncer=true';
+    console.log('Using pooler URL with port 6543');
+    
     prisma = new PrismaClient({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL + '?pgbouncer=true&connection_limit=1'
+          url: poolerUrl
         }
       }
     });
