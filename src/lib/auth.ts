@@ -28,12 +28,17 @@ export const authOptions: AuthOptions = {
           where: { email: credentials.email },
         });
 
-        if (!user) {
+        if (!user || !user.passwordHash) {
           return null;
         }
 
-        // For now, skip password validation to fix build
-        // TODO: Fix Prisma types for passwordHash field
+        // Import bcrypt dynamically to avoid build issues
+        const bcrypt = await import('bcryptjs');
+        const isValidPassword = await bcrypt.compare(credentials.password, user.passwordHash);
+        
+        if (!isValidPassword) {
+          return null;
+        }
         
         return {
           id: user.id,

@@ -7,7 +7,6 @@ export async function GET() {
   try {
     console.log('Fetching organizations...');
     
-    // Start with a simple query first
     const organizations = await prisma.organization.findMany({
       select: {
         id: true,
@@ -37,7 +36,10 @@ export async function GET() {
     return NextResponse.json(organizations);
   } catch (error) {
     console.error('Organizations API error:', error);
-    return handleError(error);
+    return NextResponse.json(
+      { error: 'Failed to fetch organizations' },
+      { status: 500 }
+    );
   }
 }
 
