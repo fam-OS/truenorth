@@ -5,23 +5,38 @@ import { handleError } from '@/lib/api-response';
 
 export async function GET() {
   try {
+    console.log('Fetching organizations...');
+    
+    // Start with a simple query first
     const organizations = await prisma.organization.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
         businessUnits: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
             stakeholders: {
-              include: {
-                goals: true
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
               }
-            },
-            metrics: true,
-          },
-        },
-      },
+            }
+          }
+        }
+      }
     });
 
+    console.log(`Found ${organizations.length} organizations`);
     return NextResponse.json(organizations);
   } catch (error) {
+    console.error('Organizations API error:', error);
     return handleError(error);
   }
 }

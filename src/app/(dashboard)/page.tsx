@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface DashboardStats {
@@ -31,6 +32,54 @@ export default function DashboardPage() {
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to format numbers with commas
+  const formatNumber = (num: number) => {
+    return num.toLocaleString();
+  };
+
+  // Helper function to format status with visual indicators
+  const formatStatus = (status: string) => {
+    const statusConfig = {
+      'IN_PROGRESS': { 
+        label: 'In Progress', 
+        color: 'bg-blue-100 text-blue-800', 
+        progress: 60,
+        icon: '🔄'
+      },
+      'COMPLETED': { 
+        label: 'Completed', 
+        color: 'bg-green-100 text-green-800', 
+        progress: 100,
+        icon: '✅'
+      },
+      'PLANNING': { 
+        label: 'Planning', 
+        color: 'bg-yellow-100 text-yellow-800', 
+        progress: 20,
+        icon: '📋'
+      },
+      'ON_HOLD': { 
+        label: 'On Hold', 
+        color: 'bg-gray-100 text-gray-800', 
+        progress: 0,
+        icon: '⏸️'
+      },
+      'CANCELLED': { 
+        label: 'Cancelled', 
+        color: 'bg-red-100 text-red-800', 
+        progress: 0,
+        icon: '❌'
+      }
+    };
+    
+    return statusConfig[status as keyof typeof statusConfig] || {
+      label: status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
+      color: 'bg-gray-100 text-gray-800',
+      progress: 0,
+      icon: '📄'
+    };
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -65,21 +114,14 @@ export default function DashboardPage() {
           opsReviews: opsReviews.length,
         });
 
-        // Create recent activity from various sources
+        // Create initiative tracking list (only initiatives, no KPIs)
         const activities: RecentActivity[] = [
-          ...initiatives.slice(0, 3).map((initiative: any) => ({
+          ...initiatives.slice(0, 5).map((initiative: any) => ({
             id: initiative.id,
             type: 'Initiative',
             title: initiative.name,
-            description: `Status: ${initiative.status}`,
+            description: initiative.status,
             date: new Date(initiative.createdAt).toLocaleDateString(),
-          })),
-          ...kpis.slice(0, 2).map((kpi: any) => ({
-            id: kpi.id,
-            type: 'KPI',
-            title: kpi.name,
-            description: `Target: ${kpi.targetMetric}`,
-            date: new Date(kpi.createdAt).toLocaleDateString(),
           })),
         ];
 
@@ -184,34 +226,53 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Activity */}
+      {/* Initiative Tracking */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>Initiative Tracking</CardTitle>
         </CardHeader>
         <CardContent>
           {recentActivity.length > 0 ? (
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-shrink-0">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {activity.type}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {activity.title}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {activity.description}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0 text-sm text-gray-500">
-                    {activity.date}
-                  </div>
-                </div>
-              ))}
+              {recentActivity.map((activity) => {
+                const statusInfo = formatStatus(activity.description);
+                return (
+                  <Link 
+                    key={activity.id} 
+                    href={`/initiatives/${activity.id}`}
+                    className="block hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                      <div className="flex-shrink-0">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {activity.type}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {activity.title}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                            <span className="mr-1">{statusInfo.icon}</span>
+                            {statusInfo.label}
+                          </span>
+                          <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-24">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${statusInfo.progress}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-500">{statusInfo.progress}%</span>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0 text-sm text-gray-500">
+                        {activity.date}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-500">No recent activity</p>

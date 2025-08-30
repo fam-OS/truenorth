@@ -14,7 +14,8 @@ export async function GET() {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    // First try to find user by email
+    let user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: {
         id: true,
@@ -25,11 +26,23 @@ export async function GET() {
       },
     });
 
+    // If user doesn't exist, create them (fallback for OAuth users)
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      console.log('User not found, creating new user for:', session.user.email);
+      user = await prisma.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || null,
+          image: session.user.image || null,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
     }
 
     return NextResponse.json({ data: user });

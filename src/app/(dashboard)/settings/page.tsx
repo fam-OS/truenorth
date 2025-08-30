@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -17,6 +17,37 @@ export default function SettingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // Organization selector state
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState('');
+
+  // Fetch organizations on component mount
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const response = await fetch('/api/organizations');
+        const orgs = await response.json();
+        setOrganizations(orgs);
+        
+        // Set default selection to first org if available
+        if (orgs.length > 0) {
+          const savedOrgId = localStorage.getItem('selectedOrgId');
+          setSelectedOrgId(savedOrgId || orgs[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
+
+  const handleOrgChange = (orgId: string) => {
+    setSelectedOrgId(orgId);
+    localStorage.setItem('selectedOrgId', orgId);
+    setSuccess('Organization preference updated');
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,6 +174,32 @@ export default function SettingsPage() {
       )}
 
       <div className="space-y-8">
+        {/* Organization Preferences */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Organization Preferences</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Select your default organization to filter data across the application.
+          </p>
+          
+          <div>
+            <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">
+              Default Organization
+            </label>
+            <select
+              id="organization"
+              value={selectedOrgId}
+              onChange={(e) => handleOrgChange(e.target.value)}
+              className="block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* Profile Information */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Profile Information</h2>

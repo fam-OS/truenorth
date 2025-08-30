@@ -56,3 +56,7 @@ What are we solving for?
 - Push calendar to the app (google, microsoft plugins?)
 - Push documents to the app (google, microsoft plugins?) 
 - Account Types (Individual vs Organization) determine experience 
+- Roles and Responsibility Definition
+- User Persona and Journey Definition
+- Goal Nesting by Role
+- Change Goal Start and Due Date to Quarter and Year
