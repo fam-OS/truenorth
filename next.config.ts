@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   
+  // Fix for client reference manifest issue on Vercel
+  output: 'standalone',
+  
   // Security headers
   async headers() {
     return [
