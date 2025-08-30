@@ -30,9 +30,9 @@ export function createMockResponse(): MockApiResponse {
     return res as NextApiResponse;
   };
 
-  res.setHeader = (name: string, value: string) => {
-    headers[name.toLowerCase()] = value;
-    return res as NextApiResponse;
+  res.setHeader = (name: string, value: string | number | readonly string[]) => {
+    headers[name.toLowerCase()] = String(value);
+    return res as MockApiResponse;
   };
 
   res._getJSONData = () => jsonData;

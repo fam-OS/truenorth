@@ -3,15 +3,13 @@ import { Slot } from '@radix-ui/react-slot';
 import { Controller, FormProvider, useFormContext } from 'react-hook-form';
 
 import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
+import * as LabelPrimitive from '@radix-ui/react-label';
 
 const Form = FormProvider;
 
-// @ts-ignore - Temporary fix for complex form types
-const FormFieldContext = React.createContext({});
+const FormFieldContext = React.createContext<{ name?: string }>({});
 
-// @ts-ignore - Temporary fix for complex form types
-const FormField = (props: any) => {
+const FormField = (props: React.ComponentProps<typeof Controller>) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
@@ -22,11 +20,9 @@ const FormField = (props: any) => {
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const { getFieldState, formState } = useFormContext();
-  // @ts-ignore - Temporary fix for complex form types
-  const fieldState = getFieldState(fieldContext.name, formState);
+  const fieldState = getFieldState(fieldContext.name || '', formState);
 
   return {
-    // @ts-ignore - Temporary fix for complex form types
     name: fieldContext.name,
     ...fieldState,
   };
@@ -46,31 +42,41 @@ const FormItem = React.forwardRef<
 });
 FormItem.displayName = 'FormItem';
 
-// @ts-ignore - Temporary fix for complex form types
-const FormLabel = React.forwardRef((props: any, ref: any) => {
+const FormLabel = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+>((props, ref) => {
   const { error } = useFormField();
   const { className, ...rest } = props;
 
   return (
-    <Label
+    <LabelPrimitive.Root
       ref={ref}
-      className={cn(error && 'text-destructive', className)}
+      className={cn(
+        'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+        error && 'text-destructive',
+        className
+      )}
       {...rest}
     />
   );
 });
 FormLabel.displayName = 'FormLabel';
 
-// @ts-ignore - Temporary fix for complex form types
-const FormControl = React.forwardRef((props: any, ref: any) => {
+const FormControl = React.forwardRef<
+  React.ElementRef<typeof Slot>,
+  React.ComponentPropsWithoutRef<typeof Slot>
+>((props, ref) => {
   const { error } = useFormField();
 
   return <Slot ref={ref} aria-invalid={!!error} {...props} />;
 });
 FormControl.displayName = 'FormControl';
 
-// @ts-ignore - Temporary fix for complex form types
-const FormMessage = React.forwardRef((props: any, ref: any) => {
+const FormMessage = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>((props, ref) => {
   const { error } = useFormField();
   const { className, children, ...rest } = props;
   const body = error ? String(error?.message) : children;

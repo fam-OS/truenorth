@@ -58,9 +58,15 @@ export default function Home() {
 
         {/* Hero Section */}
         <div className="text-center py-20">
-          <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6">
-            TrueNorth
-          </h1>
+          <div className="flex justify-center mb-8">
+            <Image 
+              src="/truenorth-logo.svg" 
+              alt="TrueNorth Logo" 
+              width={400}
+              height={120}
+              className="h-24 w-auto"
+            />
+          </div>
           <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
             ROI Tracker and Team Management for Leaders at all levels
           </p>
