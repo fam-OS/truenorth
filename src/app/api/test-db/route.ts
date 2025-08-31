@@ -8,11 +8,20 @@ export async function GET() {
     console.log('Testing database connection...');
     console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
     console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
+    console.log('DATABASE_URL preview:', process.env.DATABASE_URL?.substring(0, 50) + '...');
     
-    // Test with updated database password (unencoded)
-    console.log('Creating Prisma client with updated password...');
+    // Test with Supabase connection pooler for serverless
+    console.log('Creating Prisma client with connection pooling...');
+    const pooledUrl = process.env.DATABASE_URL?.replace(':5432/', ':6543/') + '?pgbouncer=true&connection_limit=1';
+    console.log('Using pooled URL:', pooledUrl?.substring(0, 50) + '...');
     
-    prisma = new PrismaClient();
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: pooledUrl
+        }
+      }
+    });
     
     // Simple database test
     const userCount = await prisma.user.count();
