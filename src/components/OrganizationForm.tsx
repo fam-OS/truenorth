@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Organization } from '@prisma/client';
 import { CreateOrganizationInput } from '@/lib/validations/organization';
 
@@ -18,6 +18,7 @@ export function OrganizationForm({
   const [formData, setFormData] = useState<CreateOrganizationInput>({
     name: organization?.name ?? '',
     description: organization?.description ?? '',
+    companyAccountId: '', // This will be set by the parent component
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,6 +71,7 @@ export function OrganizationForm({
         />
       </div>
 
+
       {error && (
         <div className="rounded-md bg-red-50 p-4">
           <div className="text-sm text-red-700">{error}</div>
@@ -89,7 +91,7 @@ export function OrganizationForm({
           disabled={isSubmitting}
           className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
         >
-          {isSubmitting ? 'Saving...' : organization ? 'Update Organization' : 'Create Organization'}
+{isSubmitting ? 'Saving...' : organization ? 'Update Business Unit' : 'Create Business Unit'}
         </button>
       </div>
     </form>

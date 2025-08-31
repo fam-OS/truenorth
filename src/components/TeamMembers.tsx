@@ -156,13 +156,22 @@ export function TeamMembers({ teamId }: { teamId: string }) {
             onChange={(e) => setAddEmail(e.target.value)}
             className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
           />
-          <input
-            type="text"
-            placeholder="Role"
+          <select
             value={addRole}
             onChange={(e) => setAddRole(e.target.value)}
             className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-          />
+          >
+            <option value="">Select Role</option>
+            <option value="CEO">CEO</option>
+            <option value="COO">COO</option>
+            <option value="CTO">CTO</option>
+            <option value="CIO">CIO</option>
+            <option value="CFO">CFO</option>
+            <option value="Executive">Executive</option>
+            <option value="Director">Director</option>
+            <option value="Manager">Manager</option>
+            <option value="Team Member">Team Member</option>
+          </select>
           <div className="flex gap-2 justify-end md:col-span-1">
             <button
               type="button"
@@ -205,12 +214,22 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                     onChange={(e) => setEditEmail(e.target.value)}
                     className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                   />
-                  <input
-                    type="text"
+                  <select
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value)}
                     className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                  />
+                  >
+                    <option value="">Select Role</option>
+                    <option value="CEO">CEO</option>
+                    <option value="COO">COO</option>
+                    <option value="CTO">CTO</option>
+                    <option value="CIO">CIO</option>
+                    <option value="CFO">CFO</option>
+                    <option value="Executive">Executive</option>
+                    <option value="Director">Director</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Team Member">Team Member</option>
+                  </select>
                   <div className="flex gap-2 justify-end md:col-span-1">
                     <button
                       type="button"

@@ -37,8 +37,20 @@
 ## Marketing pages
 - Done 
 ## Production preparedness
-- Fix deployment issues 
+- Done 
+## CompanyAccount
+- API tests for AccountProfile
 
+## Improvements 
+- Help text for adding new organization "Business Ops, Servicing, Technology..."
+)
+- Can delete team 
+- See basic org chart to team page
+- See basic timeline view to initiative page
+- Change Goal Start and Due Date to Quarter and Year  
+- Export team manager to CSV 
+- Export budget ledger to CSV 
+ 
 Content of Ops Reviews:
 - What makes an ops review successful? 
 - What are the key metrics to measure the success of an ops review? 
@@ -47,16 +59,4 @@ What are we solving for?
 - Share the CEO's strategic vision with leaders throughout the company. 
 - Connect initiative bets to actual ROI results 
 - Make it easy to measure success of teams at all levels and all disciplines 
-- Connect company goals to people management strategies 
-
-## Future Features
-- Stakeholder page: Visualize the org chart and way your org supports business units and initiatives feature.  
-- Initiatives page:  Build a dynamic gannt chart based on the release date of initiatives, indicating which BU is supported.  
-- Push email to the app (google, microsoft plugins?)
-- Push calendar to the app (google, microsoft plugins?)
-- Push documents to the app (google, microsoft plugins?) 
-- Account Types (Individual vs Organization) determine experience 
-- Roles and Responsibility Definition
-- User Persona and Journey Definition
-- Goal Nesting by Role
-- Change Goal Start and Due Date to Quarter and Year
+- Connect company goals to people management strategies  

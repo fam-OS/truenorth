@@ -28,6 +28,13 @@ export async function GET() {
               }
             }
           }
+        },
+        ceoGoals: {
+          select: {
+            id: true,
+            description: true,
+            createdAt: true,
+          }
         }
       }
     });

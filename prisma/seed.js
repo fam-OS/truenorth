@@ -3,11 +3,33 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create Organization
+  // Create a user first
+  const user = await prisma.user.create({
+    data: {
+      email: 'demo@example.com',
+      name: 'Demo User',
+    },
+  });
+
+  // Create CompanyAccount
+  const companyAccount = await prisma.companyAccount.create({
+    data: {
+      userId: user.id,
+      name: 'Acme Corp',
+      description: 'Demo company',
+      employees: '50-100',
+      headquarters: 'San Francisco, CA',
+      launchedDate: 'January 2020',
+      isPrivate: true,
+    },
+  });
+
+  // Create Organization (Business Unit)
   const org = await prisma.organization.create({
     data: {
-      name: 'Acme Corp',
-      description: 'Demo organization',
+      name: 'E-Commerce Division',
+      description: 'Online retail business unit',
+      companyAccountId: companyAccount.id,
     },
   });
 

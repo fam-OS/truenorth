@@ -71,10 +71,17 @@ export function StakeholderForm({ businessUnit, onSubmit, onCancel }: Stakeholde
           onChange={(e) => setFormData({ ...formData, role: e.target.value })}
         >
           <option value="">Select a role</option>
-          <option value="LEADER">Leader</option>
-          <option value="MANAGER">Manager</option>
-          <option value="CONTRIBUTOR">Contributor</option>
-          <option value="ADVISOR">Advisor</option>
+          <option value="CEO">CEO</option>
+          <option value="COO">COO</option>
+          <option value="CTO">CTO</option>
+          <option value="CIO">CIO</option>
+          <option value="CFO">CFO</option>
+          <option value="Executive">Executive</option>
+          <option value="Director">Director</option>
+          <option value="Manager">Manager</option>
+          <option value="Team Member">Team Member</option>
+          <option value="Product Manager">Product Manager</option>
+          <option value="Advisor">Advisor</option>
         </select>
       </div>
 

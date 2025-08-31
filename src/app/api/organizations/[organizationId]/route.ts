@@ -37,9 +37,73 @@ export async function DELETE(
   try {
     // Destructure params at the beginning of the function
     const { organizationId } = await params;
-    await prisma.organization.delete({
-      where: { id: organizationId },
+    
+    // Delete related entities first to avoid foreign key constraints
+    await prisma.$transaction(async (tx) => {
+      // Delete business units and their related data
+      const businessUnits = await tx.businessUnit.findMany({
+        where: { orgId: organizationId }
+      });
+      
+      for (const bu of businessUnits) {
+        // Delete stakeholders
+        await tx.stakeholder.deleteMany({
+          where: { businessUnitId: bu.id }
+        });
+        
+        // Delete metrics
+        await tx.metric.deleteMany({
+          where: { businessUnitId: bu.id }
+        });
+      }
+      
+      // Delete business units
+      await tx.businessUnit.deleteMany({
+        where: { orgId: organizationId }
+      });
+      
+      // Delete teams and team members
+      const teams = await tx.team.findMany({
+        where: { organizationId }
+      });
+      
+      for (const team of teams) {
+        await tx.teamMember.deleteMany({
+          where: { teamId: team.id }
+        });
+      }
+      
+      await tx.team.deleteMany({
+        where: { organizationId }
+      });
+      
+      // Delete other related entities
+      await tx.initiative.deleteMany({
+        where: { organizationId }
+      });
+      
+      await tx.kpi.deleteMany({
+        where: { organizationId }
+      });
+      
+      await tx.headcountTracker.deleteMany({
+        where: { organizationId }
+      });
+      
+      await tx.cost.deleteMany({
+        where: { organizationId }
+      });
+      
+      await tx.ceoGoal.deleteMany({
+        where: { organizationId }
+      });
+      
+      // Finally delete the organization
+      await tx.organization.delete({
+        where: { id: organizationId }
+      });
     });
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     return handleError(error);
@@ -55,9 +119,11 @@ export async function PUT(
     const json = await request.json();
     const data = createOrganizationSchema.parse(json);
 
+    const updateData = data;
+
     const updated = await prisma.organization.update({
       where: { id: organizationId },
-      data,
+      data: updateData,
       include: {
         businessUnits: {
           include: {

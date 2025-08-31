@@ -22,13 +22,10 @@ export async function GET() {
     // Format the response to match expected structure
     const formattedMembers = teamMembers.map(member => ({
       id: member.id,
-      userId: member.id, // Using member ID as userId for compatibility
+      name: member.name,
+      email: member.email,
+      role: member.role,
       teamId: member.teamId,
-      role: member.role || 'member',
-      user: {
-        name: member.name,
-        email: member.email || ''
-      },
       team: {
         name: member.team.name,
         organization: member.team.organization
