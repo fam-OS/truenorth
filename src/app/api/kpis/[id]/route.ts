@@ -32,7 +32,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     // If metrics are being updated, recompute derived fields
     const { targetMetric, actualMetric, organizationId, teamId, initiativeId, businessUnitId, ...rest } = parsed as any;
-    let computed: { metTarget?: boolean; metTargetPercent?: number } = {};
+    const computed: { metTarget?: boolean; metTargetPercent?: number } = {};
     const hasActual = typeof actualMetric === 'number';
     const hasTarget = typeof targetMetric === 'number';
 

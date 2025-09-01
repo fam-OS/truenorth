@@ -6,8 +6,9 @@ import { updateCompanyAccountSchema } from '@/lib/validations/company-account';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { companyAccountId: string } }
+  { params }: { params: Promise<{ companyAccountId: string }> }
 ) {
+  const { companyAccountId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -17,9 +18,9 @@ export async function GET(
 
     const companyAccount = await prisma.companyAccount.findFirst({
       where: {
-        id: params.companyAccountId,
+        id: companyAccountId,
         user: {
-          id: session.user.id
+          id: session.user.id!
         }
       },
       include: {
@@ -48,8 +49,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { companyAccountId: string } }
+  { params }: { params: Promise<{ companyAccountId: string }> }
 ) {
+  const { companyAccountId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -60,7 +62,7 @@ export async function PUT(
     // Verify ownership
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
-        id: params.companyAccountId,
+        id: companyAccountId,
         user: {
           id: session.user.id
         }
@@ -76,7 +78,7 @@ export async function PUT(
 
     const companyAccount = await prisma.companyAccount.update({
       where: {
-        id: params.companyAccountId
+        id: companyAccountId
       },
       data: validatedData,
       include: {
@@ -109,8 +111,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { companyAccountId: string } }
+  { params }: { params: Promise<{ companyAccountId: string }> }
 ) {
+  const { companyAccountId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -121,7 +124,7 @@ export async function DELETE(
     // Verify ownership
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
-        id: params.companyAccountId,
+        id: companyAccountId,
         user: {
           id: session.user.id
         }
@@ -135,7 +138,7 @@ export async function DELETE(
     // Delete the company account (this will cascade delete organizations due to schema constraints)
     await prisma.companyAccount.delete({
       where: {
-        id: params.companyAccountId
+        id: companyAccountId
       }
     });
 

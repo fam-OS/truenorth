@@ -190,14 +190,14 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
 
     try {
       // First, ensure there's a team for this organization
-      let teamResponse = await fetch('/api/teams')
+      const teamResponse = await fetch('/api/teams')
       let teams = []
       if (teamResponse.ok) {
         teams = await teamResponse.json()
       }
 
       let teamId = null
-      if (teams.length === 0 && companyAccount?.organizations.length > 0) {
+      if (teams.length === 0 && companyAccount?.organizations && companyAccount.organizations.length > 0) {
         // Create a default team for the first organization
         const createTeamResponse = await fetch('/api/teams', {
           method: 'POST',

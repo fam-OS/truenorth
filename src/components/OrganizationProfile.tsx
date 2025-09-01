@@ -514,73 +514,72 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
         </div>
       )}
 
-        {/* Executive Team */}
-        {executiveTeam.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Executive Team</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {executiveTeam.map((exec) => (
-                <div key={exec.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-blue-600">
-                        {exec.name.charAt(0)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">{exec.name}</p>
-                    <p className="text-xs text-gray-500">{exec.role}</p>
+      {/* Executive Team */}
+      {executiveTeam.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">Executive Team</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {executiveTeam.map((exec) => (
+              <div key={exec.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-blue-600">
+                      {exec.name.charAt(0)}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Business Units */}
-        {organization.businessUnits && organization.businessUnits.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Business Units</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {organization.businessUnits.map((bu) => (
-                <Link
-                  key={bu.id}
-                  href={`/business-units/${bu.id}`}
-                  className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <h4 className="font-medium text-gray-900">{bu.name}</h4>
-                  {bu.description && (
-                    <p className="mt-1 text-sm text-gray-600">{bu.description}</p>
-                  )}
-                  {bu.stakeholders && bu.stakeholders.length > 0 && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      {bu.stakeholders.length} stakeholder{bu.stakeholders.length !== 1 ? 's' : ''}
-                    </p>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* CEO Goals */}
-        {organization.ceoGoals && organization.ceoGoals.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-500 mb-3">CEO Goals</h3>
-            <div className="space-y-2">
-              {organization.ceoGoals.map((goal, index) => (
-                <div key={goal.id} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
-                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-xs font-medium text-yellow-800">
-                    {index + 1}
-                  </span>
-                  <p className="text-sm text-gray-900">{goal.description}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">{exec.name}</p>
+                  <p className="text-xs text-gray-500">{exec.role}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Business Units */}
+      {organization.businessUnits && organization.businessUnits.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">Business Units</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {organization.businessUnits.map((bu) => (
+              <Link
+                key={bu.id}
+                href={`/business-units/${bu.id}`}
+                className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <h4 className="font-medium text-gray-900">{bu.name}</h4>
+                {bu.description && (
+                  <p className="mt-1 text-sm text-gray-600">{bu.description}</p>
+                )}
+                {bu.stakeholders && bu.stakeholders.length > 0 && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    {bu.stakeholders.length} stakeholder{bu.stakeholders.length !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CEO Goals */}
+      {organization.ceoGoals && organization.ceoGoals.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">CEO Goals</h3>
+          <div className="space-y-2">
+            {organization.ceoGoals.map((goal, index) => (
+              <div key={goal.id} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
+                <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-xs font-medium text-yellow-800">
+                  {index + 1}
+                </span>
+                <p className="text-sm text-gray-900">{goal.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

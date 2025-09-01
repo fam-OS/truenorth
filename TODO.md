@@ -39,11 +39,10 @@
 ## Production preparedness
 - Done 
 ## CompanyAccount
-- API tests for AccountProfile
+- Done
 
 ## Improvements 
 - Help text for adding new organization "Business Ops, Servicing, Technology..."
-)
 - Can delete team 
 - See basic org chart to team page
 - See basic timeline view to initiative page
