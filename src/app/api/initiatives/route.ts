@@ -11,21 +11,26 @@ export async function GET(request: Request) {
     const businessUnitId = searchParams.get('businessUnitId') || undefined;
 
     const initiatives = await prisma.initiative.findMany({
+      select: {
+        id: true,
+        name: true,
+        organizationId: true,
+        ownerId: true,
+        businessUnitId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       where: {
         organizationId: orgId,
         ownerId: ownerId,
         businessUnitId: businessUnitId,
-      },
-      include: {
-        organization: true,
-        owner: true,
-        kpis: true,
       },
       orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json(initiatives);
   } catch (error) {
+    console.error('Error fetching initiatives:', error);
     return handleError(error);
   }
 }

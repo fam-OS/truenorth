@@ -180,7 +180,7 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
       {/* Organization Overview Section */}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Organization Overview</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Organization</h2>
           <div className="flex space-x-2">
             {!isEditingOverview ? (
               <button
@@ -188,7 +188,7 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <PencilIcon className="h-4 w-4 mr-2" />
-                Edit Overview
+                Edit Organization
               </button>
             ) : (
               <>
@@ -234,180 +234,6 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
                 rows={3}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Founder */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Founder</label>
-                <div className="mt-1 flex">
-                  <select
-                    value={overviewData.founderId}
-                    onChange={(e) => setOverviewData(prev => ({ ...prev, founderId: e.target.value }))}
-                    className="block w-full rounded-l-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  >
-                    <option value="">Select Founder</option>
-                    {teamMembers.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.name} {member.role ? `(${member.role})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => setShowCreateMember(true)}
-                    className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-r-md"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                  </button>
-                </div>
-                
-                {/* Create New Member Form */}
-                {showCreateMember && (
-                  <div className="mt-2 p-3 border border-gray-200 rounded-md bg-gray-50">
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        placeholder="Name"
-                        value={newMemberData.name}
-                        onChange={(e) => setNewMemberData(prev => ({ ...prev, name: e.target.value }))}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      />
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        value={newMemberData.email}
-                        onChange={(e) => setNewMemberData(prev => ({ ...prev, email: e.target.value }))}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Role"
-                        value={newMemberData.role}
-                        onChange={(e) => setNewMemberData(prev => ({ ...prev, role: e.target.value }))}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      />
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={handleCreateTeamMember}
-                          disabled={creatingMember || !newMemberData.name.trim()}
-                          className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {creatingMember ? 'Creating...' : 'Create Member'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowCreateMember(false);
-                            setNewMemberData({ name: '', email: '', role: '' });
-                          }}
-                          className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Employees */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Employees</label>
-                <input
-                  type="text"
-                  value={overviewData.employees}
-                  onChange={(e) => setOverviewData(prev => ({ ...prev, employees: e.target.value }))}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  placeholder="e.g., 50-100"
-                />
-              </div>
-
-              {/* Headquarters */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Headquarters</label>
-                <input
-                  type="text"
-                  value={overviewData.headquarters}
-                  onChange={(e) => setOverviewData(prev => ({ ...prev, headquarters: e.target.value }))}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  placeholder="City, State/Country"
-                />
-              </div>
-
-              {/* Launch Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Launch Date</label>
-                <input
-                  type="text"
-                  value={overviewData.launchedDate}
-                  onChange={(e) => setOverviewData(prev => ({ ...prev, launchedDate: e.target.value }))}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  placeholder="e.g., January 2020"
-                />
-              </div>
-
-              {/* Company Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Company Type</label>
-                <select
-                  value={overviewData.isPrivate ? 'private' : 'public'}
-                  onChange={(e) => setOverviewData(prev => ({ ...prev, isPrivate: e.target.value === 'private' }))}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="private">Private</option>
-                  <option value="public">Public</option>
-                </select>
-              </div>
-
-              {/* Traded As (only for public companies) */}
-              {!overviewData.isPrivate && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Traded As</label>
-                  <input
-                    type="text"
-                    value={overviewData.tradedAs}
-                    onChange={(e) => setOverviewData(prev => ({ ...prev, tradedAs: e.target.value }))}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="e.g., NASDAQ: AAPL"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Links */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-700">External Links</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Corporate Intranet</label>
-                  <input
-                    type="url"
-                    value={overviewData.corporateIntranet}
-                    onChange={(e) => setOverviewData(prev => ({ ...prev, corporateIntranet: e.target.value }))}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Glassdoor Link</label>
-                  <input
-                    type="url"
-                    value={overviewData.glassdoorLink}
-                    onChange={(e) => setOverviewData(prev => ({ ...prev, glassdoorLink: e.target.value }))}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="https://glassdoor.com/..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">LinkedIn Link</label>
-                  <input
-                    type="url"
-                    value={overviewData.linkedinLink}
-                    onChange={(e) => setOverviewData(prev => ({ ...prev, linkedinLink: e.target.value }))}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="https://linkedin.com/company/..."
-                  />
-                </div>
-              </div>
             </div>
           </div>
         ) : (
@@ -529,7 +355,12 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
                   </div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">{exec.name}</p>
+                  <Link 
+                    href={`/team-members/${exec.id}`}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800 truncate block"
+                  >
+                    {exec.name}
+                  </Link>
                   <p className="text-xs text-gray-500">{exec.role}</p>
                 </div>
               </div>

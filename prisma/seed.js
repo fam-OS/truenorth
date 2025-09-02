@@ -1,19 +1,26 @@
 /* eslint-disable no-console */
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create a user first
-  const user = await prisma.user.create({
-    data: {
+  // Create a user first with hashed password
+  const hashedPassword = await bcrypt.hash('demo123', 10);
+  const user = await prisma.user.upsert({
+    where: { email: 'demo@example.com' },
+    update: {},
+    create: {
       email: 'demo@example.com',
       name: 'Demo User',
+      passwordHash: hashedPassword,
     },
   });
 
   // Create CompanyAccount
-  const companyAccount = await prisma.companyAccount.create({
-    data: {
+  const companyAccount = await prisma.companyAccount.upsert({
+    where: { userId: user.id },
+    update: {},
+    create: {
       userId: user.id,
       name: 'Acme Corp',
       description: 'Demo company',
@@ -49,9 +56,9 @@ async function main() {
   // Business Unit
   const bu = await prisma.businessUnit.create({
     data: {
-      name: 'E-Commerce',
-      description: 'Web storefront BU',
-      orgId: org.id,
+      name: "E-Commerce",
+      description: "Web storefront BU",
+      organizationId: org.id,
     },
   });
 

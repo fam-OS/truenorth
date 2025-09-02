@@ -26,7 +26,7 @@ export default function GettingStartedChecklist() {
     },
     {
       id: 'business-units',
-      title: 'Add stakeholders and goals for business units',
+      title: 'Add business units and track their goals',
       description: 'Organize your company structure and key people',
       href: '/business-units',
       completed: false,

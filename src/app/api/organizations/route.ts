@@ -14,29 +14,11 @@ export async function GET() {
         description: true,
         createdAt: true,
         updatedAt: true,
-        businessUnits: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            stakeholders: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-              }
-            }
-          }
-        },
-        ceoGoals: {
-          select: {
-            id: true,
-            description: true,
-            createdAt: true,
-          }
-        }
-      }
+        companyAccountId: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     console.log(`Found ${organizations.length} organizations`);

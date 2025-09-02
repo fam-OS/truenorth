@@ -15,12 +15,18 @@ export async function GET(
   try {
     const { organizationId } = await params;
     const teams = await prisma.team.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        organizationId: true,
+      },
       where: { organizationId },
       orderBy: { name: 'asc' },
-      include: { members: true },
     });
     return NextResponse.json(teams);
   } catch (error) {
+    console.error('Error fetching teams:', error);
     return handleError(error);
   }
 }
@@ -36,6 +42,7 @@ export async function POST(
 
     const team = await prisma.team.create({
       data: {
+        id: `team_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: data.name,
         description: data.description ?? undefined,
         organizationId,

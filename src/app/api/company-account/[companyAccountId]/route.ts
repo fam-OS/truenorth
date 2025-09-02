@@ -2,7 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { updateCompanyAccountSchema } from '@/lib/validations/company-account';
+import { z } from 'zod';
+
+const updateCompanyAccountSchema = z.object({
+  name: z.string().min(1, 'Company name is required').optional(),
+  description: z.string().optional(),
+  founderId: z.string().optional(),
+  employees: z.string().optional(),
+  headquarters: z.string().optional(),
+  launchedDate: z.string().optional(),
+  isPrivate: z.boolean().optional(),
+  tradedAs: z.string().optional(),
+  corporateIntranet: z.string().url().optional().or(z.literal('')),
+  glassdoorLink: z.string().url().optional().or(z.literal('')),
+  linkedinLink: z.string().url().optional().or(z.literal(''))
+});
 
 export async function GET(
   request: NextRequest,
@@ -74,13 +88,43 @@ export async function PUT(
     }
 
     const body = await request.json();
+    console.log('Request body:', body);
     const validatedData = updateCompanyAccountSchema.parse(body);
+    console.log('Validated data:', validatedData);
+
+    // Extract founderId and validate if provided
+    const { founderId, ...companyData } = validatedData;
+    
+    // If founderId is provided and not empty, verify it exists
+    if (founderId && founderId !== '') {
+      const founderExists = await prisma.teamMember.findUnique({
+        where: { id: founderId }
+      });
+      
+      if (!founderExists) {
+        return NextResponse.json(
+          { error: 'Founder not found' },
+          { status: 400 }
+        );
+      }
+    }
 
     const companyAccount = await prisma.companyAccount.update({
       where: {
         id: companyAccountId
       },
-      data: validatedData,
+      data: {
+        ...companyData,
+        ...(founderId && founderId !== '' ? {
+          founder: {
+            connect: { id: founderId }
+          }
+        } : founderId === '' ? {
+          founder: {
+            disconnect: true
+          }
+        } : {})
+      },
       include: {
         founder: true,
         organizations: {
@@ -95,11 +139,17 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating company account:', error);
     
-    if (error instanceof Error && error.name === 'ZodError') {
+    if (error && typeof error === 'object' && 'issues' in error) {
       return NextResponse.json(
-        { error: 'Invalid data', details: error.message },
+        { error: 'Invalid data', details: error.issues },
         { status: 400 }
       );
+    }
+    
+    // Check for Prisma errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error('Prisma error code:', error.code);
+      console.error('Prisma error details:', error);
     }
 
     return NextResponse.json(

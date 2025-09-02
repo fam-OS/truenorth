@@ -17,11 +17,17 @@ export async function GET(
     const { teamId } = await params;
     const team = await prisma.team.findUnique({
       where: { id: teamId },
-      include: { organization: true, members: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        organizationId: true,
+      },
     });
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     return NextResponse.json(team);
   } catch (error) {
+    console.error('Error fetching team:', error);
     return handleError(error);
   }
 }

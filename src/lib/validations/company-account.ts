@@ -14,7 +14,37 @@ export const createCompanyAccountSchema = z.object({
   linkedinLink: z.string().url().optional().or(z.literal(''))
 });
 
-export const updateCompanyAccountSchema = createCompanyAccountSchema.partial();
+export const updateCompanyAccountSchema = createCompanyAccountSchema.partial().refine(
+  (data) => {
+    // If corporateIntranet is provided and not empty, it must be a valid URL
+    if (data.corporateIntranet && data.corporateIntranet !== '') {
+      try {
+        new URL(data.corporateIntranet);
+      } catch {
+        return false;
+      }
+    }
+    // Same for other URL fields
+    if (data.glassdoorLink && data.glassdoorLink !== '') {
+      try {
+        new URL(data.glassdoorLink);
+      } catch {
+        return false;
+      }
+    }
+    if (data.linkedinLink && data.linkedinLink !== '') {
+      try {
+        new URL(data.linkedinLink);
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  },
+  {
+    message: "Invalid URL format"
+  }
+);
 
 export type CreateCompanyAccountData = z.infer<typeof createCompanyAccountSchema>;
 export type UpdateCompanyAccountData = z.infer<typeof updateCompanyAccountSchema>;

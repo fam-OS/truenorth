@@ -355,20 +355,21 @@ export default function OrganizationsPage() {
         onUpdate={fetchCompanyAccount}
       />
 
-      {/* Business Units Section */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-900">Company Organizations</h1>
-          <button
-            onClick={() => {
-              setEditingOrg(null);
-              setShowCreateOrg(true);
-            }}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            New Organization
-          </button>
-        </div>
+      {/* Business Units Section - Only show if company account exists */}
+      {companyAccount && (
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <h1 className="text-xl font-semibold text-gray-900">Company Organizations</h1>
+            <button
+              onClick={() => {
+                setEditingOrg(null);
+                setShowCreateOrg(true);
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              New Organization
+            </button>
+          </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
@@ -516,7 +517,8 @@ export default function OrganizationsPage() {
             </ul>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Create/Edit Organization Modal */}
       {showCreateOrg && (

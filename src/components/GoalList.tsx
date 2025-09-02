@@ -55,26 +55,25 @@ export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
                       <PencilIcon className="h-4 w-4" />
                     </button>
                     <p className="text-sm font-medium text-gray-900">{goal.title}</p>
-                    <span
-                      className={clsx(
-                        'ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                        statusColors[goal.status]
-                      )}
-                    >
-                      {goal.status}
-                    </span>
+                    {goal.status && (
+                      <span
+                        className={clsx(
+                          'ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                          statusColors[goal.status]
+                        )}
+                      >
+                        {goal.status}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {format(new Date(goal.endDate), 'MMM d, yyyy')}
+                    {goal.quarter} {goal.year}
                   </div>
                 </div>
                 <div className="mt-2">
                   <p className="text-sm text-gray-500">{goal.description}</p>
                 </div>
                 <div className="mt-2 flex space-x-4 text-xs text-gray-500">
-                  <div>
-                    Start: {format(new Date(goal.startDate), 'MMM d, yyyy')}
-                  </div>
                   {goal.requirements && (
                     <div className="flex items-center">
                       <span className="h-1 w-1 bg-gray-400 rounded-full mr-1"></span>

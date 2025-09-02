@@ -382,7 +382,7 @@ export default function BusinessUnitsPage() {
                   {selectedUnit.name}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {selectedUnit.organization.name}
+                  {selectedUnit.Organization?.name || 'No organization'}
                 </p>
               </div>
               <div className="flex items-center space-x-4">
@@ -416,7 +416,7 @@ export default function BusinessUnitsPage() {
                   </button>
                 </div>
                 <GoalList
-                  goals={selectedUnit.goals || []}
+                  goals={selectedUnit.Goal || []}
                   onEditGoal={handleEditGoal}
                   onCreateGoal={handleCreateNewGoal}
                 />
@@ -438,7 +438,12 @@ export default function BusinessUnitsPage() {
                       <li key={stakeholder.id} className="px-4 py-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-blue-600">{stakeholder.name}</p>
+                            <button
+                              onClick={() => window.location.href = `/stakeholders/${stakeholder.id}`}
+                              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {stakeholder.name}
+                            </button>
                           </div>
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                             {stakeholder.role}
@@ -478,7 +483,7 @@ export default function BusinessUnitsPage() {
               </button>
             </div>
             <StakeholderList
-              stakeholders={selectedUnit.stakeholders || []}
+              stakeholders={selectedUnit.Stakeholder || []}
               onSelectStakeholder={setSelectedStakeholder}
               onCreateStakeholder={() => setViewMode('createStakeholder')}
             />
@@ -575,7 +580,7 @@ export default function BusinessUnitsPage() {
                 {organizations.map((org) => (
                   <div key={org.id}>
                     <BusinessUnitList
-                      businessUnits={businessUnits.filter(unit => unit.organization.id === org.id)}
+                      businessUnits={businessUnits.filter(unit => unit.Organization?.id === org.id)}
                       onSelectUnit={(unit) => {
                         setSelectedUnit(unit);
                         setViewMode('detail');

@@ -14,6 +14,22 @@ export async function GET(request: Request) {
     const year = searchParams.get('year') ? parseInt(searchParams.get('year') as string, 10) : undefined;
 
     const kpis = await prisma.kpi.findMany({
+      select: {
+        id: true,
+        name: true,
+        targetMetric: true,
+        actualMetric: true,
+        metTarget: true,
+        metTargetPercent: true,
+        quarter: true,
+        year: true,
+        organizationId: true,
+        teamId: true,
+        initiativeId: true,
+        businessUnitId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       where: {
         organizationId: orgId,
         teamId: teamId,
@@ -22,12 +38,12 @@ export async function GET(request: Request) {
         quarter: quarter as any,
         year: year,
       },
-      include: { team: true, initiative: true },
       orderBy: [{ year: 'desc' }, { quarter: 'asc' }],
     });
 
     return NextResponse.json(kpis);
   } catch (error) {
+    console.error('Error fetching KPIs:', error);
     return handleError(error);
   }
 }

@@ -15,7 +15,7 @@ export async function GET(
         stakeholderId,
       },
       orderBy: {
-        startDate: 'asc',
+        createdAt: 'desc',
       },
     });
 

@@ -43,7 +43,10 @@ export async function POST(
     if (data.role) memberData.role = data.role;
     
     const member = await prisma.teamMember.create({
-      data: memberData,
+      data: {
+        ...memberData,
+        id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      },
     });
 
     return NextResponse.json(member, { status: 201 });

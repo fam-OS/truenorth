@@ -41,6 +41,16 @@ export default function DashboardPage() {
 
   // Helper function to format status with visual indicators
   const formatStatus = (status: string) => {
+    // Handle null, undefined, or non-string status
+    if (!status || typeof status !== 'string') {
+      return {
+        label: 'Unknown',
+        color: 'bg-gray-100 text-gray-800',
+        progress: 0,
+        icon: '📄'
+      };
+    }
+
     const statusConfig = {
       'IN_PROGRESS': { 
         label: 'In Progress', 

@@ -3,7 +3,13 @@ import { z } from 'zod';
 export const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  companyAccountId: z.string().min(1, 'Company Account ID is required'),
+  companyAccountId: z.string().min(1, 'Company Account ID is required').optional(),
+});
+
+export const updateOrganizationSchema = z.object({
+  name: z.string().min(1, 'Name is required').optional(),
+  description: z.string().optional(),
+  companyAccountId: z.string().min(1, 'Company Account ID is required').optional(),
 });
 
 export const createBusinessUnitSchema = z.object({
@@ -20,13 +26,12 @@ export const createStakeholderSchema = z.object({
 
 export const createGoalSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  startDate: z.string().transform((str) => new Date(str)),
-  endDate: z.string().transform((str) => new Date(str)),
+  description: z.string().optional(),
+  quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']),
+  year: z.number().int().min(2020).max(2030),
   stakeholderId: z.string().min(1, 'Stakeholder ID is required'),
-  requirements: z.string().optional(),
   progressNotes: z.string().optional(),
-  status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'AT_RISK', 'BLOCKED', 'CANCELLED']).default('NOT_STARTED'),
+  status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'AT_RISK', 'BLOCKED', 'CANCELLED']).optional(),
 });
 
 export const createMeetingSchema = z.object({

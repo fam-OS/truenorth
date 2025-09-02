@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
-import { createOrganizationSchema } from '@/lib/validations/organization';
+import { createOrganizationSchema, updateOrganizationSchema } from '@/lib/validations/organization';
 
 export async function GET(
   _request: Request,
@@ -11,9 +11,13 @@ export async function GET(
     const { organizationId } = await params;
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
-      include: {
-        businessUnits: true,
-        teams: true,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        companyAccountId: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -26,6 +30,7 @@ export async function GET(
 
     return NextResponse.json(organization);
   } catch (error) {
+    console.error('Error fetching organization:', error);
     return handleError(error);
   }
 }
@@ -42,7 +47,9 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       // Delete business units and their related data
       const businessUnits = await tx.businessUnit.findMany({
-        where: { orgId: organizationId }
+        where: { 
+          organizationId: organizationId
+        }
       });
       
       for (const bu of businessUnits) {
@@ -59,7 +66,9 @@ export async function DELETE(
       
       // Delete business units
       await tx.businessUnit.deleteMany({
-        where: { orgId: organizationId }
+        where: { 
+          organizationId: organizationId
+        }
       });
       
       // Delete teams and team members
@@ -117,21 +126,15 @@ export async function PUT(
   try {
     const { organizationId } = await params;
     const json = await request.json();
-    const data = createOrganizationSchema.parse(json);
+    const data = updateOrganizationSchema.parse(json);
 
-    const updateData = data;
+    const updateData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined)
+    );
 
     const updated = await prisma.organization.update({
       where: { id: organizationId },
       data: updateData,
-      include: {
-        businessUnits: {
-          include: {
-            stakeholders: true,
-            metrics: true,
-          },
-        },
-      },
     });
 
     return NextResponse.json(updated);

@@ -111,7 +111,9 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
         onUpdate?.()
         window.location.reload()
       } else {
-        console.error('Failed to update company account')
+        const errorData = await response.json()
+        console.error('Failed to update company account:', errorData)
+        console.error('Response status:', response.status)
       }
     } catch (error) {
       console.error('Error updating company account:', error)
@@ -253,20 +255,21 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
   if (!companyAccount) {
     return (
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Company Overview</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditingOverview(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Company
-          </Button>
         </CardHeader>
         <CardContent>
           {!isEditingOverview ? (
-            <p className="text-muted-foreground">No company account found. Please create one to get started.</p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No company account found. Please create one to get started.</p>
+              <Button
+                onClick={() => setIsEditingOverview(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Company
+              </Button>
+            </div>
           ) : (
             <div className="space-y-6">
               {/* Company Name */}
@@ -343,7 +346,12 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                       type="button"
                       variant={overviewData.isPrivate ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setOverviewData({ ...overviewData, isPrivate: true })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Private button clicked, current isPrivate:', overviewData.isPrivate);
+                        setOverviewData({ ...overviewData, isPrivate: true });
+                      }}
                     >
                       Private
                     </Button>
@@ -351,7 +359,12 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                       type="button"
                       variant={!overviewData.isPrivate ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setOverviewData({ ...overviewData, isPrivate: false })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Public button clicked, current isPrivate:', overviewData.isPrivate);
+                        setOverviewData({ ...overviewData, isPrivate: false });
+                      }}
                     >
                       Public
                     </Button>
@@ -628,7 +641,12 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                     type="button"
                     variant={overviewData.isPrivate ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setOverviewData({ ...overviewData, isPrivate: true })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Private button clicked (edit mode), current isPrivate:', overviewData.isPrivate);
+                      setOverviewData({ ...overviewData, isPrivate: true });
+                    }}
                   >
                     Private
                   </Button>
@@ -636,7 +654,12 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                     type="button"
                     variant={!overviewData.isPrivate ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setOverviewData({ ...overviewData, isPrivate: false })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Public button clicked (edit mode), current isPrivate:', overviewData.isPrivate);
+                      setOverviewData({ ...overviewData, isPrivate: false });
+                    }}
                   >
                     Public
                   </Button>
