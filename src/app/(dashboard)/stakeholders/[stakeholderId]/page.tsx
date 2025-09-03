@@ -89,6 +89,27 @@ export default function StakeholderDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!stakeholder) return;
+    const confirmed = window.confirm('Delete this stakeholder permanently? This cannot be undone.');
+    if (!confirmed) return;
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/stakeholders/${stakeholder.id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Failed to delete');
+      }
+      showToast({ title: 'Stakeholder deleted', description: 'The stakeholder was removed.' });
+      router.push('/stakeholders');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete';
+      showToast({ title: 'Failed to delete stakeholder', description: message, type: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -169,7 +190,15 @@ export default function StakeholderDetailPage() {
           </select>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={saving}
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+          >
+            Delete
+          </button>
           <button
             disabled={saving}
             onClick={handleSave}

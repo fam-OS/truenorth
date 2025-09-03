@@ -314,9 +314,11 @@ model Stakeholder {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   reportsToId       String?
+  teamMemberId      String        @unique
   Goal              Goal[]
   Meeting           Meeting[]
   BusinessUnit      BusinessUnit? @relation(fields: [businessUnitId], references: [id])
+  TeamMember        TeamMember    @relation(fields: [teamMemberId], references: [id])
   Stakeholder       Stakeholder?  @relation("StakeholderToStakeholder", fields: [reportsToId], references: [id])
   other_Stakeholder Stakeholder[] @relation("StakeholderToStakeholder")
 }
@@ -380,6 +382,7 @@ model TeamMember {
   TeamMember       TeamMember?      @relation("TeamMemberToTeamMember", fields: [reportsToId], references: [id])
   other_TeamMember TeamMember[]     @relation("TeamMemberToTeamMember")
   Team             Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  Stakeholder      Stakeholder?
 
   @@unique([teamId, email])
   @@index([teamId])

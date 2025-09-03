@@ -7,11 +7,23 @@ import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const businessUnits = await prisma.businessUnit.findMany({
-      orderBy: {
-        createdAt: 'desc',
+    const businessUnitsRaw = await prisma.businessUnit.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        Stakeholder: true,
+        Goal: true,
+        Metric: true,
+        // BusinessUnit has no Organization relation per schema.prisma
       },
     });
+
+    // Normalize keys for UI compatibility: provide both capitalized and lowercase collections
+    const businessUnits = businessUnitsRaw.map((bu: any) => ({
+      ...bu,
+      stakeholders: bu.Stakeholder ?? [],
+      goals: bu.Goal ?? [],
+      metrics: bu.Metric ?? [],
+    }));
 
     return NextResponse.json(businessUnits);
   } catch (error) {

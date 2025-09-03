@@ -55,17 +55,17 @@ export async function POST(request: Request) {
     if (!org) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 400 });
     }
-    createData.organization = { connect: { id: finalOrgId } };
+    createData.Organization = { connect: { id: finalOrgId } };
     if (ownerId !== undefined) {
-      createData.owner = ownerId ? { connect: { id: ownerId } } : undefined;
+      createData.TeamMember = ownerId ? { connect: { id: ownerId } } : undefined;
     }
     if (businessUnitId !== undefined) {
-      createData.businessUnit = businessUnitId ? { connect: { id: businessUnitId } } : undefined;
+      createData.BusinessUnit = businessUnitId ? { connect: { id: businessUnitId } } : undefined;
     }
 
     const initiative = await prisma.initiative.create({
-      data: createData,
-      include: { organization: true, owner: true },
+      data: { id: crypto.randomUUID(), ...createData },
+      include: { Organization: true, TeamMember: true },
     });
 
     return NextResponse.json(initiative, { status: 201 });

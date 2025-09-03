@@ -11,7 +11,7 @@ export async function GET(
     const { id } = await params;
     const initiative = await prisma.initiative.findUnique({
       where: { id: id },
-      include: { organization: true, owner: true, kpis: true },
+      include: { Organization: true, TeamMember: true, Kpi: true },
     });
 
     if (!initiative) {
@@ -33,19 +33,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { organizationId, ownerId, businessUnitId, ...rest } = data as any;
     const updateData: any = { ...rest };
     if (organizationId) {
-      updateData.organization = { connect: { id: organizationId } };
+      updateData.Organization = { connect: { id: organizationId } };
     }
     if (ownerId !== undefined) {
-      updateData.owner = ownerId ? { connect: { id: ownerId } } : { disconnect: true };
+      updateData.TeamMember = ownerId ? { connect: { id: ownerId } } : { disconnect: true };
     }
     if (businessUnitId !== undefined) {
-      updateData.businessUnit = businessUnitId ? { connect: { id: businessUnitId } } : { disconnect: true };
+      updateData.BusinessUnit = businessUnitId ? { connect: { id: businessUnitId } } : { disconnect: true };
     }
 
     const updated = await prisma.initiative.update({
       where: { id: id },
       data: updateData,
-      include: { organization: true, owner: true },
+      include: { Organization: true, TeamMember: true, Kpi: true },
     });
 
     return NextResponse.json(updated);

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { StakeholderList } from '@/components/StakeholderList';
 import { BusinessUnitList } from '@/components/BusinessUnitList';
-import type { BusinessUnitWithDetails } from '@/types/prisma';
 import { useToast } from '@/components/ui/toast';
 
 export default function UnitsAndStakeholdersPage() {
@@ -12,7 +11,7 @@ export default function UnitsAndStakeholdersPage() {
   const mounted = useRef(false);
 
   const [organizations, setOrganizations] = useState<any[]>([]);
-  const [businessUnits, setBusinessUnits] = useState<BusinessUnitWithDetails[]>([]);
+  const [businessUnits, setBusinessUnits] = useState<any[]>([]);
   const [stakeholders, setStakeholders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

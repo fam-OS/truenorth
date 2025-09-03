@@ -76,12 +76,6 @@ export function GoalList({ goals, onCreateGoal, onEditGoal, onSelectGoal }: Goal
                   <p className="text-sm text-gray-500">{goal.description}</p>
                 </div>
                 <div className="mt-2 flex space-x-4 text-xs text-gray-500">
-                  {goal.requirements && (
-                    <div className="flex items-center">
-                      <span className="h-1 w-1 bg-gray-400 rounded-full mr-1"></span>
-                      Has requirements
-                    </div>
-                  )}
                   {goal.progressNotes && (
                     <div className="flex items-center">
                       <span className="h-1 w-1 bg-gray-400 rounded-full mr-1"></span>

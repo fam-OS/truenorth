@@ -4,18 +4,41 @@ import { handleError } from '@/lib/api-response';
 import { z } from 'zod';
 
 const updateStakeholderSchema = z.object({
-  name: z.string().min(1, 'Name is required').optional(),
-  role: z.string().min(1, 'Role is required').optional(),
-  email: z.string().email('Valid email is required').optional().or(z.literal('').transform(() => undefined)),
+  teamMemberId: z.string().optional(),
+  businessUnitId: z.string().nullable().optional(),
   reportsToId: z.string().cuid().nullable().optional(),
 });
 
 export async function GET(_request: Request, { params }: { params: Promise<{ stakeholderId: string }> }) {
   try {
     const { stakeholderId } = await params;
-    const stakeholder = await prisma.stakeholder.findUnique({ where: { id: stakeholderId } });
+    const stakeholder = await prisma.stakeholder.findUnique({ where: { id: stakeholderId }, include: { TeamMember: true } });
     if (!stakeholder) return NextResponse.json({ error: 'Stakeholder not found' }, { status: 404 });
     return NextResponse.json(stakeholder);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ stakeholderId: string }> }) {
+  try {
+    const { stakeholderId } = await params;
+
+    // Ensure stakeholder exists
+    const existing = await prisma.stakeholder.findUnique({ where: { id: stakeholderId } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Stakeholder not found' }, { status: 404 });
+    }
+
+    // Detach relations that would block deletion
+    await prisma.$transaction([
+      // Cast as any to satisfy TS when generated types don't expose Nullable field ops for updateMany
+      prisma.goal.updateMany({ where: { stakeholderId }, data: { stakeholderId: null } as any }),
+      prisma.meeting.deleteMany({ where: { stakeholderId } }),
+    ]);
+
+    await prisma.stakeholder.delete({ where: { id: stakeholderId } });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     return handleError(error);
   }
@@ -28,12 +51,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ stak
     const data = updateStakeholderSchema.parse(body);
 
     const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.role !== undefined) updateData.role = data.role;
-    if (data.email !== undefined) updateData.email = data.email;
+    if (data.teamMemberId !== undefined) updateData.teamMemberId = data.teamMemberId;
+    if (data.businessUnitId !== undefined) updateData.businessUnitId = data.businessUnitId;
     if (data.reportsToId !== undefined) updateData.reportsToId = data.reportsToId;
 
-    const updated = await prisma.stakeholder.update({ where: { id: stakeholderId }, data: updateData });
+    const updated = await prisma.stakeholder.update({ where: { id: stakeholderId }, data: updateData, include: { TeamMember: true } });
     return NextResponse.json(updated);
   } catch (error: any) {
     if (error?.code === 'P2025') {

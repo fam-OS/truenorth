@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
 import { createNoteSchema } from '@/lib/validations/task';
 import { handleError } from '@/lib/api-response';
 
@@ -25,6 +26,7 @@ export async function POST(
 
     const note = await prisma.note.create({
       data: {
+        id: randomUUID(),
         content: data.content,
         taskId: id,
       },

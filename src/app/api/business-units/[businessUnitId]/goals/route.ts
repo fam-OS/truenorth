@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { $Enums } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { z } from 'zod';
@@ -25,7 +26,7 @@ export async function GET(
         businessUnitId: businessUnitId,
       },
       include: {
-        stakeholder: {
+        Stakeholder: {
           select: {
             id: true,
             name: true,
@@ -83,7 +84,7 @@ export async function POST(
       description: z.string().nullable().optional(),
       quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']),
       year: z.number().int().min(2020).max(2030),
-      status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'CANCELLED', 'DEFERRED']).optional(),
+      status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'AT_RISK', 'BLOCKED', 'CANCELLED']).optional(),
       progressNotes: z.string().nullable().optional(),
       // stakeholderId must be provided but is not constrained to UUID in tests
       stakeholderId: z.string().min(1, 'stakeholderId is required'),
@@ -93,12 +94,13 @@ export async function POST(
 
     const goal = await prisma.goal.create({
       data: {
+        id: crypto.randomUUID(),
         title: parsedJson.title,
         description: parsedJson.description ?? null,
         quarter: parsedJson.quarter,
         year: parsedJson.year,
         businessUnitId,
-        ...(parsedJson.status && { status: parsedJson.status }),
+        ...(parsedJson.status && { status: parsedJson.status as $Enums.GoalStatus }),
         stakeholderId: parsedJson.stakeholderId,
         progressNotes: parsedJson.progressNotes ?? null,
       },

@@ -33,6 +33,7 @@ export async function POST(request: Request) {
 
     const created = await prisma.headcountTracker.create({
       data: {
+        id: crypto.randomUUID(),
         teamId: data.teamId,
         organizationId: data.organizationId,
         year: data.year,

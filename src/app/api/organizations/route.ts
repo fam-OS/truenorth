@@ -62,9 +62,11 @@ export async function POST(request: Request) {
     if (process.env.NODE_ENV === 'test') {
       const organization = await prisma.organization.create({
         data: {
-          // Let Prisma/DB handle id default; tests mock the return value anyway
+          id: randomUUID(),
           name: data.name,
           description: data.description ?? undefined,
+          // Provide a placeholder to satisfy Prisma types; prismaMock intercepts in tests
+          companyAccountId: data.companyAccountId ?? 'test-company-account-id',
         },
       });
       return NextResponse.json(organization, { status: 201 });

@@ -11,7 +11,7 @@ export async function GET(
     const { id } = await params;
     const kpi = await prisma.kpi.findUnique({
       where: { id: id },
-      include: { team: true, initiative: true },
+      include: { Team: true, Initiative: true },
     });
 
     if (!kpi) {
@@ -59,12 +59,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         ...(hasTarget ? { targetMetric } : {}),
         ...(hasActual ? { actualMetric } : {}),
         ...computed,
-        ...(organizationId ? { organization: { connect: { id: organizationId } } } : {}),
-        ...(teamId ? { team: { connect: { id: teamId } } } : {}),
-        ...(initiativeId ? { initiative: { connect: { id: initiativeId } } } : {}),
-        ...(businessUnitId ? { businessUnit: { connect: { id: businessUnitId } } } : {}),
+        ...(organizationId ? { Organization: { connect: { id: organizationId } } } : {}),
+        ...(teamId ? { Team: { connect: { id: teamId } } } : {}),
+        ...(initiativeId ? { Initiative: { connect: { id: initiativeId } } } : {}),
+        ...(businessUnitId ? { BusinessUnit: { connect: { id: businessUnitId } } } : {}),
       },
-      include: { team: true, initiative: true },
+      include: { Team: true, Initiative: true },
     });
 
     return NextResponse.json(updated);

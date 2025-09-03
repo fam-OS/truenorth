@@ -47,9 +47,9 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       // Delete business units and their related data
       const businessUnits = await tx.businessUnit.findMany({
-        where: { 
-          organizationId: organizationId
-        }
+        where: {
+          Team: { some: { organizationId } },
+        },
       });
       
       for (const bu of businessUnits) {
@@ -66,9 +66,9 @@ export async function DELETE(
       
       // Delete business units
       await tx.businessUnit.deleteMany({
-        where: { 
-          organizationId: organizationId
-        }
+        where: {
+          Team: { some: { organizationId } },
+        },
       });
       
       // Delete teams and team members

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
     // Create support request
     const supportRequest = await prisma.supportRequest.create({
       data: {
+        id: randomUUID(),
         subject,
         category,
         priority: priority || 'medium',

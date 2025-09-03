@@ -1,16 +1,14 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, $Enums } from '@prisma/client';
 
-export type OrganizationWithBusinessUnits = Prisma.OrganizationGetPayload<{
-  include: {
-    businessUnits: {
-      include: {
-        stakeholders: true;
-        metrics: true;
-        goals: true;
-      };
-    };
-  };
-}>;
+// Note: Keep this aligned with what /api/organizations returns. We only use a few fields in the UI.
+export type OrganizationWithBusinessUnits = {
+  id: string;
+  name: string;
+  description: string | null;
+  companyAccountId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export type BusinessUnitWithDetails = {
   id: string;
@@ -35,6 +33,7 @@ export type BusinessUnitWithDetails = {
     role: string;
     businessUnitId: string | null;
     reportsToId: string | null;
+    teamMemberId: string;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -45,6 +44,7 @@ export type BusinessUnitWithDetails = {
     role: string;
     businessUnitId: string | null;
     reportsToId: string | null;
+    teamMemberId: string;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -72,15 +72,14 @@ export type BusinessUnitWithDetails = {
   }>;
   Goal: Array<{
     id: string;
-    description: string;
     title: string;
-    startDate: Date;
-    endDate: Date;
-    status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD';
-    stakeholderId: string;
-    requirements: string | null;
+    description: string | null;
+    status: $Enums.GoalStatus | null;
+    stakeholderId: string | null;
     progressNotes: string | null;
-    businessUnitId: string | null;
+    businessUnitId: string;
+    quarter: $Enums.Quarter;
+    year: number;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -88,7 +87,7 @@ export type BusinessUnitWithDetails = {
 
 export type StakeholderWithDetails = Prisma.StakeholderGetPayload<{
   include: {
-    goals: true;
-    meetings: true;
+    Goal: true;
+    Meeting: true;
   };
 }>;

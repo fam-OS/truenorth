@@ -79,17 +79,18 @@ export async function POST(request: Request) {
 
     const kpi = await prisma.kpi.create({
       data: {
+        id: crypto.randomUUID(),
         ...rest,
         targetMetric,
         actualMetric,
         metTarget,
         metTargetPercent,
-        ...(finalOrgId ? { organization: { connect: { id: finalOrgId } } } : {}),
-        team: { connect: { id: teamId } },
-        ...(initiativeId ? { initiative: { connect: { id: initiativeId } } } : {}),
-        ...(businessUnitId ? { businessUnit: { connect: { id: businessUnitId } } } : {}),
+        ...(finalOrgId ? { Organization: { connect: { id: finalOrgId } } } : {}),
+        ...(teamId ? { Team: { connect: { id: teamId } } } : {}),
+        ...(initiativeId ? { Initiative: { connect: { id: initiativeId } } } : {}),
+        ...(businessUnitId ? { BusinessUnit: { connect: { id: businessUnitId } } } : {}),
       },
-      include: { team: true, initiative: true },
+      include: { Team: true, Initiative: true },
     });
 
     return NextResponse.json(kpi, { status: 201 });

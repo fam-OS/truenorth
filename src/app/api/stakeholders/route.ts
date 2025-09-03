@@ -3,38 +3,36 @@ import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { z } from 'zod';
 
-const createGlobalStakeholderSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  role: z.string().min(1, 'Role is required'),
-  email: z.string().email('Valid email is required').optional(),
+// New contract: Stakeholder is a link to a TeamMember plus optional business unit.
+const createStakeholderSchema = z.object({
+  teamMemberId: z.string().min(1, 'teamMemberId is required'),
+  businessUnitId: z.string().optional().nullable(),
 });
 
 export async function POST(request: Request) {
   try {
     const json = await request.json();
-    console.log('Stakeholder creation request:', json);
-    const data = createGlobalStakeholderSchema.parse(json);
-    console.log('Validated stakeholder data:', data);
+    const data = createStakeholderSchema.parse(json);
 
-    // Generate unique ID for stakeholder
-    const stakeholderId = `stakeholder-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-    
-    // After running Prisma migration + generate, types will align. Until then, suppress mismatch.
+    // Validate TeamMember exists
+    const tm = await prisma.teamMember.findUnique({ where: { id: data.teamMemberId } });
+    if (!tm) return NextResponse.json({ error: 'TeamMember not found' }, { status: 404 });
+
     const stakeholder = await prisma.stakeholder.create({
       data: {
-        id: stakeholderId,
-        name: data.name,
-        role: data.role,
-        email: data.email ?? '',
-        // businessUnitId left undefined for BU-agnostic stakeholders
-        // updatedAt now handled automatically by @updatedAt directive
+        id: `stakeholder-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+        teamMemberId: data.teamMemberId,
+        businessUnitId: data.businessUnitId ?? undefined,
+        // Deprecated fields are left untouched and will be dropped in later migration
+        name: tm.name,
+        email: tm.email ?? '',
+        role: tm.role ?? '',
       },
+      include: { TeamMember: true },
     });
 
-    console.log('Stakeholder created successfully:', stakeholder);
     return NextResponse.json(stakeholder, { status: 201 });
   } catch (error) {
-    console.error('Error creating stakeholder:', error);
     return handleError(error);
   }
 }
@@ -43,12 +41,39 @@ export const GET = async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const unassigned = searchParams.get('unassigned');
+    const includeAssigned = searchParams.get('includeAssigned');
+    const businessUnitId = searchParams.get('businessUnitId');
 
-    const stakeholders = await prisma.stakeholder.findMany({ orderBy: { name: 'asc' } });
-    const result = unassigned === 'true'
-      ? stakeholders.filter((s) => s.businessUnitId == null)
-      : stakeholders;
-    return NextResponse.json(result);
+    // If includeAssigned=true and a businessUnitId is provided, return all stakeholders
+    // EXCEPT those already assigned to the current business unit. This allows moving stakeholders
+    // from other units or linking unassigned ones.
+    if (includeAssigned === 'true' && businessUnitId) {
+      const stakeholders = await prisma.stakeholder.findMany({
+        where: {
+          OR: [
+            { businessUnitId: null },
+            { NOT: { businessUnitId } },
+          ],
+        },
+        include: { TeamMember: true },
+        orderBy: { name: 'asc' },
+      });
+      return NextResponse.json(stakeholders);
+    }
+
+    // Legacy behavior: only unassigned when explicitly requested
+    if (unassigned === 'true') {
+      const stakeholders = await prisma.stakeholder.findMany({
+        where: { businessUnitId: null },
+        include: { TeamMember: true },
+        orderBy: { name: 'asc' },
+      });
+      return NextResponse.json(stakeholders);
+    }
+
+    // Default: return all
+    const stakeholders = await prisma.stakeholder.findMany({ include: { TeamMember: true }, orderBy: { name: 'asc' } });
+    return NextResponse.json(stakeholders);
   } catch (error) {
     return handleError(error);
   }

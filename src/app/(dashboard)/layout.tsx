@@ -34,7 +34,7 @@ export default function DashboardLayout({
     () =>
       [
         { href: '/organizations', label: 'Organizations', icon: BuildingOfficeIcon, desc: 'Manage company and business units' },
-        { href: '/units-stakeholders', label: 'Business Units & Stakeholders', icon: BuildingOfficeIcon, desc: 'Manage org structure and stakeholders' },
+        { href: '/business-units', label: 'Business Units', icon: BuildingOfficeIcon, desc: 'Units, stakeholders, and goals' },
         { href: '/financial', label: 'Financial Management', icon: PresentationChartBarIcon, desc: 'Track costs, forecasts, and actuals' },
         { href: '/initiatives-kpis', label: 'Initiatives & KPIs', icon: PresentationChartBarIcon, desc: 'Plan, execute, and measure outcomes' },
         { href: '/teams', label: 'Team Management', icon: UserGroupIcon, desc: 'Headcount, roles, and team setup' },

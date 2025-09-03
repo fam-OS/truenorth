@@ -23,9 +23,9 @@ export async function PUT(
     const existingGoal = await prisma.goal.findUnique({
       where: { id: goalId },
       include: {
-        stakeholder: {
+        Stakeholder: {
           include: {
-            businessUnit: true,
+            BusinessUnit: true,
           },
         },
       },
@@ -35,7 +35,7 @@ export async function PUT(
       return new NextResponse('Goal not found', { status: 404 });
     }
 
-    if (existingGoal.stakeholder.businessUnitId !== businessUnitId) {
+    if (!existingGoal.Stakeholder || existingGoal.Stakeholder?.businessUnitId !== businessUnitId) {
       return new NextResponse('Goal does not belong to this business unit', { status: 403 });
     }
 
@@ -51,7 +51,7 @@ export async function PUT(
         progressNotes: json.progressNotes || null,
       },
       include: {
-        stakeholder: true,
+        Stakeholder: true,
       },
     });
 

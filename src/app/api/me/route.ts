@@ -31,6 +31,7 @@ export async function GET() {
       console.log('User not found, creating new user for:', session.user.email);
       user = await prisma.user.create({
         data: {
+          id: crypto.randomUUID(),
           email: session.user.email,
           name: session.user.name || null,
           image: session.user.image || null,

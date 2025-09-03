@@ -106,7 +106,7 @@ export default function GoalDetailPage() {
                   </span>
                 )}
                 <span className="text-sm text-gray-500">
-                  {(goal as any).quarter} {(goal as any).year}
+                  {goal.quarter} {goal.year}
                 </span>
               </div>
             </div>
@@ -133,13 +133,7 @@ export default function GoalDetailPage() {
               </p>
             </div>
 
-            {/* Requirements */}
-            {goal.requirements && (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Requirements</h2>
-                <p className="text-gray-700 whitespace-pre-wrap">{goal.requirements}</p>
-              </div>
-            )}
+            {/* Requirements section removed: field no longer exists on Goal */}
 
             {/* Progress Notes */}
             {goal.progressNotes && (
@@ -173,7 +167,7 @@ export default function GoalDetailPage() {
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Period</dt>
                   <dd className="mt-1 text-sm text-gray-900">
-                    {(goal as any).quarter} {(goal as any).year}
+                    {goal.quarter} {goal.year}
                   </dd>
                 </div>
 
