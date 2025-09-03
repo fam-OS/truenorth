@@ -51,11 +51,11 @@ export function BusinessUnitList({
             <div className="flex space-x-4 text-sm text-gray-500">
               <div className="flex items-center">
                 <UserGroupIcon className="h-4 w-4 mr-1" />
-                {unit.stakeholders.length} stakeholders
+                {(unit.Stakeholder || unit.stakeholders || []).length} stakeholders
               </div>
               <div className="flex items-center">
                 <ChartBarIcon className="h-4 w-4 mr-1" />
-                {unit.metrics.length} metrics
+                {(unit.Metric || unit.metrics || []).length} metrics
               </div>
             </div>
           </div>

@@ -151,13 +151,13 @@ export default function OrganizationsPage() {
       setEditingOrg(null);
       await fetchOrganizations();
       showToast({ 
-        title: editingOrg ? 'Business unit updated' : 'Business unit created', 
+        title: editingOrg ? 'Organization updated' : 'Organization created', 
         description: `${data.name} was ${editingOrg ? 'updated' : 'created'} successfully.` 
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       showToast({ 
-        title: 'Failed to save business unit', 
+        title: 'Failed to save organization', 
         description: err instanceof Error ? err.message : 'Unknown error', 
         type: 'destructive' 
       });
@@ -359,7 +359,7 @@ export default function OrganizationsPage() {
       {companyAccount && (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-900">Company Organizations</h1>
+            <h1 className="text-xl font-semibold text-gray-900">My organizations and teams</h1>
             <button
               onClick={() => {
                 setEditingOrg(null);

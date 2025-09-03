@@ -242,7 +242,34 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
       if (memberResponse.ok) {
         const newMember = await memberResponse.json()
         setTeamMembers([...teamMembers, newMember])
-        setOverviewData({ ...overviewData, founderId: newMember.id })
+        
+        // Update the company account with the new founder
+        const updatedOverviewData = { ...overviewData, founderId: newMember.id }
+        setOverviewData(updatedOverviewData)
+        
+        // Automatically save the company account with the new founder
+        if (companyAccount?.id) {
+          try {
+            const updateResponse = await fetch(`/api/company-account/${companyAccount.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(updatedOverviewData),
+            })
+            
+            if (updateResponse.ok) {
+              console.log('Company account updated with new founder')
+              // Refresh the page to show the updated founder
+              window.location.reload()
+            } else {
+              console.error('Failed to update company account with founder')
+            }
+          } catch (error) {
+            console.error('Error updating company account:', error)
+          }
+        }
+        
         setShowNewMemberForm(false)
         setNewMemberName('')
         setNewMemberEmail('')

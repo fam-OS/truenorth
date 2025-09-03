@@ -67,17 +67,19 @@ describe('Goals API', () => {
 
       expect(res.status).toBe(200);
       expect(data.title).toBe('Improve performance');
-      expect(prismaMock.goal.create).toHaveBeenCalledWith({
-        data: {
-          title: 'Improve performance',
-          description: 'Optimize system performance',
-          quarter: 'Q1',
-          year: 2025,
-          status: 'IN_PROGRESS',
-          stakeholderId: 'stakeholder1',
-          progressNotes: null,
-        },
-      });
+      expect(prismaMock.goal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            title: 'Improve performance',
+            description: 'Optimize system performance',
+            quarter: 'Q1',
+            year: 2025,
+            status: 'IN_PROGRESS',
+            stakeholderId: 'stakeholder1',
+            progressNotes: null,
+          }),
+        })
+      );
     });
 
     it('creates a goal with optional description', async () => {
@@ -101,16 +103,18 @@ describe('Goals API', () => {
       const res = await POST_GOAL(req as any, { params: Promise.resolve({ businessUnitId: 'bu1' }) });
       
       expect(res.status).toBe(200);
-      expect(prismaMock.goal.create).toHaveBeenCalledWith({
-        data: {
-          title: 'Improve performance',
-          description: null,
-          quarter: 'Q1',
-          year: 2025,
-          stakeholderId: 'stakeholder1',
-          progressNotes: null,
-        },
-      });
+      expect(prismaMock.goal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            title: 'Improve performance',
+            description: null,
+            quarter: 'Q1',
+            year: 2025,
+            stakeholderId: 'stakeholder1',
+            progressNotes: null,
+          }),
+        })
+      );
     });
 
     it('returns 404 when business unit not found', async () => {

@@ -24,12 +24,6 @@ export async function PUT(
         name: validatedData.name,
         description: validatedData.description,
       },
-      include: {
-        organization: true,
-        stakeholders: true,
-        metrics: true,
-
-      },
     });
 
     return NextResponse.json(businessUnit);
@@ -52,12 +46,6 @@ export async function GET(
     const { businessUnitId } = await params;
     const businessUnit = await prisma.businessUnit.findUnique({
       where: { id: businessUnitId },
-      include: {
-        organization: true,
-        stakeholders: true,
-        metrics: true,
-
-      },
     });
 
     if (!businessUnit) {

@@ -68,32 +68,74 @@ export default function GettingStartedChecklist() {
 
   const [completedCount, setCompletedCount] = useState(0);
 
+  const [hasCompanyAccount, setHasCompanyAccount] = useState<boolean | null>(null);
+
   useEffect(() => {
+    // Load saved checkbox states from localStorage
+    const savedStates = localStorage.getItem('gettingStartedChecklist');
+    if (savedStates) {
+      try {
+        const parsed = JSON.parse(savedStates);
+        setChecklist(prev => prev.map(item => ({
+          ...item,
+          completed: parsed[item.id] || false
+        })));
+      } catch (error) {
+        console.error('Error parsing saved checklist states:', error);
+      }
+    }
+
     // Check completion status based on existing data
     const checkCompletion = async () => {
       try {
-        const [orgsRes, teamsRes, initiativesRes] = await Promise.all([
+        const [companyRes, orgsRes, teamsRes, initiativesRes] = await Promise.all([
+          fetch('/api/company-account'),
           fetch('/api/organizations'),
           fetch('/api/teams'),
           fetch('/api/initiatives')
         ]);
 
-        const [organizationsData, teamsData, initiativesData] = await Promise.all([
+        const [companyData, organizationsData, teamsData, initiativesData] = await Promise.all([
+          companyRes.json(),
           orgsRes.json(),
           teamsRes.json(),
           initiativesRes.json()
         ]);
 
+        const hasCompany = companyRes.ok && companyData && !companyData.error;
+        setHasCompanyAccount(hasCompany);
+
         const organizations = Array.isArray(organizationsData) ? organizationsData : [];
         const teams = Array.isArray(teamsData) ? teamsData : [];
         const initiatives = Array.isArray(initiativesData) ? initiativesData : [];
 
+        // Auto-complete items based on actual data (but don't override manual selections)
         setChecklist(prev => prev.map(item => {
-          // Initialize all items as deselected (completed = false)
-          return { ...item, completed: false };
+          const savedStates = localStorage.getItem('gettingStartedChecklist');
+          const parsed = savedStates ? JSON.parse(savedStates) : {};
+          
+          // Keep manual selection if it exists, otherwise auto-detect
+          if (parsed[item.id] !== undefined) {
+            return { ...item, completed: parsed[item.id] };
+          }
+          
+          // Auto-detect completion based on data
+          switch (item.id) {
+            case 'organization':
+              return { ...item, completed: hasCompany };
+            case 'business-units':
+              return { ...item, completed: organizations.some((org: any) => org.businessUnits?.length > 0) };
+            case 'teams':
+              return { ...item, completed: teams.length > 0 };
+            case 'initiatives':
+              return { ...item, completed: initiatives.length > 0 };
+            default:
+              return { ...item, completed: false };
+          }
         }));
       } catch (error) {
         console.error('Error checking completion status:', error);
+        setHasCompanyAccount(false);
       }
     };
 
@@ -105,11 +147,21 @@ export default function GettingStartedChecklist() {
   }, [checklist]);
 
   const toggleComplete = (id: string) => {
-    setChecklist(prev => 
-      prev.map(item => 
+    setChecklist(prev => {
+      const updated = prev.map(item => 
         item.id === id ? { ...item, completed: !item.completed } : item
-      )
-    );
+      );
+      
+      // Save to localStorage
+      const stateMap = updated.reduce((acc, item) => {
+        acc[item.id] = item.completed;
+        return acc;
+      }, {} as Record<string, boolean>);
+      
+      localStorage.setItem('gettingStartedChecklist', JSON.stringify(stateMap));
+      
+      return updated;
+    });
   };
 
   const progressPercentage = Math.round((completedCount / checklist.length) * 100);
@@ -135,13 +187,22 @@ export default function GettingStartedChecklist() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {checklist.map((item) => (
+          {checklist.map((item) => {
+            const isCreateOrg = item.id === 'organization';
+            const shouldHighlight = hasCompanyAccount === false && isCreateOrg;
+            const shouldDim = hasCompanyAccount === false && !isCreateOrg;
+            
+            return (
             <div
               key={item.id}
               className={`flex items-center space-x-3 p-3 rounded-lg border transition-all ${
                 item.completed 
                   ? 'bg-green-50 border-green-200' 
-                  : 'bg-white border-gray-200 hover:border-gray-300'
+                  : shouldHighlight
+                    ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200'
+                    : shouldDim
+                      ? 'bg-gray-50 border-gray-200 opacity-50'
+                      : 'bg-white border-gray-200 hover:border-gray-300'
               }`}
             >
               <button
@@ -176,12 +237,14 @@ export default function GettingStartedChecklist() {
                   variant={item.completed ? "outline" : "default"}
                   size="sm"
                   className={item.completed ? 'border-green-300 text-green-700 hover:bg-green-50' : ''}
+                  disabled={shouldDim}
                 >
                   {item.completed ? 'View' : 'Start'}
                 </Button>
               </Link>
             </div>
-          ))}
+            );
+          })}
         </div>
         
         {completedCount === checklist.length && (

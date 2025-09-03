@@ -18,7 +18,6 @@ export function OrganizationForm({
   const [formData, setFormData] = useState<CreateOrganizationInput>({
     name: organization?.name ?? '',
     description: organization?.description ?? '',
-    companyAccountId: '', // This will be set by the parent component
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +49,7 @@ export function OrganizationForm({
           name="name"
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-          placeholder="Enter organization name"
+          placeholder="Marketing, Business Ops, Servicing, Technology..."
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
@@ -91,7 +90,7 @@ export function OrganizationForm({
           disabled={isSubmitting}
           className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
         >
-{isSubmitting ? 'Saving...' : organization ? 'Update Business Unit' : 'Create Business Unit'}
+{isSubmitting ? 'Saving...' : organization ? 'Update Organization' : 'Create Organization'}
         </button>
       </div>
     </form>

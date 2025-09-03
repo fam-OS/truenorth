@@ -171,25 +171,6 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ o
               </div>
             )}
 
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Business Units</h3>
-              {organization.businessUnits && organization.businessUnits.length > 0 ? (
-                <ul className="mt-2 divide-y divide-gray-200">
-                  {organization.businessUnits.map((unit) => (
-                    <li key={unit.id} className="py-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">{unit.name}</p>
-                        {unit.description && (
-                          <span className="text-sm text-gray-500">{unit.description}</span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-1 text-sm text-gray-500">No business units found</p>
-              )}
-            </div>
 
             {mounted && (
               <div>

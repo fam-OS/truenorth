@@ -33,17 +33,24 @@ export async function GET(
     const companyAccount = await prisma.companyAccount.findFirst({
       where: {
         id: companyAccountId,
-        user: {
-          id: session.user.id!
-        }
+        userId: session.user.id
       },
-      include: {
-        founder: true,
-        organizations: {
-          include: {
-            businessUnits: true
-          }
-        }
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        founderId: true,
+        employees: true,
+        headquarters: true,
+        launchedDate: true,
+        isPrivate: true,
+        tradedAs: true,
+        corporateIntranet: true,
+        glassdoorLink: true,
+        linkedinLink: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
@@ -77,9 +84,7 @@ export async function PUT(
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
         id: companyAccountId,
-        user: {
-          id: session.user.id
-        }
+        userId: session.user.id
       }
     });
 
@@ -88,12 +93,13 @@ export async function PUT(
     }
 
     const body = await request.json();
-    console.log('Request body:', body);
+    console.log('Company account update request body:', body);
     const validatedData = updateCompanyAccountSchema.parse(body);
-    console.log('Validated data:', validatedData);
+    console.log('Company account validated data:', validatedData);
 
     // Extract founderId and validate if provided
     const { founderId, ...companyData } = validatedData;
+    console.log('Extracted founderId:', founderId);
     
     // If founderId is provided and not empty, verify it exists
     if (founderId && founderId !== '') {
@@ -116,25 +122,31 @@ export async function PUT(
       data: {
         ...companyData,
         ...(founderId && founderId !== '' ? {
-          founder: {
-            connect: { id: founderId }
-          }
+          founderId: founderId
         } : founderId === '' ? {
-          founder: {
-            disconnect: true
-          }
+          founderId: null
         } : {})
       },
-      include: {
-        founder: true,
-        organizations: {
-          include: {
-            businessUnits: true
-          }
-        }
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        founderId: true,
+        employees: true,
+        headquarters: true,
+        launchedDate: true,
+        isPrivate: true,
+        tradedAs: true,
+        corporateIntranet: true,
+        glassdoorLink: true,
+        linkedinLink: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
+    console.log('Updated company account:', companyAccount);
     return NextResponse.json(companyAccount);
   } catch (error) {
     console.error('Error updating company account:', error);
@@ -175,9 +187,7 @@ export async function DELETE(
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
         id: companyAccountId,
-        user: {
-          id: session.user.id
-        }
+        userId: session.user.id
       }
     });
 

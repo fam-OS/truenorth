@@ -35,12 +35,17 @@ export async function POST(
     }
 
     const data = createStakeholderSchema.parse(json);
+    
+    // Generate unique ID for stakeholder
+    const stakeholderId = `stakeholder-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    
     const stakeholder = await prisma.stakeholder.create({
       data: {
+        id: stakeholderId,
         name: data.name,
         role: data.role,
         email: data.email ?? '',
-        businessUnit: { connect: { id: businessUnitId } },
+        businessUnitId: businessUnitId,
       },
     });
 

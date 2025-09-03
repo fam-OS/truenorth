@@ -14,10 +14,10 @@ import { useToast } from '@/components/ui/toast';
 type ViewMode = 'list' | 'detail' | 'createUnit' | 'createGoal' | 'createStakeholder' | 'stakeholders' | 'editUnit' | 'createGlobalStakeholder';
 
 export default function BusinessUnitsPage() {
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [companyAccount, setCompanyAccount] = useState<any>(null);
   const [businessUnits, setBusinessUnits] = useState<BusinessUnitWithDetails[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<BusinessUnitWithDetails | null>(null);
-  const [selectedOrg, setSelectedOrg] = useState<any | null>(null);
+  const [needsCompanyAccount, setNeedsCompanyAccount] = useState(false);
   const [selectedStakeholder, setSelectedStakeholder] = useState<any | null>(null);
   const [unassignedStakeholders, setUnassignedStakeholders] = useState<any[]>([]);
   const [selectedExistingStakeholderId, setSelectedExistingStakeholderId] = useState<string>('');
@@ -36,40 +36,54 @@ export default function BusinessUnitsPage() {
     
     try {
       setIsLoading(true);
-      const response = await fetch('/api/organizations', {
-        cache: 'no-store', // Prevent caching
-        signal: AbortSignal.timeout(5000) // Add timeout to prevent hanging requests
+      console.log('Fetching business units data...');
+      
+      // First check for company account
+      const accountResponse = await fetch('/api/company-account', {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000)
       });
       
-      if (!response.ok) throw new Error('Failed to fetch organizations');
-      const data = await response.json();
+      console.log('Company account response status:', accountResponse.status);
+      
+      if (!accountResponse.ok) {
+        if (accountResponse.status === 404) {
+          console.log('No company account found, showing creation prompt');
+          setNeedsCompanyAccount(true);
+          setIsLoading(false);
+          return;
+        }
+        throw new Error('Failed to fetch company account');
+      }
+      
+      const accountData = await accountResponse.json();
+      console.log('Company account data:', accountData);
+      setCompanyAccount(accountData);
+      setNeedsCompanyAccount(false);
+      
+      // Fetch business units directly
+      const businessUnitsResponse = await fetch('/api/business-units', {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      console.log('Business units response status:', businessUnitsResponse.status);
+      
+      if (!businessUnitsResponse.ok) {
+        console.error('Failed to fetch business units');
+        setBusinessUnits([]);
+        return;
+      }
+      
+      const businessUnitsData = await businessUnitsResponse.json();
+      console.log('Business units data:', businessUnitsData);
       
       if (!isMounted.current) return;
       
-      setOrganizations(data);
-      const units = data.flatMap((org: any) => 
-        (org.businessUnits || []).map((unit: any) => {
-          // Flatten goals from all stakeholders
-          const allGoals = (unit.stakeholders || []).flatMap(
-            (stakeholder: any) => (stakeholder.goals || []).map((goal: any) => ({
-              ...goal,
-              stakeholderName: stakeholder.name,
-            }))
-          );
-          
-          return {
-            ...unit,
-            organization: org,
-            stakeholders: unit.stakeholders || [],
-            metrics: unit.metrics || [],
-            goals: allGoals,
-          };
-        })
-      );
-      setBusinessUnits(units);
+      setBusinessUnits(businessUnitsData);
 
       if (selectedUnit) {
-        const updatedUnit = units.find((unit: BusinessUnitWithDetails) => unit.id === selectedUnit.id);
+        const updatedUnit = businessUnitsData.find((unit: BusinessUnitWithDetails) => unit.id === selectedUnit.id);
         if (updatedUnit) setSelectedUnit(updatedUnit);
       }
 
@@ -121,19 +135,23 @@ export default function BusinessUnitsPage() {
     }
   }, [viewMode]);
 
-  async function handleCreateBusinessUnit({ name, description, organizationId }: { name: string; description?: string; organizationId: string }) {
+  async function handleCreateBusinessUnit({ name, description }: { name: string; description?: string }) {
+    if (!companyAccount) {
+      showToast({ title: 'Company account required', description: 'Please create a company account first.', type: 'destructive' });
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/organizations/${organizationId}/business-units`, {
+      const response = await fetch('/api/business-units', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, companyAccountId: companyAccount.id }),
       });
 
       if (!response.ok) throw new Error('Failed to create business unit');
       
       await fetchData();
       setViewMode('list');
-      setSelectedOrg(null);
       showToast({ title: 'Business unit created', description: `${name} was added successfully.` });
     } catch (err) {
       showToast({ title: 'Failed to create business unit', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
@@ -316,36 +334,10 @@ export default function BusinessUnitsPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Create New Business Unit
             </h2>
-            <div className="bg-white shadow rounded-lg p-6">
-              <div className="mb-4">
-                <label htmlFor="organization" className="block text-sm font-medium text-gray-700">
-                  Organization
-                </label>
-                <select
-                  id="organization"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  value={selectedOrg?.id || ''}
-                  onChange={(e) => {
-                    const org = organizations.find(o => o.id === e.target.value);
-                    setSelectedOrg(org || null);
-                  }}
-                >
-                  <option value="">Select an organization</option>
-                  {organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {selectedOrg && (
-                <BusinessUnitForm
-                  organizationId={selectedOrg.id}
-                  onSubmit={handleCreateBusinessUnit}
-                  onCancel={() => setViewMode('list')}
-                />
-              )}
-            </div>
+            <BusinessUnitForm
+              onSubmit={handleCreateBusinessUnit}
+              onCancel={() => setViewMode('list')}
+            />
           </div>
         );
 
@@ -419,6 +411,10 @@ export default function BusinessUnitsPage() {
                   goals={selectedUnit.Goal || []}
                   onEditGoal={handleEditGoal}
                   onCreateGoal={handleCreateNewGoal}
+                  onSelectGoal={(goal) => {
+                    // Navigate to goal detail page
+                    window.location.href = `/goals/${goal.id}`;
+                  }}
                 />
               </div>
 
@@ -552,8 +548,8 @@ export default function BusinessUnitsPage() {
         return (
           <>
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900">Business Units</h1>
-              {organizations.length > 0 && (
+              <h1 className="text-2xl font-semibold text-gray-900">Company business units</h1>
+              {companyAccount && (
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setViewMode('createGlobalStakeholder')}
@@ -570,28 +566,30 @@ export default function BusinessUnitsPage() {
                 </div>
               )}
             </div>
-            {organizations.length === 0 ? (
+            {needsCompanyAccount ? (
               <div className="text-center py-12">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Organizations Found</h3>
-                <p className="text-gray-500">Create an organization first to add business units.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Company Account Required</h3>
+                <p className="text-gray-500 mb-4">You need to create a company account before you can add business units.</p>
+                <button
+                  onClick={() => window.location.href = '/organizations'}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Create Company Account
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {organizations.map((org) => (
-                  <div key={org.id}>
-                    <BusinessUnitList
-                      businessUnits={businessUnits.filter(unit => unit.Organization?.id === org.id)}
-                      onSelectUnit={(unit) => {
-                        setSelectedUnit(unit);
-                        setViewMode('detail');
-                      }}
-                      onAddStakeholder={(unit) => {
-                        setSelectedUnit(unit);
-                        setViewMode('createStakeholder');
-                      }}
-                    />
-                  </div>
-                ))}
+                <BusinessUnitList
+                  businessUnits={businessUnits}
+                  onSelectUnit={(unit) => {
+                    setSelectedUnit(unit);
+                    setViewMode('detail');
+                  }}
+                  onAddStakeholder={(unit) => {
+                    setSelectedUnit(unit);
+                    setViewMode('createStakeholder');
+                  }}
+                />
               </div>
             )}
           </>

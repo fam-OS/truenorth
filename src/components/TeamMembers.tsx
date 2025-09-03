@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-type Member = { id: string; name: string; email: string; role: string };
+type Member = { id: string; name: string; email: string; role: string; teamId?: string | null };
 
 export function TeamMembers({ teamId }: { teamId: string }) {
   const [members, setMembers] = useState<Member[]>([]);
@@ -16,6 +16,10 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   const [addEmail, setAddEmail] = useState('');
   const [addRole, setAddRole] = useState('');
   const [adding, setAdding] = useState(false);
+  // Attach existing
+  const [attachExisting, setAttachExisting] = useState(false);
+  const [allActiveMembers, setAllActiveMembers] = useState<Member[]>([]);
+  const [selectedExistingId, setSelectedExistingId] = useState('');
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,6 +45,16 @@ export function TeamMembers({ teamId }: { teamId: string }) {
 
   useEffect(() => {
     void fetchMembers();
+    // Also load all active members for the attach-existing flow
+    const fetchAll = async () => {
+      try {
+        const res = await fetch('/api/team-members', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data: Member[] = await res.json();
+        setAllActiveMembers(data);
+      } catch {}
+    };
+    void fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId]);
 
@@ -49,11 +63,14 @@ export function TeamMembers({ teamId }: { teamId: string }) {
     try {
       setError(null);
       setAdding(true);
-      const payload = {
-        name: addName,
-        email: addEmail.trim() === '' ? undefined : addEmail,
-        role: addRole.trim() === '' ? undefined : addRole,
-      };
+      const isAttach = attachExisting && selectedExistingId !== '';
+      const payload = isAttach
+        ? { existingMemberId: selectedExistingId }
+        : {
+            name: addName,
+            email: addEmail.trim() === '' ? undefined : addEmail,
+            role: addRole.trim() === '' ? undefined : addRole,
+          };
       const res = await fetch(`/api/teams/${teamId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,6 +80,8 @@ export function TeamMembers({ teamId }: { teamId: string }) {
       setAddName('');
       setAddEmail('');
       setAddRole('');
+      setSelectedExistingId('');
+      setAttachExisting(false);
       setAddOpen(false);
       await fetchMembers();
     } catch (e) {
@@ -140,42 +159,77 @@ export function TeamMembers({ teamId }: { teamId: string }) {
       </div>
 
       {addOpen && (
-        <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-4 rounded-lg shadow">
-          <input
-            type="text"
-            required
-            placeholder="Name"
-            value={addName}
-            onChange={(e) => setAddName(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={addEmail}
-            onChange={(e) => setAddEmail(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-          />
-          <select
-            value={addRole}
-            onChange={(e) => setAddRole(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-          >
-            <option value="">Select Role</option>
-            <option value="CEO">CEO</option>
-            <option value="COO">COO</option>
-            <option value="CTO">CTO</option>
-            <option value="CIO">CIO</option>
-            <option value="CFO">CFO</option>
-            <option value="Executive">Executive</option>
-            <option value="Director">Director</option>
-            <option value="Manager">Manager</option>
-            <option value="Team Member">Team Member</option>
-          </select>
-          <div className="flex gap-2 justify-end md:col-span-1">
+        <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-6 gap-3 bg-white p-4 rounded-lg shadow">
+          <div className="md:col-span-6 flex items-center gap-3">
+            <input
+              id="attach-existing"
+              type="checkbox"
+              checked={attachExisting}
+              onChange={(e) => setAttachExisting(e.target.checked)}
+            />
+            <label htmlFor="attach-existing" className="text-sm text-gray-700">Attach existing member</label>
+          </div>
+
+          {attachExisting ? (
+            <select
+              required
+              value={selectedExistingId}
+              onChange={(e) => setSelectedExistingId(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm md:col-span-3"
+            >
+              <option value="">Select an existing member</option>
+              {allActiveMembers
+                .filter((m) => !members.some((tm) => tm.id === m.id))
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} {m.email ? `(${m.email})` : ''}
+                  </option>
+                ))}
+            </select>
+          ) : (
+            <>
+              <input
+                type="text"
+                required
+                placeholder="Name"
+                value={addName}
+                onChange={(e) => setAddName(e.target.value)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={addEmail}
+                onChange={(e) => setAddEmail(e.target.value)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              />
+              <select
+                value={addRole}
+                onChange={(e) => setAddRole(e.target.value)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              >
+                <option value="">Select Role</option>
+                <option value="CEO">CEO</option>
+                <option value="COO">COO</option>
+                <option value="CTO">CTO</option>
+                <option value="CIO">CIO</option>
+                <option value="CFO">CFO</option>
+                <option value="Executive">Executive</option>
+                <option value="Director">Director</option>
+                <option value="Manager">Manager</option>
+                <option value="Team Member">Team Member</option>
+              </select>
+            </>
+          )}
+
+          <div className="flex gap-2 justify-end md:col-span-2">
             <button
               type="button"
-              onClick={() => setAddOpen(false)}
+              onClick={() => {
+                setAddOpen(false);
+                setAttachExisting(false);
+                setSelectedExistingId('');
+              }}
               className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               Cancel
@@ -185,7 +239,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
               disabled={adding}
               className="inline-flex items-center px-4 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
             >
-              {adding ? 'Adding...' : 'Add'}
+              {adding ? 'Saving...' : attachExisting ? 'Attach' : 'Add'}
             </button>
           </div>
         </form>

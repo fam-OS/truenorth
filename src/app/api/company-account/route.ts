@@ -29,23 +29,6 @@ export async function GET() {
     const companyAccount = await prisma.companyAccount.findFirst({
       where: {
         userId: session.user.id
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        founderId: true,
-        employees: true,
-        headquarters: true,
-        launchedDate: true,
-        isPrivate: true,
-        tradedAs: true,
-        corporateIntranet: true,
-        glassdoorLink: true,
-        linkedinLink: true,
-        userId: true,
-        createdAt: true,
-        updatedAt: true
       }
     });
 
@@ -53,7 +36,26 @@ export async function GET() {
       return NextResponse.json({ error: 'Company account not found' }, { status: 404 });
     }
 
-    return NextResponse.json(companyAccount);
+    // Fetch founder separately if founderId exists
+    let founder = null;
+    if (companyAccount.founderId) {
+      founder = await prisma.teamMember.findUnique({
+        where: { id: companyAccount.founderId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      });
+    }
+
+    const result = {
+      ...companyAccount,
+      founder
+    };
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching company account:', error);
     return NextResponse.json(
@@ -93,6 +95,7 @@ export async function POST(request: NextRequest) {
 
     const companyAccount = await prisma.companyAccount.create({
       data: {
+        id: `company-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
         ...companyData,
         userId: session.user.id,
         ...(founderId && founderId !== '' ? {

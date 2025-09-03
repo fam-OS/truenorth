@@ -18,9 +18,10 @@ interface GoalListProps {
   goals: Goal[];
   onCreateGoal: () => void;
   onEditGoal: (goal: Goal) => void;
+  onSelectGoal?: (goal: Goal) => void;
 }
 
-export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
+export function GoalList({ goals, onCreateGoal, onEditGoal, onSelectGoal }: GoalListProps) {
   return (
     <div className="bg-white shadow rounded-lg">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
@@ -38,7 +39,8 @@ export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
           {goals.map((goal) => (
             <li
               key={goal.id}
-              className="hover:bg-gray-50"
+              className="hover:bg-gray-50 cursor-pointer"
+              onClick={() => onSelectGoal?.(goal)}
             >
               <div className="px-4 py-4">
                 <div className="flex items-center justify-between">
@@ -67,7 +69,7 @@ export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
                     )}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {goal.quarter} {goal.year}
+                    {(goal as any).quarter} {(goal as any).year}
                   </div>
                 </div>
                 <div className="mt-2">

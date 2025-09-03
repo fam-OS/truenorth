@@ -59,6 +59,17 @@ export type BusinessUnitWithDetails = {
     createdAt: Date;
     updatedAt: Date;
   }>;
+  metrics: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    target: number | null;
+    current: number | null;
+    unit: string | null;
+    businessUnitId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
   Goal: Array<{
     id: string;
     description: string;

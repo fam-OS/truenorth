@@ -9,6 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:ui": "playwright test",
+    "test:ui:headed": "playwright test --headed",
     "seed": "prisma db seed",
     "postinstall": "prisma generate"
   },
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",

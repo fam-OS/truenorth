@@ -31,9 +31,7 @@ model BusinessUnit {
   name           String
   description    String?
   createdAt      DateTime      @default(now())
-  updatedAt      DateTime
-  organizationId String?
-  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  updatedAt      DateTime      @updatedAt
   Goal           Goal[]
   Initiative     Initiative[]
   Kpi            Kpi[]
@@ -48,7 +46,7 @@ model CeoGoal {
   order          Int          @default(0)
   organizationId String
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime      @updatedAt
   Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
@@ -69,7 +67,7 @@ model CompanyAccount {
   glassdoorLink     String?
   linkedinLink      String?
   createdAt         DateTime       @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime       @updatedAt
   TeamMember        TeamMember?    @relation(fields: [founderId], references: [id])
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   Organization      Organization[]
@@ -91,7 +89,7 @@ model Cost {
   q4Actual       Decimal       @default(0) @db.Decimal(12, 2)
   notes          String?
   createdAt      DateTime      @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime      @updatedAt
   Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   Team           Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
@@ -110,7 +108,7 @@ model FeatureRequest {
   status      String   @default("submitted")
   userId      String
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
   User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -122,7 +120,7 @@ model Goal {
   stakeholderId  String?
   progressNotes  String?
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime      @updatedAt
   businessUnitId String
   quarter        Quarter
   year           Int
@@ -148,7 +146,7 @@ model HeadcountTracker {
   q4Actual       Int           @default(0)
   notes          String?
   createdAt      DateTime      @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime      @updatedAt
   Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   Team           Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
@@ -167,7 +165,7 @@ model Initiative {
   organizationId        String
   ownerId               String?
   createdAt             DateTime          @default(now())
-  updatedAt             DateTime
+  updatedAt             DateTime @updatedAt
   businessUnitId        String?
   type                  InitiativeType?
   atRisk                Boolean           @default(false)
@@ -193,7 +191,7 @@ model Kpi {
   teamId            String
   initiativeId      String?
   createdAt         DateTime      @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime @updatedAt
   businessUnitId    String?
   metTarget         Boolean?
   metTargetPercent  Float?
@@ -216,7 +214,7 @@ model Meeting {
   notes         String
   stakeholderId String
   createdAt     DateTime    @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
   Stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
 }
 
@@ -228,7 +226,7 @@ model Metric {
   unit           String
   businessUnitId String
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime      @updatedAt
   BusinessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
 }
 
@@ -237,7 +235,7 @@ model Note {
   content   String
   taskId    String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   Task      Task     @relation(fields: [taskId], references: [id])
 }
 
@@ -272,7 +270,7 @@ model OpsReviewItem {
   teamId       String
   ownerId      String?
   createdAt    DateTime    @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime @updatedAt
   OpsReview    OpsReview   @relation(fields: [opsReviewId], references: [id], onDelete: Cascade)
   TeamMember   TeamMember? @relation(fields: [ownerId], references: [id])
   Team         Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -287,9 +285,8 @@ model Organization {
   name             String
   description      String?
   createdAt        DateTime           @default(now())
-  updatedAt        DateTime
+  updatedAt        DateTime           @updatedAt
   companyAccountId String
-  BusinessUnit     BusinessUnit[]
   CeoGoal          CeoGoal[]
   Cost             Cost[]
   HeadcountTracker HeadcountTracker[]
@@ -315,7 +312,7 @@ model Stakeholder {
   role              String
   businessUnitId    String?
   createdAt         DateTime      @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime      @updatedAt
   reportsToId       String?
   Goal              Goal[]
   Meeting           Meeting[]
@@ -334,7 +331,7 @@ model SupportRequest {
   status      String   @default("open")
   userId      String
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
   User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -345,12 +342,12 @@ model Task {
   dueDate     DateTime?
   status      TaskStatus
   createdAt   DateTime   @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
   Note        Note[]
 }
 
 model Team {
-  id               String             @id
+  id               String             @id @default(cuid())
   name             String
   description      String?
   organizationId   String
@@ -369,7 +366,7 @@ model Team {
 }
 
 model TeamMember {
-  id               String           @id
+  id               String           @id @default(cuid())
   name             String
   email            String?
   role             String?
@@ -393,7 +390,7 @@ model User {
   email          String           @unique
   name           String?
   createdAt      DateTime         @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime           @updatedAt
   emailVerified  DateTime?
   image          String?
   passwordHash   String?
