@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
 import { createGoalSchema } from '@/lib/validations/organization';
 import { handleError } from '@/lib/api-response';
 
@@ -15,7 +16,7 @@ export async function GET(
         stakeholderId,
       },
       orderBy: {
-        startDate: 'asc',
+        createdAt: 'desc',
       },
     });
 
@@ -38,8 +39,32 @@ export async function POST(
       stakeholderId,
     });
 
+    // Fetch stakeholder to resolve required businessUnitId
+    const stakeholder = await prisma.stakeholder.findUnique({
+      where: { id: stakeholderId },
+      select: { businessUnitId: true },
+    });
+
+    if (!stakeholder) {
+      return NextResponse.json({ error: 'Stakeholder not found' }, { status: 404 });
+    }
+
+    if (!stakeholder.businessUnitId) {
+      return NextResponse.json({ error: 'Stakeholder must belong to a Business Unit' }, { status: 400 });
+    }
+
     const goal = await prisma.goal.create({
-      data,
+      data: {
+        id: randomUUID(),
+        title: data.title,
+        description: data.description ?? null,
+        quarter: data.quarter as any,
+        year: data.year,
+        stakeholderId,
+        businessUnitId: stakeholder.businessUnitId,
+        progressNotes: data.progressNotes ?? null,
+        status: data.status,
+      },
     });
 
     return NextResponse.json(goal, { status: 201 });

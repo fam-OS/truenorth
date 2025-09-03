@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
+import { Prisma } from '@prisma/client';
 
 const createTeamSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -17,10 +18,11 @@ export async function GET(
     const teams = await prisma.team.findMany({
       where: { organizationId },
       orderBy: { name: 'asc' },
-      include: { members: true },
+      include: { TeamMember: true },
     });
     return NextResponse.json(teams);
   } catch (error) {
+    console.error('Error fetching teams:', error);
     return handleError(error);
   }
 }
@@ -46,6 +48,10 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid request data', details: error.issues }, { status: 400 });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      // Unique constraint failed (likely organizationId + name)
+      return NextResponse.json({ error: 'A team with this name already exists in this organization' }, { status: 409 });
     }
     return handleError(error);
   }

@@ -14,7 +14,7 @@ describe('Teams API', () => {
     it('returns teams for organization', async () => {
       prismaMock.team.findMany.mockResolvedValue([mockTeam] as any);
       const req = new Request('http://localhost/api/organizations/org1/teams');
-      const res = await GET_ORG_TEAMS(req as any, { params: { organizationId: 'org1' } });
+      const res = await GET_ORG_TEAMS(req as any, { params: Promise.resolve({ organizationId: 'org1' }) });
       const data = await res.json();
       expect(res.status).toBe(200);
       expect(data).toEqual([mockTeam]);
@@ -59,7 +59,7 @@ describe('Teams API', () => {
     it('returns a team by id', async () => {
       prismaMock.team.findUnique.mockResolvedValue({ ...mockTeam, organization: {}, members: [] } as any);
       const req = new Request('http://localhost/api/teams/team1');
-      const res = await GET_TEAM(req as any, { params: { teamId: 'team1' } });
+      const res = await GET_TEAM(req as any, { params: Promise.resolve({ teamId: 'team1' }) });
       const data = await res.json();
       expect(res.status).toBe(200);
       expect(data.id).toBe('team1');
@@ -90,7 +90,7 @@ describe('Teams API', () => {
         body: JSON.stringify(updateData),
       });
       
-      const res = await PUT_TEAM(req as any, { params: { teamId: 'team1' } });
+      const res = await PUT_TEAM(req as any, { params: Promise.resolve({ teamId: 'team1' }) });
       const data = await res.json();
       
       expect(res.status).toBe(200);
@@ -107,14 +107,51 @@ describe('Teams API', () => {
   });
 
   describe('DELETE /api/teams/[teamId]', () => {
-    it('deletes a team', async () => {
+    it('deletes a team successfully', async () => {
       prismaMock.team.delete.mockResolvedValue(mockTeam as any);
       const req = new Request('http://localhost/api/teams/team1', { method: 'DELETE' });
-      const res = await DELETE_TEAM(req as any, { params: { teamId: 'team1' } });
+      const res = await DELETE_TEAM(req as any, { params: Promise.resolve({ teamId: 'team1' }) });
       const data = await res.json();
       expect(res.status).toBe(200);
       expect(data).toEqual({ success: true });
       expect(prismaMock.team.delete).toHaveBeenCalledWith({ where: { id: 'team1' } });
+    });
+
+    it('returns 404 when team not found', async () => {
+      prismaMock.team.delete.mockRejectedValue(new Error('Record to delete does not exist.'));
+      const req = new Request('http://localhost/api/teams/nonexistent', { method: 'DELETE' });
+      const res = await DELETE_TEAM(req as any, { params: Promise.resolve({ teamId: 'nonexistent' }) });
+      expect(res.status).toBe(500); // handleError should catch this
+    });
+
+    it('handles foreign key constraint errors when team has members', async () => {
+      const foreignKeyError = new Error('Foreign key constraint failed');
+      foreignKeyError.name = 'PrismaClientKnownRequestError';
+      (foreignKeyError as any).code = 'P2003';
+      
+      prismaMock.team.delete.mockRejectedValue(foreignKeyError);
+      const req = new Request('http://localhost/api/teams/team1', { method: 'DELETE' });
+      const res = await DELETE_TEAM(req as any, { params: Promise.resolve({ teamId: 'team1' }) });
+      expect(res.status).toBe(500); // Should be handled by error handler
+    });
+
+    it('handles database connection errors', async () => {
+      const dbError = new Error('Database connection failed');
+      prismaMock.team.delete.mockRejectedValue(dbError);
+      const req = new Request('http://localhost/api/teams/team1', { method: 'DELETE' });
+      const res = await DELETE_TEAM(req as any, { params: Promise.resolve({ teamId: 'team1' }) });
+      expect(res.status).toBe(500);
+    });
+
+    it('deletes team with valid UUID format', async () => {
+      const validUUID = 'cmeylzebl0000rp092ovtugdk';
+      prismaMock.team.delete.mockResolvedValue({ ...mockTeam, id: validUUID } as any);
+      const req = new Request(`http://localhost/api/teams/${validUUID}`, { method: 'DELETE' });
+      const res = await DELETE_TEAM(req as any, { params: Promise.resolve({ teamId: validUUID }) });
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(data).toEqual({ success: true });
+      expect(prismaMock.team.delete).toHaveBeenCalledWith({ where: { id: validUUID } });
     });
   });
 });

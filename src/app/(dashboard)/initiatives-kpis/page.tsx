@@ -84,24 +84,16 @@ export default function InitiativesAndKpisPage() {
   // Owner filter should list all members (not scoped to current org)
   const allMembers = useMemo(() => (members || []), [members]);
 
-  // Load all organizations and their business units to populate BU filter
-  const [allBusinessUnits, setAllBusinessUnits] = useState<Array<{ id: string; name: string; orgId: string }>>([]);
+  // Load all business units globally to populate BU filter
+  const [allBusinessUnits, setAllBusinessUnits] = useState<Array<{ id: string; name: string }>>([]);
   useEffect(() => {
     let aborted = false;
     const loadBUs = async () => {
       try {
-        const orgRes = await fetch('/api/organizations', { cache: 'no-store' });
-        if (!orgRes.ok) throw new Error('Failed to fetch organizations');
-        const orgs: Array<{ id: string; name: string }> = await orgRes.json();
-        const buLists = await Promise.all(
-          orgs.map(async (o) => {
-            const buRes = await fetch(`/api/organizations/${o.id}/business-units`, { cache: 'no-store' });
-            if (!buRes.ok) return [] as any[];
-            const bus: Array<{ id: string; name: string }> = await buRes.json();
-            return bus.map((b) => ({ id: b.id, name: b.name, orgId: o.id }));
-          })
-        );
-        if (!aborted) setAllBusinessUnits(buLists.flat());
+        const buRes = await fetch('/api/business-units', { cache: 'no-store' });
+        if (!buRes.ok) throw new Error('Failed to fetch business units');
+        const bus: Array<{ id: string; name: string }> = await buRes.json();
+        if (!aborted) setAllBusinessUnits(bus.map((b) => ({ id: b.id, name: b.name })));
       } catch {
         if (!aborted) setAllBusinessUnits([]);
       }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import GettingStartedChecklist from '@/components/GettingStartedChecklist';
 
 interface DashboardStats {
   organizations: number;
@@ -40,6 +41,16 @@ export default function DashboardPage() {
 
   // Helper function to format status with visual indicators
   const formatStatus = (status: string) => {
+    // Handle null, undefined, or non-string status
+    if (!status || typeof status !== 'string') {
+      return {
+        label: 'Unknown',
+        color: 'bg-gray-100 text-gray-800',
+        progress: 0,
+        icon: '📄'
+      };
+    }
+
     const statusConfig = {
       'IN_PROGRESS': { 
         label: 'In Progress', 
@@ -86,19 +97,24 @@ export default function DashboardPage() {
       try {
         // Fetch organizations and count related data
         const orgsResponse = await fetch('/api/organizations');
-        const organizations = await orgsResponse.json();
+        const organizationsData = await orgsResponse.json();
+        const organizations = Array.isArray(organizationsData) ? organizationsData : [];
         
         const initiativesResponse = await fetch('/api/initiatives');
-        const initiatives = await initiativesResponse.json();
+        const initiativesData = await initiativesResponse.json();
+        const initiatives = Array.isArray(initiativesData) ? initiativesData : [];
         
         const teamsResponse = await fetch('/api/teams');
-        const teams = await teamsResponse.json();
+        const teamsData = await teamsResponse.json();
+        const teams = Array.isArray(teamsData) ? teamsData : [];
         
         const kpisResponse = await fetch('/api/kpis');
-        const kpis = await kpisResponse.json();
+        const kpisData = await kpisResponse.json();
+        const kpis = Array.isArray(kpisData) ? kpisData : [];
         
         const opsReviewsResponse = await fetch('/api/ops-reviews');
-        const opsReviews = await opsReviewsResponse.json();
+        const opsReviewsData = await opsReviewsResponse.json();
+        const opsReviews = Array.isArray(opsReviewsData) ? opsReviewsData : [];
 
         // Count business units from organizations
         const totalBusinessUnits = organizations.reduce((count: number, org: any) => 
@@ -150,6 +166,9 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600">Overview of your organization's performance</p>
       </div>
+
+      {/* Getting Started Checklist */}
+      <GettingStartedChecklist />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

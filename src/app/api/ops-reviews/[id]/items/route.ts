@@ -79,7 +79,7 @@ export async function GET(
 
     const items = await prisma.opsReviewItem.findMany({
       where: { opsReviewId: id },
-      include: { owner: true, team: true, opsReview: true },
+      include: { TeamMember: true, Team: true, OpsReview: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -142,31 +142,32 @@ export async function POST(
     // Create the OpsReviewItem using Prisma's create method
     const created = await prisma.opsReviewItem.create({
       data: {
+        id: crypto.randomUUID(),
         title: parsed.title,
         description: parsed.description || null,
         targetMetric: parsed.targetMetric,
         actualMetric: parsed.actualMetric,
         quarter: quarter as any, // Using 'as any' to handle the custom enum type
         year: year,
-        opsReview: { connect: { id: parsed.opsReviewId } },
-        team: { connect: { id: parsed.teamId } },
-        ...(parsed.ownerId && { owner: { connect: { id: parsed.ownerId } } }),
+        OpsReview: { connect: { id: parsed.opsReviewId } },
+        Team: { connect: { id: parsed.teamId } },
+        ...(parsed.ownerId && { TeamMember: { connect: { id: parsed.ownerId } } }),
       },
       include: {
-        owner: {
+        TeamMember: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        team: {
+        Team: {
           select: {
             id: true,
             name: true,
           },
         },
-        opsReview: {
+        OpsReview: {
           select: {
             id: true,
             title: true,

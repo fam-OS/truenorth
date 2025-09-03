@@ -43,8 +43,8 @@ export async function PUT(
         description: data.description,
       },
       include: {
-        stakeholders: true,
-        metrics: true,
+        Stakeholder: true,
+        Metric: true,
       },
     });
 

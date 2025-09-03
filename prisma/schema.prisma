@@ -8,247 +8,258 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Task {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  dueDate     DateTime?
-  status      TaskStatus
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  notes       Note[]
-}
-
-model Note {
-  id        String   @id @default(cuid())
-  content   String
-  taskId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  task      Task     @relation(fields: [taskId], references: [id])
-}
-
-model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  name            String?
-  emailVerified   DateTime?
-  image           String?
-  passwordHash    String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  organizations   Organization[]   @relation("OrganizationToUser")
-  accounts        Account[]
-  sessions        Session[]
-  featureRequests FeatureRequest[]
-  supportRequests SupportRequest[]
-}
-
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model BusinessUnit {
+  id             String        @id
+  name           String
+  description    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Goal           Goal[]
+  Initiative     Initiative[]
+  Kpi            Kpi[]
+  Metric         Metric[]
+  Stakeholder    Stakeholder[]
+  Team           Team[]
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+model CeoGoal {
+  id             String       @id
+  description    String
+  order          Int          @default(0)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime      @updatedAt
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([identifier, token])
+  @@index([organizationId])
+}
+
+model CompanyAccount {
+  id                String         @id
+  userId            String         @unique
+  name              String
+  description       String?
+  founderId         String?
+  employees         String?
+  headquarters      String?
+  launchedDate      String?
+  isPrivate         Boolean        @default(true)
+  tradedAs          String?
+  corporateIntranet String?
+  glassdoorLink     String?
+  linkedinLink      String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  TeamMember        TeamMember?    @relation(fields: [founderId], references: [id])
+  User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Organization      Organization[]
+}
+
+model Cost {
+  id             String        @id
+  teamId         String
+  organizationId String?
+  year           Int
+  type           CostType
+  q1Forecast     Decimal       @default(0) @db.Decimal(12, 2)
+  q1Actual       Decimal       @default(0) @db.Decimal(12, 2)
+  q2Forecast     Decimal       @default(0) @db.Decimal(12, 2)
+  q2Actual       Decimal       @default(0) @db.Decimal(12, 2)
+  q3Forecast     Decimal       @default(0) @db.Decimal(12, 2)
+  q3Actual       Decimal       @default(0) @db.Decimal(12, 2)
+  q4Forecast     Decimal       @default(0) @db.Decimal(12, 2)
+  q4Actual       Decimal       @default(0) @db.Decimal(12, 2)
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Team           Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@index([year])
 }
 
 model FeatureRequest {
-  id          String   @id @default(cuid())
+  id          String   @id
   title       String
-  description String   @db.Text
+  description String
   category    String
   priority    String   @default("medium")
-  useCase     String?  @db.Text
+  useCase     String?
   status      String   @default("submitted")
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model SupportRequest {
-  id          String   @id @default(cuid())
-  subject     String
-  category    String
-  priority    String   @default("medium")
-  description String   @db.Text
-  steps       String?  @db.Text
-  status      String   @default("open")
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Organization {
-  id                String             @id @default(cuid())
-  name              String
-  description       String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  businessUnits     BusinessUnit[]
-  teams             Team[]
-  users             User[]             @relation("OrganizationToUser")
-  initiatives       Initiative[]
-  kpis              Kpi[]
-  headcountTrackers HeadcountTracker[]
-  costs             Cost[]
-  ceoGoals          CeoGoal[]
-}
-
-model BusinessUnit {
-  id           String        @id @default(cuid())
-  name         String
-  description  String?
-  orgId        String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  organization Organization  @relation(fields: [orgId], references: [id])
-  metrics      Metric[]
-  stakeholders Stakeholder[]
-  initiatives  Initiative[]
-  kpis         Kpi[]
-}
-
-model Stakeholder {
-  id             String        @id @default(cuid())
-  name           String
-  email          String
-  role           String
-  businessUnitId String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  goals          Goal[]
-  meetings       Meeting[]
-  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id])
-  // Self-referential manager relationship
-  reportsToId    String?
-  reportsTo      Stakeholder?  @relation("StakeholderReports", fields: [reportsToId], references: [id])
-  directReports  Stakeholder[] @relation("StakeholderReports")
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Goal {
-  id            String      @id @default(cuid())
-  title         String
-  description   String
-  startDate     DateTime
-  endDate       DateTime
-  status        GoalStatus
-  stakeholderId String
-  requirements  String?
-  progressNotes String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
+  id             String       @id
+  title          String
+  description    String?
+  status         GoalStatus?
+  stakeholderId  String?
+  progressNotes  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime      @updatedAt
+  businessUnitId String
+  quarter        Quarter
+  year           Int
+  BusinessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
+  Stakeholder    Stakeholder? @relation(fields: [stakeholderId], references: [id])
+}
+
+model HeadcountTracker {
+  id             String        @id
+  teamId         String
+  organizationId String?
+  year           Int
+  role           String
+  level          String
+  salary         Decimal       @db.Decimal(12, 2)
+  q1Forecast     Int           @default(0)
+  q1Actual       Int           @default(0)
+  q2Forecast     Int           @default(0)
+  q2Actual       Int           @default(0)
+  q3Forecast     Int           @default(0)
+  q3Actual       Int           @default(0)
+  q4Forecast     Int           @default(0)
+  q4Actual       Int           @default(0)
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Team           Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@index([year])
+}
+
+model Initiative {
+  id                    String            @id
+  name                  String
+  summary               String?
+  valueProposition      String?
+  implementationDetails String?
+  releaseDate           DateTime?
+  organizationId        String
+  ownerId               String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime @updatedAt
+  businessUnitId        String?
+  type                  InitiativeType?
+  atRisk                Boolean           @default(false)
+  status                InitiativeStatus?
+  BusinessUnit          BusinessUnit?     @relation(fields: [businessUnitId], references: [id])
+  Organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  TeamMember            TeamMember?       @relation(fields: [ownerId], references: [id])
+  Kpi                   Kpi[]
+
+  @@index([businessUnitId])
+  @@index([organizationId])
+  @@index([ownerId])
+}
+
+model Kpi {
+  id                String        @id
+  name              String
+  targetMetric      Float?
+  actualMetric      Float?
+  quarter           Quarter
+  year              Int
+  organizationId    String
+  teamId            String
+  initiativeId      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime @updatedAt
+  businessUnitId    String?
+  metTarget         Boolean?
+  metTargetPercent  Float?
+  actualRevenue     Float?
+  forecastedRevenue Float?
+  BusinessUnit      BusinessUnit? @relation(fields: [businessUnitId], references: [id])
+  Initiative        Initiative?   @relation(fields: [initiativeId], references: [id])
+  Organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Team              Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([businessUnitId])
+  @@index([initiativeId])
+  @@index([organizationId])
+  @@index([teamId])
 }
 
 model Meeting {
-  id            String      @id @default(cuid())
+  id            String      @id
   date          DateTime
   notes         String
   stakeholderId String
   createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
+  updatedAt     DateTime @updatedAt
+  Stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
 }
 
 model Metric {
-  id             String       @id @default(cuid())
+  id             String       @id
   name           String
   target         Float
   current        Float
   unit           String
   businessUnitId String
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  businessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
+  updatedAt      DateTime      @updatedAt
+  BusinessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
 }
 
-model Team {
-  id                String             @id @default(cuid())
-  name              String
-  description       String?
-  organizationId    String
-  opsReviews        OpsReview[]
-  OpsReviewItem     OpsReviewItem[]
-  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  members           TeamMember[]
-  kpis              Kpi[]
-  headcountTrackers HeadcountTracker[]
-  costs             Cost[]
-
-  @@unique([organizationId, name])
-  @@index([organizationId])
-}
-
-model TeamMember {
-  id                  String          @id @default(cuid())
-  name                String
-  email               String?
-  role                String?
-  teamId              String
-  isActive            Boolean         @default(true)
-  // Self-referential manager relationship
-  reportsToId         String?
-  reportsTo           TeamMember?     @relation("TeamMemberReports", fields: [reportsToId], references: [id])
-  subordinates        TeamMember[]    @relation("TeamMemberReports")
-  ownedOpsReviews     OpsReview[]     @relation("OpsReviewOwner")
-  ownedOpsReviewItems OpsReviewItem[] @relation("OpsReviewItemOwner")
-  team                Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  ownedInitiatives    Initiative[]    @relation("InitiativeOwner")
-
-  @@unique([teamId, email])
-  @@index([teamId])
+model Note {
+  id        String   @id
+  content   String
+  taskId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Task      Task     @relation(fields: [taskId], references: [id])
 }
 
 model OpsReview {
-  id          String          @id @default(cuid())
-  title       String
-  description String?
-  quarter     Quarter
-  month       Int?
-  year        Int
-  teamId      String
-  ownerId     String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  owner       TeamMember?     @relation("OpsReviewOwner", fields: [ownerId], references: [id])
-  team        Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  items       OpsReviewItem[]
+  id            String          @id
+  title         String
+  description   String?
+  quarter       Quarter
+  month         Int?
+  year          Int
+  teamId        String
+  ownerId       String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  TeamMember    TeamMember?     @relation(fields: [ownerId], references: [id])
+  Team          Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  OpsReviewItem OpsReviewItem[]
 
-  @@index([teamId])
   @@index([ownerId])
+  @@index([teamId])
 }
 
 model OpsReviewItem {
-  id           String      @id @default(cuid())
+  id           String      @id
   title        String
   description  String?
   targetMetric Float?
@@ -259,21 +270,154 @@ model OpsReviewItem {
   teamId       String
   ownerId      String?
   createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  opsReview    OpsReview   @relation(fields: [opsReviewId], references: [id], onDelete: Cascade)
-  owner        TeamMember? @relation("OpsReviewItemOwner", fields: [ownerId], references: [id])
-  team         Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  updatedAt    DateTime @updatedAt
+  OpsReview    OpsReview   @relation(fields: [opsReviewId], references: [id], onDelete: Cascade)
+  TeamMember   TeamMember? @relation(fields: [ownerId], references: [id])
+  Team         Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([opsReviewId])
-  @@index([teamId])
   @@index([ownerId])
+  @@index([teamId])
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  COMPLETED
-  BLOCKED
+model Organization {
+  id               String             @id
+  name             String
+  description      String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  companyAccountId String
+  CeoGoal          CeoGoal[]
+  Cost             Cost[]
+  HeadcountTracker HeadcountTracker[]
+  Initiative       Initiative[]
+  Kpi              Kpi[]
+  CompanyAccount   CompanyAccount     @relation(fields: [companyAccountId], references: [id], onDelete: Cascade)
+  Team             Team[]
+  User             User[]
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Stakeholder {
+  id                String        @id
+  name              String
+  email             String
+  role              String
+  businessUnitId    String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  reportsToId       String?
+  teamMemberId      String        @unique
+  Goal              Goal[]
+  Meeting           Meeting[]
+  BusinessUnit      BusinessUnit? @relation(fields: [businessUnitId], references: [id])
+  TeamMember        TeamMember    @relation(fields: [teamMemberId], references: [id])
+  Stakeholder       Stakeholder?  @relation("StakeholderToStakeholder", fields: [reportsToId], references: [id])
+  other_Stakeholder Stakeholder[] @relation("StakeholderToStakeholder")
+}
+
+model SupportRequest {
+  id          String   @id
+  subject     String
+  category    String
+  priority    String   @default("medium")
+  description String
+  steps       String?
+  status      String   @default("open")
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id          String     @id
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      TaskStatus
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime @updatedAt
+  Note        Note[]
+}
+
+model Team {
+  id               String             @id @default(cuid())
+  name             String
+  description      String?
+  organizationId   String
+  businessUnitId   String?
+  Cost             Cost[]
+  HeadcountTracker HeadcountTracker[]
+  Kpi              Kpi[]
+  OpsReview        OpsReview[]
+  OpsReviewItem    OpsReviewItem[]
+  BusinessUnit     BusinessUnit?      @relation(fields: [businessUnitId], references: [id])
+  Organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  TeamMember       TeamMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model TeamMember {
+  id               String           @id @default(cuid())
+  name             String
+  email            String?
+  role             String?
+  teamId           String
+  isActive         Boolean          @default(true)
+  reportsToId      String?
+  CompanyAccount   CompanyAccount[]
+  Initiative       Initiative[]
+  OpsReview        OpsReview[]
+  OpsReviewItem    OpsReviewItem[]
+  TeamMember       TeamMember?      @relation("TeamMemberToTeamMember", fields: [reportsToId], references: [id])
+  other_TeamMember TeamMember[]     @relation("TeamMemberToTeamMember")
+  Team             Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  Stakeholder      Stakeholder?
+
+  @@unique([teamId, email])
+  @@index([teamId])
+}
+
+model User {
+  id             String           @id
+  email          String           @unique
+  name           String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime           @updatedAt
+  emailVerified  DateTime?
+  image          String?
+  passwordHash   String?
+  Account        Account[]
+  CompanyAccount CompanyAccount?
+  FeatureRequest FeatureRequest[]
+  Session        Session[]
+  SupportRequest SupportRequest[]
+  Organization   Organization[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum CostType {
+  SOFTWARE
+  TRAINING
+  SALARY
+  OTHER
 }
 
 enum GoalStatus {
@@ -285,11 +429,11 @@ enum GoalStatus {
   CANCELLED
 }
 
-enum Quarter {
-  Q1
-  Q2
-  Q3
-  Q4
+enum InitiativeStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
 }
 
 enum InitiativeType {
@@ -298,138 +442,16 @@ enum InitiativeType {
   KTLO
 }
 
-enum InitiativeStatus {
-  NOT_STARTED
+enum Quarter {
+  Q1
+  Q2
+  Q3
+  Q4
+}
+
+enum TaskStatus {
+  TODO
   IN_PROGRESS
-  ON_HOLD
   COMPLETED
-}
-
-model Initiative {
-  id                    String            @id @default(cuid())
-  name                  String
-  type                  InitiativeType?
-  atRisk                Boolean           @default(false)
-  status                InitiativeStatus?
-  summary               String? // one-line summary
-  valueProposition      String?
-  implementationDetails String?
-  releaseDate           DateTime?
-  organizationId        String
-  ownerId               String?
-  businessUnitId        String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  owner        TeamMember?   @relation("InitiativeOwner", fields: [ownerId], references: [id])
-  businessUnit BusinessUnit? @relation(fields: [businessUnitId], references: [id])
-  kpis         Kpi[]
-
-  @@index([organizationId])
-  @@index([ownerId])
-  @@index([businessUnitId])
-}
-
-model HeadcountTracker {
-  id             String   @id @default(cuid())
-  teamId         String
-  organizationId String?
-  year           Int
-  role           String
-  level          String
-  salary         Decimal  @db.Decimal(12, 2)
-  q1Forecast     Int      @default(0)
-  q1Actual       Int      @default(0)
-  q2Forecast     Int      @default(0)
-  q2Actual       Int      @default(0)
-  q3Forecast     Int      @default(0)
-  q3Actual       Int      @default(0)
-  q4Forecast     Int      @default(0)
-  q4Actual       Int      @default(0)
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([teamId])
-  @@index([organizationId])
-  @@index([year])
-}
-
-/// Cost Manager models and enums
-enum CostType {
-  SOFTWARE
-  TRAINING
-  SALARY
-  OTHER
-}
-
-model Cost {
-  id             String   @id @default(cuid())
-  teamId         String
-  organizationId String?
-  year           Int
-  type           CostType
-  q1Forecast     Decimal  @default(0) @db.Decimal(12, 2)
-  q1Actual       Decimal  @default(0) @db.Decimal(12, 2)
-  q2Forecast     Decimal  @default(0) @db.Decimal(12, 2)
-  q2Actual       Decimal  @default(0) @db.Decimal(12, 2)
-  q3Forecast     Decimal  @default(0) @db.Decimal(12, 2)
-  q3Actual       Decimal  @default(0) @db.Decimal(12, 2)
-  q4Forecast     Decimal  @default(0) @db.Decimal(12, 2)
-  q4Actual       Decimal  @default(0) @db.Decimal(12, 2)
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([teamId])
-  @@index([organizationId])
-  @@index([year])
-}
-
-model Kpi {
-  id                String   @id @default(cuid())
-  name              String
-  targetMetric      Float?
-  actualMetric      Float?
-  forecastedRevenue Float?
-  actualRevenue     Float?
-  metTarget         Boolean?
-  metTargetPercent  Float?
-  quarter           Quarter
-  year              Int
-  organizationId    String
-  teamId            String
-  initiativeId      String?
-  businessUnitId    String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  initiative   Initiative?   @relation(fields: [initiativeId], references: [id])
-  businessUnit BusinessUnit? @relation(fields: [businessUnitId], references: [id])
-
-  @@index([organizationId])
-  @@index([teamId])
-  @@index([initiativeId])
-  @@index([businessUnitId])
-}
-
-model CeoGoal {
-  id             String       @id @default(cuid())
-  description    String
-  order          Int          @default(0)
-  organizationId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
+  BLOCKED
 }

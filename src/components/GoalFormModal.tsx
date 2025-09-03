@@ -6,12 +6,12 @@ import { Goal } from '@prisma/client';
 
 type GoalFormData = {
   title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  requirements?: string;
+  description?: string;
+  quarter: string;
+  year: number;
+  status?: string;
   progressNotes?: string;
+  stakeholderId?: string;
 };
 
 interface GoalFormModalProps {
@@ -34,12 +34,12 @@ export function GoalFormModal({
     const formData = new FormData(e.currentTarget);
     const data = {
       title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      startDate: formData.get('startDate') as string,
-      endDate: formData.get('endDate') as string,
-      status: formData.get('status') as string,
-      requirements: formData.get('requirements') as string,
-      progressNotes: formData.get('progressNotes') as string,
+      description: formData.get('description') as string || undefined,
+      quarter: formData.get('quarter') as string,
+      year: parseInt(formData.get('year') as string),
+      status: formData.get('status') as string || undefined,
+      progressNotes: formData.get('progressNotes') as string || undefined,
+      stakeholderId: formData.get('stakeholderId') as string || undefined,
     };
     await onSubmit(data);
   };
@@ -95,12 +95,11 @@ export function GoalFormModal({
 
                   <div>
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                      Description *
+                      Description
                     </label>
                     <textarea
                       id="description"
                       name="description"
-                      required
                       rows={3}
                       defaultValue={goal?.description || ''}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -109,29 +108,35 @@ export function GoalFormModal({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
-                        Start Date *
+                      <label htmlFor="quarter" className="block text-sm font-medium text-gray-700">
+                        Quarter *
                       </label>
-                      <input
-                        type="date"
-                        id="startDate"
-                        name="startDate"
+                      <select
+                        id="quarter"
+                        name="quarter"
                         required
-                        defaultValue={goal?.startDate ? new Date(goal.startDate).toISOString().split('T')[0] : ''}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      />
+                        defaultValue={goal?.quarter || 'Q1'}
+                        className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                      >
+                        <option value="Q1">Q1</option>
+                        <option value="Q2">Q2</option>
+                        <option value="Q3">Q3</option>
+                        <option value="Q4">Q4</option>
+                      </select>
                     </div>
 
                     <div>
-                      <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
-                        End Date *
+                      <label htmlFor="year" className="block text-sm font-medium text-gray-700">
+                        Year *
                       </label>
                       <input
-                        type="date"
-                        id="endDate"
-                        name="endDate"
+                        type="number"
+                        id="year"
+                        name="year"
                         required
-                        defaultValue={goal?.endDate ? new Date(goal.endDate).toISOString().split('T')[0] : ''}
+                        min="2020"
+                        max="2030"
+                        defaultValue={goal?.year || new Date().getFullYear()}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       />
                     </div>
@@ -139,15 +144,15 @@ export function GoalFormModal({
 
                   <div>
                     <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                      Status *
+                      Status
                     </label>
                     <select
                       id="status"
                       name="status"
-                      required
-                      defaultValue={goal?.status || 'NOT_STARTED'}
+                      defaultValue={goal?.status || ''}
                       className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                     >
+                      <option value="">Select Status (Optional)</option>
                       <option value="NOT_STARTED">Not Started</option>
                       <option value="IN_PROGRESS">In Progress</option>
                       <option value="COMPLETED">Completed</option>
@@ -157,18 +162,6 @@ export function GoalFormModal({
                     </select>
                   </div>
 
-                  <div>
-                    <label htmlFor="requirements" className="block text-sm font-medium text-gray-700">
-                      Requirements
-                    </label>
-                    <textarea
-                      id="requirements"
-                      name="requirements"
-                      rows={2}
-                      defaultValue={goal?.requirements || ''}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
 
                   <div>
                     <label htmlFor="progressNotes" className="block text-sm font-medium text-gray-700">

@@ -12,7 +12,7 @@ export async function GET(
     const { id } = await params;
     const task = await prisma.task.findUnique({
       where: { id },
-      include: { notes: true },
+      include: { Note: true },
     });
 
     if (!task) {
@@ -57,7 +57,7 @@ export async function PUT(
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         status: data.status,
       },
-      include: { notes: true },
+      include: { Note: true },
     });
 
     return NextResponse.json(updatedTask);

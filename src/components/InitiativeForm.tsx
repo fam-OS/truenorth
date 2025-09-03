@@ -67,14 +67,13 @@ export function InitiativeForm({
 
   useEffect(() => {
     async function loadBusinessUnits() {
-      if (!currentOrg?.id) return;
       try {
         setLoadingBUs(true);
-        console.log('[InitiativeForm] loading BUs for orgId =', currentOrg.id);
-        const res = await fetch(`/api/organizations/${currentOrg.id}/business-units`, { cache: 'no-store' });
+        console.log('[InitiativeForm] loading all Business Units');
+        const res = await fetch(`/api/business-units`, { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to load business units');
         const data = await res.json();
-        const mapped: BusinessUnitOption[] = data.map((b: any) => ({ id: b.id, name: b.name }));
+        const mapped: BusinessUnitOption[] = (Array.isArray(data) ? data : []).map((b: any) => ({ id: b.id, name: b.name }));
         setBusinessUnits(mapped);
         console.log('[InitiativeForm] BUs loaded count =', mapped.length);
       } catch (e) {
@@ -85,7 +84,7 @@ export function InitiativeForm({
       }
     }
     loadBusinessUnits();
-  }, [currentOrg?.id]);
+  }, []);
 
   useEffect(() => {
     async function loadOwners() {

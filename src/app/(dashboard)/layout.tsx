@@ -33,12 +33,13 @@ export default function DashboardLayout({
   const apps = useMemo(
     () =>
       [
-        { href: '/units-stakeholders', label: 'Business Units & Stakeholders', icon: BuildingOfficeIcon, desc: 'Manage org structure and stakeholders' },
+        { href: '/organizations', label: 'Organizations', icon: BuildingOfficeIcon, desc: 'Manage company and business units' },
+        { href: '/business-units', label: 'Business Units', icon: BuildingOfficeIcon, desc: 'Units, stakeholders, and goals' },
         { href: '/financial', label: 'Financial Management', icon: PresentationChartBarIcon, desc: 'Track costs, forecasts, and actuals' },
         { href: '/initiatives-kpis', label: 'Initiatives & KPIs', icon: PresentationChartBarIcon, desc: 'Plan, execute, and measure outcomes' },
         { href: '/teams', label: 'Team Management', icon: UserGroupIcon, desc: 'Headcount, roles, and team setup' },
         { href: '/ops-reviews', label: 'Team Ops Reviews', icon: PresentationChartBarIcon, desc: 'Quarterly operational reviews' },
-      ].sort((a, b) => a.label.localeCompare(b.label)),
+      ],
     []
   );
 

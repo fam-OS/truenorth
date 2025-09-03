@@ -37,26 +37,21 @@
 ## Marketing pages
 - Done 
 ## Production preparedness
-- Fix deployment issues 
-
+- Done 
+## CompanyAccount
+- Done
+ 
 Content of Ops Reviews:
 - What makes an ops review successful? 
 - What are the key metrics to measure the success of an ops review? 
 
 What are we solving for?
-- Share the CEO's strategic vision with leaders throughout the company. 
-- Connect initiative bets to actual ROI results 
-- Make it easy to measure success of teams at all levels and all disciplines 
-- Connect company goals to people management strategies 
+- Keep relationship notes in one place for discussions with directs, higher ups, and stakeholders
+- Maintain a personal source of truth for the executive strategic vision and business goals to meet this vision 
+- Model your team's budget and recurring costs, and model and forecast headcount for your organization  
+- Track overall status of key initiatives and KPIs they are tied to 
+- Make it easy to measure success of teams at all levels and all disciplines  
+- Connect company goals to people management strategies  
+- Track high level goals and metrics for a company business unit 
 
-## Future Features
-- Stakeholder page: Visualize the org chart and way your org supports business units and initiatives feature.  
-- Initiatives page:  Build a dynamic gannt chart based on the release date of initiatives, indicating which BU is supported.  
-- Push email to the app (google, microsoft plugins?)
-- Push calendar to the app (google, microsoft plugins?)
-- Push documents to the app (google, microsoft plugins?) 
-- Account Types (Individual vs Organization) determine experience 
-- Roles and Responsibility Definition
-- User Persona and Journey Definition
-- Goal Nesting by Role
-- Change Goal Start and Due Date to Quarter and Year
+

@@ -11,12 +11,50 @@ export default function SignUpPage() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const router = useRouter();
+
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('Password must be at least 8 characters long');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Password must contain at least one uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('Password must contain at least one lowercase letter');
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push('Password must contain at least one number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('Password must contain at least one special character');
+    }
+    
+    return errors;
+  };
+
+  const handlePasswordChange = (newPassword: string) => {
+    setPassword(newPassword);
+    const errors = validatePassword(newPassword);
+    setPasswordErrors(errors);
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Check password validation before submitting
+    const passwordValidationErrors = validatePassword(password);
+    if (passwordValidationErrors.length > 0) {
+      setPasswordErrors(passwordValidationErrors);
+      setError('Please fix the password requirements below');
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -28,6 +66,16 @@ export default function SignUpPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle detailed validation errors from API
+        if (data.details && Array.isArray(data.details)) {
+          const passwordIssues = data.details
+            .filter((issue: any) => issue.path?.includes('password'))
+            .map((issue: any) => issue.message);
+          
+          if (passwordIssues.length > 0) {
+            setPasswordErrors(passwordIssues);
+          }
+        }
         setError(data.error || 'An error occurred');
         return;
       }
@@ -134,16 +182,64 @@ export default function SignUpPage() {
                 autoComplete="new-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handlePasswordChange(e.target.value)}
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
               />
             </div>
 
+            {/* Password Requirements Feedback */}
+            {password && passwordErrors.length > 0 && (
+              <div className="rounded-md bg-yellow-50 p-4">
+                <div className="text-sm text-yellow-800">
+                  <p className="font-medium mb-2">Password requirements:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {passwordErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Password Strength Indicator */}
+            {password && (
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">Password strength:</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      passwordErrors.length === 0 
+                        ? 'bg-green-500 w-full' 
+                        : passwordErrors.length <= 2 
+                        ? 'bg-yellow-500 w-3/4' 
+                        : passwordErrors.length <= 3
+                        ? 'bg-orange-500 w-1/2'
+                        : 'bg-red-500 w-1/4'
+                    }`}
+                  />
+                </div>
+                <div className={`text-xs ${
+                  passwordErrors.length === 0 
+                    ? 'text-green-600' 
+                    : passwordErrors.length <= 2 
+                    ? 'text-yellow-600' 
+                    : 'text-red-600'
+                }`}>
+                  {passwordErrors.length === 0 
+                    ? 'Strong password' 
+                    : passwordErrors.length <= 2 
+                    ? 'Good password' 
+                    : 'Weak password'
+                  }
+                </div>
+              </div>
+            )}
+
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || passwordErrors.length > 0}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
               >
                 {loading ? 'Creating account...' : 'Sign up'}

@@ -5,13 +5,31 @@ import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
 import type { OrganizationWithBusinessUnits } from '@/types/prisma';
 import { OrganizationForm } from '@/components/OrganizationForm';
+import AccountProfile from '@/components/AccountProfile';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import CEOGoals from '@/components/CEOGOALS';
 
 type Team = { id: string; name: string; description?: string | null };
 
+interface CompanyAccount {
+  id: string
+  name: string
+  description?: string
+  founderId?: string
+  employees?: string
+  headquarters?: string
+  launchedDate?: string
+  isPrivate: boolean
+  tradedAs?: string
+  corporateIntranet?: string
+  glassdoorLink?: string
+  linkedinLink?: string
+  founder?: any
+  organizations: any[]
+}
+
 export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<OrganizationWithBusinessUnits[]>([]);
+  const [companyAccount, setCompanyAccount] = useState<CompanyAccount | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateOrg, setShowCreateOrg] = useState(false);
@@ -77,9 +95,29 @@ export default function OrganizationsPage() {
     }
   }, []);
 
+  const fetchCompanyAccount = useCallback(async () => {
+    try {
+      const response = await fetch('/api/company-account', {
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCompanyAccount(data);
+      }
+    } catch (err) {
+      console.error('Error fetching company account:', err);
+    }
+  }, []);
+
   // Handle saving organization
   const handleSaveOrganization = async (data: { name: string; description?: string }) => {
     try {
+      if (!companyAccount) {
+        setError('No company account found. Please create one first.');
+        return;
+      }
+
       let response: Response;
       
       if (editingOrg) {
@@ -98,7 +136,10 @@ export default function OrganizationsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            ...data,
+            companyAccountId: companyAccount.id,
+          }),
         });
       }
 
@@ -106,13 +147,20 @@ export default function OrganizationsPage() {
         throw new Error('Failed to save organization');
       }
 
-      await fetchOrganizations();
       setShowCreateOrg(false);
       setEditingOrg(null);
-      showToast({ title: `Organization ${editingOrg ? 'updated' : 'created'}`, description: `${data.name} saved successfully.` });
+      await fetchOrganizations();
+      showToast({ 
+        title: editingOrg ? 'Organization updated' : 'Organization created', 
+        description: `${data.name} was ${editingOrg ? 'updated' : 'created'} successfully.` 
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save organization');
-      showToast({ title: 'Failed to save organization', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      showToast({ 
+        title: 'Failed to save organization', 
+        description: err instanceof Error ? err.message : 'Unknown error', 
+        type: 'destructive' 
+      });
     }
   };
 
@@ -201,6 +249,7 @@ export default function OrganizationsPage() {
   useEffect(() => {
     isMounted.current = true;
     fetchOrganizations();
+    fetchCompanyAccount();
 
     return () => {
       isMounted.current = false;
@@ -300,26 +349,27 @@ export default function OrganizationsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* CEO Goals Section */}
-      <CEOGoals 
-        initialGoals={ceoGoals}
-        onSave={handleSaveCEOGoals}
+      {/* Company Account Overview */}
+      <AccountProfile 
+        companyAccount={companyAccount} 
+        onUpdate={fetchCompanyAccount}
       />
 
-      {/* Organizations Section */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-900">Organizations</h1>
-          <button
-            onClick={() => {
-              setEditingOrg(null);
-              setShowCreateOrg(true);
-            }}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            New Organization
-          </button>
-        </div>
+      {/* Business Units Section - Only show if company account exists */}
+      {companyAccount && (
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <h1 className="text-xl font-semibold text-gray-900">My organizations and teams</h1>
+            <button
+              onClick={() => {
+                setEditingOrg(null);
+                setShowCreateOrg(true);
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              New Organization
+            </button>
+          </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
@@ -467,7 +517,8 @@ export default function OrganizationsPage() {
             </ul>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Create/Edit Organization Modal */}
       {showCreateOrg && (

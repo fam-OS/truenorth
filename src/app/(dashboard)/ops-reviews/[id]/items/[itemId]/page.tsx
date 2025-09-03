@@ -27,9 +27,9 @@ export default async function OpsReviewItemDetailPage({
   const item = await prisma.opsReviewItem.findUnique({
     where: { id: itemId },
     include: {
-      opsReview: { select: { id: true, title: true, quarter: true, year: true } },
-      team: { select: { id: true, name: true } },
-      owner: { select: { id: true, name: true, email: true } },
+      OpsReview: { select: { id: true, title: true, quarter: true, year: true } },
+      Team: { select: { id: true, name: true } },
+      TeamMember: { select: { id: true, name: true, email: true } },
     },
   });
 
@@ -52,7 +52,7 @@ export default async function OpsReviewItemDetailPage({
         <div>
           <h1 className="text-3xl font-bold">{item.title}</h1>
           <p className="text-gray-500">
-            {item.opsReview?.title} • {item.opsReview?.quarter} {item.opsReview?.year}
+            {item.OpsReview?.title} • {item.OpsReview?.quarter} {item.OpsReview?.year}
           </p>
         </div>
         <div className="space-x-2">
@@ -80,11 +80,11 @@ export default async function OpsReviewItemDetailPage({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-500">Team</p>
-                <p>{item.team?.name ?? 'No Team'}</p>
+                <p>{item.Team?.name ?? 'No Team'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Owner</p>
-                <p>{item.owner?.name ?? 'Unassigned'}</p>
+                <p>{item.TeamMember?.name ?? 'Unassigned'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Quarter</p>

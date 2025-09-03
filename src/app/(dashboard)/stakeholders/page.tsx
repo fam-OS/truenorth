@@ -42,7 +42,7 @@ export default function StakeholdersPage() {
     return () => { mounted.current = false; };
   }, [fetchStakeholders]);
 
-  async function handleCreateGlobalStakeholder(data: { name: string; role: string; email?: string }) {
+  async function handleCreateGlobalStakeholder(data: { teamMemberId: string }) {
     try {
       const response = await fetch('/api/stakeholders', {
         method: 'POST',
@@ -52,7 +52,7 @@ export default function StakeholdersPage() {
       if (!response.ok) throw new Error('Failed to create stakeholder');
       await fetchStakeholders();
       setView('list');
-      showToast({ title: 'Stakeholder created', description: `${data.name} was added successfully.` });
+      showToast({ title: 'Stakeholder created', description: `Stakeholder was added successfully.` });
     } catch (err) {
       showToast({ title: 'Failed to create stakeholder', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
     }

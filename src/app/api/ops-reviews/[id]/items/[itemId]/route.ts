@@ -11,7 +11,7 @@ export async function GET(
   try {
     const item = await prisma.opsReviewItem.findUnique({
       where: { id: itemId },
-      include: { owner: true, team: true, opsReview: true },
+      include: { TeamMember: true, Team: true, OpsReview: true },
     });
     if (!item || item.opsReviewId !== id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
@@ -50,12 +50,12 @@ export async function PUT(
         ...(parsed.actualMetric !== undefined && { actualMetric: parsed.actualMetric }),
         ...(parsed.quarter !== undefined && { quarter: parsed.quarter as any }),
         ...(parsed.year !== undefined && { year: parsed.year as number }),
-        ...(parsed.teamId !== undefined && { team: { connect: { id: parsed.teamId } } }),
+        ...(parsed.teamId !== undefined && { Team: { connect: { id: parsed.teamId } } }),
         ...(parsed.ownerId !== undefined && (parsed.ownerId
-          ? { owner: { connect: { id: parsed.ownerId } } }
-          : { owner: { disconnect: true } })),
+          ? { TeamMember: { connect: { id: parsed.ownerId } } }
+          : { TeamMember: { disconnect: true } })),
       },
-      include: { owner: true, team: true, opsReview: true },
+      include: { TeamMember: true, Team: true, OpsReview: true },
     });
 
     return NextResponse.json(updated);

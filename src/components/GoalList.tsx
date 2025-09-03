@@ -18,9 +18,10 @@ interface GoalListProps {
   goals: Goal[];
   onCreateGoal: () => void;
   onEditGoal: (goal: Goal) => void;
+  onSelectGoal?: (goal: Goal) => void;
 }
 
-export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
+export function GoalList({ goals, onCreateGoal, onEditGoal, onSelectGoal }: GoalListProps) {
   return (
     <div className="bg-white shadow rounded-lg">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
@@ -38,7 +39,8 @@ export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
           {goals.map((goal) => (
             <li
               key={goal.id}
-              className="hover:bg-gray-50"
+              className="hover:bg-gray-50 cursor-pointer"
+              onClick={() => onSelectGoal?.(goal)}
             >
               <div className="px-4 py-4">
                 <div className="flex items-center justify-between">
@@ -55,32 +57,25 @@ export function GoalList({ goals, onCreateGoal, onEditGoal }: GoalListProps) {
                       <PencilIcon className="h-4 w-4" />
                     </button>
                     <p className="text-sm font-medium text-gray-900">{goal.title}</p>
-                    <span
-                      className={clsx(
-                        'ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                        statusColors[goal.status]
-                      )}
-                    >
-                      {goal.status}
-                    </span>
+                    {goal.status && (
+                      <span
+                        className={clsx(
+                          'ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                          statusColors[goal.status]
+                        )}
+                      >
+                        {goal.status}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {format(new Date(goal.endDate), 'MMM d, yyyy')}
+                    {(goal as any).quarter} {(goal as any).year}
                   </div>
                 </div>
                 <div className="mt-2">
                   <p className="text-sm text-gray-500">{goal.description}</p>
                 </div>
                 <div className="mt-2 flex space-x-4 text-xs text-gray-500">
-                  <div>
-                    Start: {format(new Date(goal.startDate), 'MMM d, yyyy')}
-                  </div>
-                  {goal.requirements && (
-                    <div className="flex items-center">
-                      <span className="h-1 w-1 bg-gray-400 rounded-full mr-1"></span>
-                      Has requirements
-                    </div>
-                  )}
                   {goal.progressNotes && (
                     <div className="flex items-center">
                       <span className="h-1 w-1 bg-gray-400 rounded-full mr-1"></span>

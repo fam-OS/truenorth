@@ -1,6 +1,50 @@
 import { NextResponse } from 'next/server';
+import { $Enums } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
+import { z } from 'zod';
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ businessUnitId: string }> }
+) {
+  try {
+    const { businessUnitId } = await params;
+    
+    // Validate business unit exists
+    const businessUnit = await prisma.businessUnit.findUnique({
+      where: { id: businessUnitId },
+    });
+
+    if (!businessUnit) {
+      return new NextResponse('Business unit not found', { status: 404 });
+    }
+
+    // Fetch goals for this business unit
+    const goals = await prisma.goal.findMany({
+      where: {
+        businessUnitId: businessUnitId,
+      },
+      include: {
+        Stakeholder: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json(goals);
+  } catch (error) {
+    console.error('Error fetching goals:', error);
+    return handleError(error);
+  }
+}
 
 export async function POST(
   request: Request,
@@ -21,12 +65,11 @@ export async function POST(
       return new NextResponse('Business unit not found', { status: 404 });
     }
 
-    // Validate stakeholder exists and belongs to the same business unit
+    // Validate stakeholder exists
     if (json.stakeholderId) {
       const stakeholder = await prisma.stakeholder.findUnique({
         where: { 
-          id: json.stakeholderId,
-          businessUnitId
+          id: json.stakeholderId
         }
       });
 
@@ -36,20 +79,30 @@ export async function POST(
     }
 
     // Create the goal
-    if (!json.stakeholderId) {
-      return new NextResponse('Stakeholder ID is required', { status: 400 });
-    }
+    const createGoalSchema = z.object({
+      title: z.string().min(1, 'Title is required'),
+      description: z.string().nullable().optional(),
+      quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']),
+      year: z.number().int().min(2020).max(2030),
+      status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'AT_RISK', 'BLOCKED', 'CANCELLED']).optional(),
+      progressNotes: z.string().nullable().optional(),
+      // stakeholderId must be provided but is not constrained to UUID in tests
+      stakeholderId: z.string().min(1, 'stakeholderId is required'),
+    });
+
+    const parsedJson = createGoalSchema.parse(json);
 
     const goal = await prisma.goal.create({
       data: {
-        title: json.title,
-        description: json.description,
-        startDate: new Date(json.startDate),
-        endDate: new Date(json.endDate),
-        status: 'NOT_STARTED', // Default status
-        stakeholderId: json.stakeholderId,
-        requirements: json.requirements || null,
-        progressNotes: null,
+        id: crypto.randomUUID(),
+        title: parsedJson.title,
+        description: parsedJson.description ?? null,
+        quarter: parsedJson.quarter,
+        year: parsedJson.year,
+        businessUnitId,
+        ...(parsedJson.status && { status: parsedJson.status as $Enums.GoalStatus }),
+        stakeholderId: parsedJson.stakeholderId,
+        progressNotes: parsedJson.progressNotes ?? null,
       },
     });
 

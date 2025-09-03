@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 // Extend the NodeJS namespace to include our custom global variables
 declare global {
-  // eslint-disable-next-line no-var
+   
   var prisma: PrismaClient | undefined;
 }
 

@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     // Create feature request
     const featureRequest = await prisma.featureRequest.create({
       data: {
+        id: crypto.randomUUID(),
         title,
         description,
         category,
