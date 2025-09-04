@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createOrganizationSchema } from '@/lib/validations/organization';
 import { handleError } from '@/lib/api-response';
 import { randomUUID } from 'crypto';
+import { requireUserId } from '@/lib/access';
 
 export async function GET() {
   try {
@@ -14,15 +13,11 @@ export async function GET() {
       return NextResponse.json(organizations);
     }
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    console.log('Fetching organizations for user:', session.user.id);
+    const userId = await requireUserId();
+    console.log('Fetching organizations for user:', userId);
 
     const companyAccount = await prisma.companyAccount.findFirst({
-      where: { userId: session.user.id }
+      where: { userId }
     });
 
     if (!companyAccount) {
@@ -72,13 +67,10 @@ export async function POST(request: Request) {
       return NextResponse.json(organization, { status: 201 });
     }
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const companyAccount = await prisma.companyAccount.findFirst({
-      where: { userId: session.user.id }
+      where: { userId }
     });
 
     if (!companyAccount) {

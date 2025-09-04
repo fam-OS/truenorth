@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { assertTeamAccess, getViewerCompanyOrgIds, requireUserId } from '@/lib/access';
 
 export async function GET() {
@@ -53,24 +51,70 @@ const createTeamMemberSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      console.log('Team member creation failed: No authenticated user');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const body = await request.json();
     console.log('Team member creation request:', body);
-    console.log('Authenticated user:', session.user.id);
+    console.log('Authenticated user:', userId);
     
     const validatedData = createTeamMemberSchema.parse(body);
     console.log('Validated data:', validatedData);
 
-    // In non-test, ensure teamId (if provided) belongs to viewer orgs
-    if (process.env.NODE_ENV !== 'test' && validatedData.teamId) {
+    // If no teamId provided, auto-assign to a default "General Team" under the viewer's CompanyAccount orgs
+    let targetTeamId = validatedData.teamId;
+    if (!targetTeamId) {
+      let orgIds = await getViewerCompanyOrgIds(userId);
+      if (orgIds.length === 0) {
+        // No orgs yet: create a default Organization under the viewer's CompanyAccount
+        // First, try to infer companyAccountId from any org membership; otherwise use owned CompanyAccount
+        const membershipOrg = await prisma.organization.findFirst({
+          where: { User: { some: { id: userId } } },
+          select: { companyAccountId: true },
+        });
+        let companyAccountId: string | null = membershipOrg?.companyAccountId ?? null;
+        if (!companyAccountId) {
+          const owned = await prisma.companyAccount.findFirst({ where: { userId }, select: { id: true } });
+          companyAccountId = owned?.id ?? null;
+        }
+        if (!companyAccountId) {
+          return NextResponse.json({ error: 'No company account found for the current user.' }, { status: 400 });
+        }
+        const defaultOrg = await prisma.organization.create({
+          data: {
+            id: `org-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: 'General Organization',
+            description: 'Auto-created for team member management',
+            companyAccountId,
+          },
+          select: { id: true },
+        });
+        orgIds = [defaultOrg.id];
+      }
+      // Try to find an existing General Team in any of the orgs
+      let team = await prisma.team.findFirst({
+        where: {
+          organizationId: { in: orgIds },
+          name: 'General Team'
+        },
+        select: { id: true }
+      });
+      // If none, create one under the first org
+      if (!team) {
+        team = await prisma.team.create({
+          data: {
+            name: 'General Team',
+            organizationId: orgIds[0],
+          },
+          select: { id: true }
+        });
+      }
+      targetTeamId = team.id;
+    }
+
+    // In non-test, ensure chosen team belongs to viewer orgs
+    if (process.env.NODE_ENV !== 'test' && targetTeamId) {
       try {
-        await assertTeamAccess(session.user.id, validatedData.teamId);
+        await assertTeamAccess(userId, targetTeamId);
       } catch (resp) {
         return resp as any;
       }
@@ -85,11 +129,8 @@ export async function POST(request: Request) {
       email: validatedData.email || `${validatedData.name.toLowerCase().replace(/\s+/g, '.')}@company.com`,
       role: validatedData.role,
       isActive: true,
+      teamId: targetTeamId,
     };
-    
-    if (validatedData.teamId) {
-      teamMemberData.teamId = validatedData.teamId;
-    }
     
     const teamMember = await prisma.teamMember.create({
       data: teamMemberData,

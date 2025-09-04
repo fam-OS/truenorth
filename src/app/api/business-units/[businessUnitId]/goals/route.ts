@@ -3,9 +3,7 @@ import { $Enums } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { z } from 'zod';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { assertBusinessUnitAccess } from '@/lib/access';
+import { assertBusinessUnitAccess, requireUserId } from '@/lib/access';
 
 export async function GET(
   _request: Request,
@@ -14,11 +12,8 @@ export async function GET(
   try {
     const { businessUnitId } = await params;
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return new NextResponse('Unauthorized', { status: 401 });
-      }
-      await assertBusinessUnitAccess(session.user.id, businessUnitId);
+      const userId = await requireUserId();
+      await assertBusinessUnitAccess(userId, businessUnitId);
     }
     
     // Validate business unit exists
@@ -64,11 +59,8 @@ export async function POST(
     const { businessUnitId } = await params;
     const json = await request.json();
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return new NextResponse('Unauthorized', { status: 401 });
-      }
-      await assertBusinessUnitAccess(session.user.id, businessUnitId);
+      const userId = await requireUserId();
+      await assertBusinessUnitAccess(userId, businessUnitId);
     }
 
     // Validate business unit exists

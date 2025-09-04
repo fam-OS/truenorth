@@ -20,17 +20,32 @@ export async function requireUserId(): Promise<string> {
 }
 
 export async function getViewerCompanyOrgIds(userId: string): Promise<string[]> {
-  const companyAccount = await prisma.companyAccount.findFirst({
-    where: { userId },
-    select: { id: true },
+  // If the user is a member of any Organization (via many-to-many), use that org's companyAccountId
+  const membershipOrg = await prisma.organization.findFirst({
+    where: { User: { some: { id: userId } } },
+    select: { companyAccountId: true },
   });
-  if (!companyAccount) return [];
+
+  let companyAccountId: string | null = null;
+
+  if (membershipOrg?.companyAccountId) {
+    companyAccountId = membershipOrg.companyAccountId;
+  } else {
+    // Fallback: use the company account owned by the user (legacy 1:1 ownership)
+    const owned = await prisma.companyAccount.findFirst({
+      where: { userId },
+      select: { id: true },
+    });
+    companyAccountId = owned?.id ?? null;
+  }
+
+  if (!companyAccountId) return [];
 
   const orgs = await prisma.organization.findMany({
-    where: { companyAccountId: companyAccount.id },
+    where: { companyAccountId },
     select: { id: true },
   });
-  return orgs.map(o => o.id);
+  return orgs.map((o) => o.id);
 }
 
 export async function assertBusinessUnitAccess(userId: string, businessUnitId: string): Promise<void> {

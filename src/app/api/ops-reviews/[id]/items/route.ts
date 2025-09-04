@@ -3,9 +3,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { createOpsReviewItemSchema } from '@/lib/validations/ops-review-item';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { assertOpsReviewAccess } from '@/lib/access';
+import { assertOpsReviewAccess, requireUserId } from '@/lib/access';
 
 // Define the expected response type
 interface OpsReviewItemResponse {
@@ -65,12 +63,9 @@ export async function GET(
   try {
     console.log(`[GET /api/ops-reviews/${id}/items] Starting request`);
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+      const userId = await requireUserId();
       try {
-        await assertOpsReviewAccess(session.user.id, id);
+        await assertOpsReviewAccess(userId, id);
       } catch (resp) {
         return resp as any;
       }
@@ -141,12 +136,9 @@ export async function POST(
       );
     }
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+      const userId = await requireUserId();
       try {
-        await assertOpsReviewAccess(session.user.id, id);
+        await assertOpsReviewAccess(userId, id);
       } catch (resp) {
         return resp as any;
       }

@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateOpsReviewSchema } from '@/lib/validations/ops-review';
 import { handleError } from '@/lib/api-response';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { assertOpsReviewAccess } from '@/lib/access';
+import { assertOpsReviewAccess, requireUserId } from '@/lib/access';
 
 
 interface OpsReviewWithRelations {
@@ -32,12 +30,9 @@ export async function GET(
   const { id } = await params;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
       try {
-        await assertOpsReviewAccess(session.user.id, id);
+        const userId = await requireUserId();
+        await assertOpsReviewAccess(userId, id);
       } catch (resp) {
         return resp as any;
       }
@@ -111,12 +106,9 @@ export async function PUT(
     const now = new Date().toISOString();
 
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
       try {
-        await assertOpsReviewAccess(session.user.id, id);
+        const userId = await requireUserId();
+        await assertOpsReviewAccess(userId, id);
       } catch (resp) {
         return resp as any;
       }
@@ -230,12 +222,9 @@ export async function DELETE(
   const { id } = await params;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
       try {
-        await assertOpsReviewAccess(session.user.id, id);
+        const userId = await requireUserId();
+        await assertOpsReviewAccess(userId, id);
       } catch (resp) {
         return resp as any;
       }

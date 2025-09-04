@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { createKpiSchema } from '@/lib/validations/kpi';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { getViewerCompanyOrgIds } from '@/lib/access';
+import { getViewerCompanyOrgIds, requireUserId } from '@/lib/access';
 
 export async function GET(request: Request) {
   try {
@@ -18,11 +16,8 @@ export async function GET(request: Request) {
 
     let orgIdsFilter: string[] | undefined = undefined;
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      const viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      const userId = await requireUserId();
+      const viewerOrgIds = await getViewerCompanyOrgIds(userId);
       if (orgId) {
         if (!viewerOrgIds.includes(orgId)) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -83,11 +78,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'organizationId is required' }, { status: 400 });
     }
     if (process.env.NODE_ENV !== 'test') {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      const viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      const userId = await requireUserId();
+      const viewerOrgIds = await getViewerCompanyOrgIds(userId);
       if (!viewerOrgIds.includes(finalOrgId)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }

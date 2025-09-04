@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { getViewerCompanyOrgIds } from '@/lib/access';
+import { getViewerCompanyOrgIds, requireUserId } from '@/lib/access';
 
 export async function GET() {
   try {
@@ -12,11 +10,8 @@ export async function GET() {
       return NextResponse.json(teams);
     }
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const orgIds = await getViewerCompanyOrgIds(session.user.id);
+    const userId = await requireUserId();
+    const orgIds = await getViewerCompanyOrgIds(userId);
 
     const teams = await prisma.team.findMany({
       where: { organizationId: { in: orgIds } },

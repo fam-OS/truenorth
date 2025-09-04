@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { assertBusinessUnitAccess } from '@/lib/access';
+import { assertBusinessUnitAccess, requireUserId } from '@/lib/access';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const userId = await requireUserId();
     const { id } = await params;
     // Get goal first
     const goal = await prisma.goal.findUnique({
@@ -22,7 +16,7 @@ export async function GET(
 
     if (!goal) {
       console.warn('GET /api/goals/[id] 404: goal not found', {
-        userId: session.user.id,
+        userId,
         goalId: id
       });
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
@@ -33,7 +27,7 @@ export async function GET(
       where: { id: goal.businessUnitId }
     });
     if (process.env.NODE_ENV !== 'test') {
-      await assertBusinessUnitAccess(session.user.id, goal.businessUnitId);
+      await assertBusinessUnitAccess(userId, goal.businessUnitId);
     }
 
     // Get stakeholder if exists
@@ -62,10 +56,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const body = await request.json();
     const { title, description, status, progressNotes, quarter, year, stakeholderId } = body;
@@ -78,14 +69,14 @@ export async function PUT(
 
     if (!goal) {
       console.warn('PUT /api/goals/[id] 404: goal not found', {
-        userId: session.user.id,
+        userId,
         goalId: id
       });
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
     if (process.env.NODE_ENV !== 'test' && goal) {
-      await assertBusinessUnitAccess(session.user.id, goal.businessUnitId);
+      await assertBusinessUnitAccess(userId, goal.businessUnitId);
     }
     const updatedGoal = await prisma.goal.update({
       where: { id },
@@ -118,11 +109,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     console.log('DELETE /api/goals/[id] called', { id });
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      console.warn('DELETE /api/goals/[id] unauthorized', { id });
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const goal = await prisma.goal.findUnique({
       where: { id }
@@ -130,13 +117,13 @@ export async function DELETE(
 
     if (!goal) {
       console.warn('DELETE /api/goals/[id] 404: goal not found', {
-        userId: session.user.id,
+        userId,
         goalId: id
       });
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
     if (process.env.NODE_ENV !== 'test') {
-      await assertBusinessUnitAccess(session.user.id, goal.businessUnitId);
+      await assertBusinessUnitAccess(userId, goal.businessUnitId);
     }
 
     await prisma.goal.delete({

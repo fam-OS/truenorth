@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { requireUserId } from '@/lib/access';
 
 const createCompanyAccountSchema = z.object({
   name: z.string().min(1, 'Company name is required'),
@@ -20,15 +19,11 @@ const createCompanyAccountSchema = z.object({
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const companyAccount = await prisma.companyAccount.findFirst({
       where: {
-        userId: session.user.id
+        userId: userId
       }
     });
 
@@ -67,16 +62,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     // Check if user already has a company account (1:1 relationship)
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
-        userId: session.user.id
+        userId: userId
       }
     });
 
@@ -97,7 +88,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: `company-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
         ...companyData,
-        userId: session.user.id,
+        userId: userId,
         ...(founderId && founderId !== '' ? {
           founderId: founderId
         } : {})

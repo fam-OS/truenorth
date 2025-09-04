@@ -2,43 +2,58 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { createBusinessUnitSchema } from '@/lib/validations/organization';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { getViewerCompanyOrgIds } from '@/lib/access';
+import { getViewerCompanyOrgIds, requireUserId } from '@/lib/access';
 
 export async function GET() {
   try {
-    // Require session and scope by the viewer's CompanyAccount organizations
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const orgIds = await getViewerCompanyOrgIds(session.user.id);
+    // Centralized auth and scoping by viewer's organizations
+    const userId = await requireUserId();
+    const orgIds = await getViewerCompanyOrgIds(userId);
 
     const businessUnitsRaw = await prisma.businessUnit.findMany({
       where: {
-        Team: {
-          some: {
-            organizationId: { in: orgIds },
-          },
-        },
+        OR: [
+          // Units linked to Teams in viewer orgs
+          { Team: { some: { organizationId: { in: orgIds } } } },
+          // Units linked via Stakeholders whose TeamMember belongs to Teams in viewer orgs
+          { Stakeholder: { some: { TeamMember: { Team: { organizationId: { in: orgIds } } } } } },
+          // Units linked via KPIs that belong to viewer orgs
+          { Kpi: { some: { Organization: { id: { in: orgIds } } } } },
+        ],
       },
       orderBy: { createdAt: 'desc' },
       include: {
         Stakeholder: true,
         Goal: true,
         Metric: true,
+        Team: { include: { Organization: true } },
       },
     });
 
-    // Normalize keys for UI compatibility: provide both capitalized and lowercase collections
-    const businessUnits = businessUnitsRaw.map((bu: any) => ({
-      ...bu,
-      stakeholders: bu.Stakeholder ?? [],
-      goals: bu.Goal ?? [],
-      metrics: bu.Metric ?? [],
-    }));
+    // Normalize keys for UI compatibility and surface a representative Organization
+    const businessUnits = businessUnitsRaw.map((bu: any) => {
+      const orgFromTeam = bu.Team?.[0]?.Organization || null;
+      const Organization = orgFromTeam
+        ? {
+            id: orgFromTeam.id,
+            name: orgFromTeam.name,
+            description: orgFromTeam.description,
+            companyAccountId: orgFromTeam.companyAccountId,
+            createdAt: orgFromTeam.createdAt,
+            updatedAt: orgFromTeam.updatedAt,
+          }
+        : null;
+
+      return {
+        ...bu,
+        Organization,
+        orgId: Organization?.id ?? bu.orgId ?? '',
+        organizationId: Organization?.id ?? bu.organizationId ?? null,
+        stakeholders: bu.Stakeholder ?? [],
+        goals: bu.Goal ?? [],
+        metrics: bu.Metric ?? [],
+      };
+    });
 
     return NextResponse.json(businessUnits);
   } catch (error) {
@@ -49,10 +64,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const json = await request.json();
     const data = createBusinessUnitSchema.parse(json);
@@ -66,7 +78,7 @@ export async function POST(request: Request) {
     const companyAccount = await prisma.companyAccount.findFirst({
       where: {
         id: companyAccountId,
-        userId: session.user.id,
+        userId: userId,
       },
     });
 

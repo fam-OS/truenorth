@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { requireUserId } from '@/lib/access';
 
 const updateCompanyAccountSchema = z.object({
   name: z.string().min(1, 'Company name is required').optional(),
@@ -24,16 +23,12 @@ export async function GET(
 ) {
   const { companyAccountId } = await params;
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const companyAccount = await prisma.companyAccount.findFirst({
       where: {
         id: companyAccountId,
-        userId: session.user.id
+        userId: userId
       },
       select: {
         id: true,
@@ -74,17 +69,13 @@ export async function PUT(
 ) {
   const { companyAccountId } = await params;
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     // Verify ownership
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
         id: companyAccountId,
-        userId: session.user.id
+        userId: userId
       }
     });
 
@@ -177,17 +168,13 @@ export async function DELETE(
 ) {
   const { companyAccountId } = await params;
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     // Verify ownership
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
         id: companyAccountId,
-        userId: session.user.id
+        userId: userId
       }
     });
 
