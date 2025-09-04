@@ -4,16 +4,31 @@ import { handleError } from '@/lib/api-response';
 import { createBusinessUnitSchema } from '@/lib/validations/organization';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 export async function GET() {
   try {
+    // Require session and scope by the viewer's CompanyAccount organizations
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const orgIds = await getViewerCompanyOrgIds(session.user.id);
+
     const businessUnitsRaw = await prisma.businessUnit.findMany({
+      where: {
+        Team: {
+          some: {
+            organizationId: { in: orgIds },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         Stakeholder: true,
         Goal: true,
         Metric: true,
-        // BusinessUnit has no Organization relation per schema.prisma
       },
     });
 

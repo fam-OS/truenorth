@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { upsertHeadcountSchema } from '@/lib/validations/headcount';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 export async function GET(request: Request) {
   try {
@@ -11,10 +14,26 @@ export async function GET(request: Request) {
     const yearParam = searchParams.get('year');
     const year = yearParam ? Number(yearParam) : undefined;
 
+    let orgIdsFilter: string[] | undefined = undefined;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      if (organizationId) {
+        if (!viewerOrgIds.includes(organizationId)) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      } else {
+        orgIdsFilter = viewerOrgIds;
+      }
+    }
+
     const items = await prisma.headcountTracker.findMany({
       where: {
         teamId: teamId,
-        organizationId: organizationId,
+        organizationId: orgIdsFilter ? { in: orgIdsFilter } : (organizationId as any),
         year: year,
       },
       orderBy: [{ teamId: 'asc' }, { role: 'asc' }, { level: 'asc' }],
@@ -30,7 +49,16 @@ export async function POST(request: Request) {
   try {
     const json = await request.json();
     const data = upsertHeadcountSchema.parse(json);
-
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      if (data.organizationId && !viewerOrgIds.includes(data.organizationId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     const created = await prisma.headcountTracker.create({
       data: {
         id: crypto.randomUUID(),

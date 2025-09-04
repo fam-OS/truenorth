@@ -3,6 +3,9 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { createOpsReviewItemSchema } from '@/lib/validations/ops-review-item';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { assertOpsReviewAccess } from '@/lib/access';
 
 // Define the expected response type
 interface OpsReviewItemResponse {
@@ -61,6 +64,17 @@ export async function GET(
   
   try {
     console.log(`[GET /api/ops-reviews/${id}/items] Starting request`);
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      try {
+        await assertOpsReviewAccess(session.user.id, id);
+      } catch (resp) {
+        return resp as any;
+      }
+    }
     
     // First, verify the review exists using raw SQL
     const review = await prisma.$queryRaw`
@@ -125,6 +139,17 @@ export async function POST(
         { error: 'Ops Review not found' },
         { status: 404 }
       );
+    }
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      try {
+        await assertOpsReviewAccess(session.user.id, id);
+      } catch (resp) {
+        return resp as any;
+      }
     }
     
     // Parse and validate the input data

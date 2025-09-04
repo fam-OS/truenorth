@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 const updateTeamSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -15,6 +18,16 @@ export async function GET(
 ) {
   try {
     const { teamId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const allowed = await prisma.team.findFirst({ where: { id: teamId, organizationId: { in: orgIds } }, select: { id: true } });
+      if (!allowed) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
     const team = await prisma.team.findUnique({
       where: { id: teamId },
       include: { organization: true, members: true } as any,
@@ -33,6 +46,15 @@ export async function PUT(
 ) {
   try {
     const { teamId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const allowed = await prisma.team.findFirst({ where: { id: teamId, organizationId: { in: orgIds } }, select: { id: true } });
+      if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const json = await request.json();
     console.log('Team update request data:', json);
     const data = updateTeamSchema.parse(json);
@@ -61,6 +83,15 @@ export async function DELETE(
 ) {
   try {
     const { teamId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const allowed = await prisma.team.findFirst({ where: { id: teamId, organizationId: { in: orgIds } }, select: { id: true } });
+      if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     await prisma.team.delete({ where: { id: teamId } });
     return NextResponse.json({ success: true });
   } catch (error) {

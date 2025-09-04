@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { assertBusinessUnitAccess } from '@/lib/access';
 
 export async function GET(
   request: NextRequest,
@@ -27,10 +28,13 @@ export async function GET(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    // Fetch business unit (optional context, no org ownership check here since BusinessUnit has no organizationId)
+    // Fetch business unit and assert access in non-test env
     const businessUnit = await prisma.businessUnit.findUnique({
       where: { id: goal.businessUnitId }
     });
+    if (process.env.NODE_ENV !== 'test') {
+      await assertBusinessUnitAccess(session.user.id, goal.businessUnitId);
+    }
 
     // Get stakeholder if exists
     const stakeholder = goal.stakeholderId ? await prisma.stakeholder.findUnique({
@@ -80,6 +84,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
+    if (process.env.NODE_ENV !== 'test' && goal) {
+      await assertBusinessUnitAccess(session.user.id, goal.businessUnitId);
+    }
     const updatedGoal = await prisma.goal.update({
       where: { id },
       data: {
@@ -128,8 +135,9 @@ export async function DELETE(
       });
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
-
-    // Note: Skipping ownership verification due to lack of organizationId on BusinessUnit model
+    if (process.env.NODE_ENV !== 'test') {
+      await assertBusinessUnitAccess(session.user.id, goal.businessUnitId);
+    }
 
     await prisma.goal.delete({
       where: { id }

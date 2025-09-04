@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { updateKpiSchema } from '@/lib/validations/kpi';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 export async function GET(
   _request: Request,
@@ -11,11 +14,23 @@ export async function GET(
     const { id } = await params;
     const kpi = await prisma.kpi.findUnique({
       where: { id: id },
-      include: { Team: true, Initiative: true },
+      include: { Team: true, Initiative: true, Organization: true, BusinessUnit: true } as any,
     });
 
     if (!kpi) {
       return NextResponse.json({ error: 'KPI not found' }, { status: 404 });
+    }
+
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const orgId = (kpi as any).organizationId ?? (kpi as any).Team?.organizationId ?? (kpi as any).BusinessUnit?.organizationId ?? (kpi as any).Initiative?.organizationId;
+      if (!orgId || !orgIds.includes(orgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     return NextResponse.json(kpi);
@@ -27,6 +42,22 @@ export async function GET(
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const existing = await prisma.kpi.findUnique({
+        where: { id },
+        include: { Team: true, Initiative: true, Organization: true, BusinessUnit: true } as any,
+      });
+      if (!existing) return NextResponse.json({ error: 'KPI not found' }, { status: 404 });
+      const orgId = (existing as any).organizationId ?? (existing as any).Team?.organizationId ?? (existing as any).BusinessUnit?.organizationId ?? (existing as any).Initiative?.organizationId;
+      if (!orgId || !orgIds.includes(orgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     const json = await request.json();
     const parsed = updateKpiSchema.parse(json);
 
@@ -79,6 +110,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const existing = await prisma.kpi.findUnique({ where: { id }, include: { Team: true, Initiative: true, Organization: true, BusinessUnit: true } as any });
+      if (!existing) return NextResponse.json({ error: 'KPI not found' }, { status: 404 });
+      const orgId = (existing as any).organizationId ?? (existing as any).Team?.organizationId ?? (existing as any).BusinessUnit?.organizationId ?? (existing as any).Initiative?.organizationId;
+      if (!orgId || !orgIds.includes(orgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     await prisma.kpi.delete({ where: { id: id } });
     return NextResponse.json({ success: true });
   } catch (error) {

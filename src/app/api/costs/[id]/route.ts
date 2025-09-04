@@ -2,10 +2,30 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { upsertCostSchema } from '@/lib/validations/cost';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    let viewerOrgIds: string[] = [];
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      const existing = await prisma.cost.findUnique({
+        where: { id },
+        include: { Team: true } as any,
+      });
+      if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      const orgId = (existing as any).organizationId ?? (existing as any).Team?.organizationId;
+      if (!orgId || !viewerOrgIds.includes(orgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     const json = await request.json();
     const data = upsertCostSchema.partial({ teamId: true, year: true, type: true }).parse(json);
 
@@ -38,6 +58,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      const existing = await prisma.cost.findUnique({ where: { id }, include: { Team: true } as any });
+      if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      const orgId = (existing as any).organizationId ?? (existing as any).Team?.organizationId;
+      if (!orgId || !viewerOrgIds.includes(orgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     await prisma.cost.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {

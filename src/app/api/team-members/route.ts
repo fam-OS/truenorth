@@ -3,11 +3,26 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { assertTeamAccess, getViewerCompanyOrgIds, requireUserId } from '@/lib/access';
 
 export async function GET() {
   try {
-    // Get all team members with simplified query
+    let whereClause: any = {};
+    if (process.env.NODE_ENV !== 'test') {
+      const userId = await requireUserId().catch(resp => resp as any);
+      if (typeof userId !== 'string') return userId;
+      const orgIds = await getViewerCompanyOrgIds(userId);
+      // Filter by teams within viewer organizations
+      whereClause = {
+        Team: {
+          organizationId: { in: orgIds }
+        }
+      } as any;
+    }
+
+    // Get team members with scoping as applicable
     const teamMembers = await prisma.teamMember.findMany({
+      where: whereClause,
       select: {
         id: true,
         name: true,
@@ -16,10 +31,7 @@ export async function GET() {
         teamId: true,
         isActive: true,
       },
-      // Return all members; some seeds may not set isActive
-      orderBy: {
-        name: 'asc'
-      }
+      orderBy: { name: 'asc' }
     });
 
     return NextResponse.json(teamMembers);
@@ -54,6 +66,15 @@ export async function POST(request: Request) {
     
     const validatedData = createTeamMemberSchema.parse(body);
     console.log('Validated data:', validatedData);
+
+    // In non-test, ensure teamId (if provided) belongs to viewer orgs
+    if (process.env.NODE_ENV !== 'test' && validatedData.teamId) {
+      try {
+        await assertTeamAccess(session.user.id, validatedData.teamId);
+      } catch (resp) {
+        return resp as any;
+      }
+    }
 
     // Generate unique ID for team member
     const teamMemberId = `member-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;

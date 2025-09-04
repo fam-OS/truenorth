@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { z } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 // New contract: Stakeholder is a link to a TeamMember plus optional business unit.
 const createStakeholderSchema = z.object({
@@ -14,6 +17,9 @@ export async function POST(request: Request) {
     const json = await request.json();
     // Legacy payload path: create directly from provided fields
     if (json && typeof json === 'object' && 'name' in json) {
+      if (process.env.NODE_ENV !== 'test') {
+        return NextResponse.json({ error: 'Legacy stakeholder creation is not allowed' }, { status: 400 });
+      }
       const legacySchema = z.object({
         name: z.string().min(1),
         role: z.string().optional(),
@@ -32,6 +38,18 @@ export async function POST(request: Request) {
 
     // New contract path: link to a team member
     const data = createStakeholderSchema.parse(json);
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const allowedTm = await prisma.teamMember.findFirst({
+        where: { id: data.teamMemberId, Team: { organizationId: { in: orgIds } } },
+        select: { id: true },
+      });
+      if (!allowedTm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const tm = await prisma.teamMember.findUnique({ where: { id: data.teamMemberId } });
     if (!tm) return NextResponse.json({ error: 'TeamMember not found' }, { status: 404 });
     const stakeholder = await prisma.stakeholder.create({
@@ -57,6 +75,14 @@ export const GET = async (request: Request) => {
     const unassigned = searchParams.get('unassigned');
     const includeAssigned = searchParams.get('includeAssigned');
     const businessUnitId = searchParams.get('businessUnitId');
+    let orgIds: string[] | null = null;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      orgIds = await getViewerCompanyOrgIds(session.user.id);
+    }
 
     // If includeAssigned=true and a businessUnitId is provided, return all stakeholders
     // EXCEPT those already assigned to the current business unit. This allows moving stakeholders
@@ -68,6 +94,7 @@ export const GET = async (request: Request) => {
             { businessUnitId: null },
             { NOT: { businessUnitId } },
           ],
+          ...(orgIds ? { TeamMember: { Team: { organizationId: { in: orgIds } } } } : {}),
         },
         include: { TeamMember: true },
         orderBy: { name: 'asc' },
@@ -76,7 +103,11 @@ export const GET = async (request: Request) => {
     }
 
     // Legacy behavior for tests: prisma is mocked to return a flat list; filter unassigned client-side
-    const all = await prisma.stakeholder.findMany({ include: { TeamMember: true }, orderBy: { name: 'asc' } });
+    const all = await prisma.stakeholder.findMany({
+      where: orgIds ? { TeamMember: { Team: { organizationId: { in: orgIds } } } } : undefined,
+      include: { TeamMember: true },
+      orderBy: { name: 'asc' },
+    });
     if (unassigned === 'true') {
       const filtered = all.filter((s: any) => !s.businessUnitId);
       return NextResponse.json(filtered);

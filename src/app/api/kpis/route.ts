@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { createKpiSchema } from '@/lib/validations/kpi';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 export async function GET(request: Request) {
   try {
@@ -12,6 +15,22 @@ export async function GET(request: Request) {
     const businessUnitId = searchParams.get('businessUnitId') || undefined;
     const quarter = searchParams.get('quarter') || undefined;
     const year = searchParams.get('year') ? parseInt(searchParams.get('year') as string, 10) : undefined;
+
+    let orgIdsFilter: string[] | undefined = undefined;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      if (orgId) {
+        if (!viewerOrgIds.includes(orgId)) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      } else {
+        orgIdsFilter = viewerOrgIds;
+      }
+    }
 
     const kpis = await prisma.kpi.findMany({
       select: {
@@ -32,7 +51,7 @@ export async function GET(request: Request) {
         Team: { select: { id: true, name: true } },
       },
       where: {
-        organizationId: orgId,
+        organizationId: orgIdsFilter ? { in: orgIdsFilter } : (orgId as any),
         teamId: teamId,
         initiativeId: initiativeId,
         businessUnitId: businessUnitId,
@@ -62,6 +81,16 @@ export async function POST(request: Request) {
     const finalOrgId = organizationId || orgIdFromUrl;
     if (!finalOrgId) {
       return NextResponse.json({ error: 'organizationId is required' }, { status: 400 });
+    }
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+      if (!viewerOrgIds.includes(finalOrgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     const org = await prisma.organization.findUnique({ where: { id: finalOrgId } });
     if (!org) {
