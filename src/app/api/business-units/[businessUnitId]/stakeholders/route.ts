@@ -17,18 +17,28 @@ export async function POST(
 ) {
   try {
     const { businessUnitId } = await params;
+    console.log('POST /api/business-units/[businessUnitId]/stakeholders called', { businessUnitId });
     const json = await request.json();
+    console.log('Request body:', json);
 
     // Discriminate between linking existing vs creating new
     const parsedLink = linkExistingSchema.safeParse(json);
     if (parsedLink.success) {
       const { stakeholderId } = parsedLink.data;
+      console.log('Link existing stakeholder flow', { stakeholderId, businessUnitId });
+      // Ensure stakeholder exists
+      const existing = await prisma.stakeholder.findUnique({ where: { id: stakeholderId } });
+      if (!existing) {
+        console.warn('Stakeholder not found for link', { stakeholderId });
+        return NextResponse.json({ error: 'Stakeholder not found' }, { status: 404 });
+      }
       const stakeholder = await prisma.stakeholder.update({
         where: { id: stakeholderId },
         data: {
           businessUnitId: businessUnitId,
         },
       });
+      console.log('Linked stakeholder to business unit', { stakeholderId, businessUnitId });
       return NextResponse.json(stakeholder, { status: 200 });
     }
 
@@ -56,9 +66,10 @@ export async function POST(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: createData,
     });
-
+    console.log('Created stakeholder', { stakeholderId: stakeholder.id, businessUnitId });
     return NextResponse.json(stakeholder, { status: 201 });
   } catch (error) {
+    console.error('Error in stakeholders POST:', error);
     return handleError(error);
   }
 }
@@ -69,7 +80,9 @@ export async function DELETE(
 ) {
   try {
     const { businessUnitId } = await params;
+    console.log('DELETE /api/business-units/[businessUnitId]/stakeholders called', { businessUnitId });
     const body = await request.json().catch(() => ({}));
+    console.log('Request body:', body);
     const schema = z.object({ stakeholderId: z.string().min(1) });
     const { stakeholderId } = schema.parse(body);
 
@@ -86,11 +99,13 @@ export async function DELETE(
       data: { businessUnitId: null },
     });
 
+    console.log('Unlinked stakeholder from business unit', { stakeholderId, businessUnitId });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid request data', details: error.issues }, { status: 400 });
     }
+    console.error('Error in stakeholders DELETE:', error);
     return handleError(error);
   }
 }

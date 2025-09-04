@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/toast';
 
@@ -24,6 +25,10 @@ export default function StakeholderDetailPage() {
 
   const [stakeholder, setStakeholder] = useState<Stakeholder | null>(null);
   const [allStakeholders, setAllStakeholders] = useState<Stakeholder[]>([]);
+
+  // Delete confirmation modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const managerOptions = useMemo(
     () => allStakeholders.filter(s => s.id !== stakeholder?.id),
@@ -89,25 +94,47 @@ export default function StakeholderDetailPage() {
     }
   }
 
-  async function handleDelete() {
+  function handleDelete(e?: React.MouseEvent<HTMLButtonElement>) {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (!stakeholder) return;
-    const confirmed = window.confirm('Delete this stakeholder permanently? This cannot be undone.');
-    if (!confirmed) return;
+    setIsDeleteModalOpen(true);
+  }
+
+  async function handleConfirmDelete(e?: React.MouseEvent<HTMLButtonElement>) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (!stakeholder) return;
     try {
-      setSaving(true);
-      const res = await fetch(`/api/stakeholders/${stakeholder.id}`, { method: 'DELETE' });
+      setIsDeleting(true);
+      console.log('[Stakeholder Detail Delete] Deleting…', { stakeholderId: stakeholder.id });
+      const res = await fetch(`/api/stakeholders/${stakeholder.id}`, {
+        method: 'DELETE',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(10000),
+      });
+      let raw = '';
+      try { raw = await res.text(); } catch {}
+      console.log('[Stakeholder Detail Delete] Response', { status: res.status, ok: res.ok, raw });
       if (!res.ok && res.status !== 204) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || 'Failed to delete');
+        throw new Error(raw || `Failed with status ${res.status}`);
       }
       showToast({ title: 'Stakeholder deleted', description: 'The stakeholder was removed.' });
+      setIsDeleteModalOpen(false);
       router.push('/stakeholders');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete';
+      console.error('[Stakeholder Detail Delete] Error', err);
       showToast({ title: 'Failed to delete stakeholder', description: message, type: 'destructive' });
     } finally {
-      setSaving(false);
+      setIsDeleting(false);
     }
+  }
+
+  function handleCancelDelete(e?: React.MouseEvent<HTMLButtonElement>) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setIsDeleteModalOpen(false);
   }
 
   if (loading) {
@@ -208,6 +235,45 @@ export default function StakeholderDetailPage() {
           </button>
         </div>
       </div>
+    {/* Delete Confirmation Modal */}
+    {isDeleteModalOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div
+          className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        >
+          <div className="px-6 py-4 border-b">
+            <h3 className="text-lg font-medium text-gray-900">Delete this stakeholder?</h3>
+          </div>
+          <div className="px-6 py-4">
+            <p className="text-sm text-gray-600">This action cannot be undone.</p>
+          </div>
+          <div className="px-6 py-4 border-t flex justify-end gap-3">
+            <button
+              type="button"
+              className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 }

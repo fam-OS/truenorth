@@ -38,11 +38,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const json = await request.json();
+    console.debug('[Initiatives][POST] Raw body:', json);
     const data = createInitiativeSchema.parse(json);
+    console.debug('[Initiatives][POST] Parsed data:', data);
 
     // Allow defaulting organization from URL if not passed in body
     const { searchParams } = new URL(request.url);
     const orgIdFromUrl = searchParams.get('orgId') || undefined;
+    console.debug('[Initiatives][POST] orgIdFromUrl:', orgIdFromUrl);
 
     const { organizationId, ownerId, businessUnitId, ...rest } = data as any;
     const createData: any = { ...rest };
@@ -63,13 +66,32 @@ export async function POST(request: Request) {
       createData.BusinessUnit = businessUnitId ? { connect: { id: businessUnitId } } : undefined;
     }
 
-    const initiative = await prisma.initiative.create({
-      data: { id: crypto.randomUUID(), ...createData },
-      include: { Organization: true, TeamMember: true },
-    });
+    console.debug('[Initiatives][POST] Final createData:', createData);
+
+    let initiative;
+    try {
+      initiative = await prisma.initiative.create({
+        data: { id: crypto.randomUUID(), ...createData },
+        include: { Organization: true, TeamMember: true },
+      });
+    } catch (err: any) {
+      console.error('[Initiatives][POST] Prisma create error:', {
+        message: err?.message,
+        code: err?.code,
+        meta: err?.meta,
+        stack: err?.stack,
+      });
+      throw err; // handled by outer catch + handleError
+    }
 
     return NextResponse.json(initiative, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    console.error('[Initiatives][POST] Unhandled error:', {
+      message: error?.message,
+      code: (error as any)?.code,
+      meta: (error as any)?.meta,
+      stack: error?.stack,
+    });
     return handleError(error);
   }
 }

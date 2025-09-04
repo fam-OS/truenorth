@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import type React from 'react';
 import { BusinessUnitList } from '@/components/BusinessUnitList';
 import { BusinessUnitForm } from '@/components/BusinessUnitForm';
 import { GoalList } from '@/components/GoalList';
@@ -31,6 +32,11 @@ export default function BusinessUnitsPage() {
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
   const { showToast } = useToast();
+
+  // Stakeholder delete confirmation modal state
+  const [isDeleteStakeholderModalOpen, setIsDeleteStakeholderModalOpen] = useState(false);
+  const [stakeholderToRemove, setStakeholderToRemove] = useState<null | { id: string; name?: string }>(null);
+  const [isDeletingStakeholder, setIsDeletingStakeholder] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!isMounted.current) return;
@@ -178,21 +184,61 @@ export default function BusinessUnitsPage() {
     }
   }
 
-  async function handleRemoveStakeholder(stakeholderId: string) {
-    if (!selectedUnit) return;
+  function handleRemoveStakeholder(s: { id: string; name?: string }) {
+    // Open confirmation modal instead of deleting immediately
+    setStakeholderToRemove({ id: s.id, name: s.name });
+    setIsDeleteStakeholderModalOpen(true);
+  }
+
+  async function handleConfirmRemoveStakeholder(e?: React.MouseEvent<HTMLButtonElement>) {
+    e?.preventDefault();
+    e?.stopPropagation();
+
+    if (!selectedUnit || !stakeholderToRemove) return;
+    const stakeholderId = stakeholderToRemove.id;
     try {
+      setIsDeletingStakeholder(true);
+      console.log('[Stakeholder Delete] Confirming removal…', { businessUnitId: selectedUnit.id, stakeholderId });
+
+      console.log('[Stakeholder Delete] Sending DELETE…');
       const response = await fetch(`/api/business-units/${selectedUnit.id}/stakeholders`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stakeholderId }),
+        cache: 'no-store',
+        signal: AbortSignal.timeout(10000)
       });
-      if (!response.ok && response.status !== 204) throw new Error('Failed to remove stakeholder');
+
+      let raw = '';
+      try {
+        raw = await response.text();
+      } catch {}
+      console.log('[Stakeholder Delete] Response:', { status: response.status, ok: response.ok, raw });
+
+      if (!response.ok && response.status !== 204) {
+        const msg = raw || 'Failed to remove stakeholder';
+        showToast({ title: 'Failed to remove stakeholder', description: `Status ${response.status}: ${msg}`, type: 'destructive' });
+        return;
+      }
+
       await fetchData();
       setViewMode('detail');
-      showToast({ title: 'Stakeholder removed', description: 'Stakeholder was unlinked from this business unit.' });
+      showToast({ title: 'Stakeholder removed', description: stakeholderToRemove.name ? `${stakeholderToRemove.name} was unlinked from this business unit.` : 'Stakeholder was unlinked from this business unit.' });
+      setIsDeleteStakeholderModalOpen(false);
+      setStakeholderToRemove(null);
     } catch (err) {
+      console.error('[Stakeholder Delete] Error:', err);
       showToast({ title: 'Failed to remove stakeholder', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
+    } finally {
+      setIsDeletingStakeholder(false);
     }
+  }
+
+  function handleCancelRemoveStakeholder(e?: React.MouseEvent<HTMLButtonElement>) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setIsDeleteStakeholderModalOpen(false);
+    setStakeholderToRemove(null);
   }
 
   async function handleLinkExistingStakeholder() {
@@ -473,7 +519,8 @@ export default function BusinessUnitsPage() {
                             </span>
                           </div>
                           <button
-                            onClick={() => handleRemoveStakeholder(stakeholder.id)}
+                            type="button"
+                            onClick={(ev) => { ev.preventDefault(); ev.stopPropagation(); handleRemoveStakeholder({ id: stakeholder.id, name: stakeholder.name }); }}
                             className="text-xs text-red-600 hover:text-red-800"
                             title="Remove from this business unit"
                           >
@@ -583,7 +630,7 @@ export default function BusinessUnitsPage() {
         return (
           <>
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900">Company business units</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">Company Business Units</h1>
               {companyAccount && (
                 <div className="flex items-center gap-3">
                   <button
@@ -672,6 +719,52 @@ export default function BusinessUnitsPage() {
         </div>
       ) : (
         renderContent()
+      )}
+
+      {/* Delete Stakeholder Confirmation Modal */}
+      {isDeleteStakeholderModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <div className="px-6 py-4 border-b">
+              <h3 className="text-lg font-medium text-gray-900">Remove stakeholder?</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600">
+                {stakeholderToRemove?.name ? (
+                  <>Are you sure you want to remove <span className="font-semibold">{stakeholderToRemove.name}</span> from this business unit?</>
+                ) : (
+                  <>Are you sure you want to remove this stakeholder from this business unit?</>
+                )}
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                onClick={handleCancelRemoveStakeholder}
+                disabled={isDeletingStakeholder}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                onClick={handleConfirmRemoveStakeholder}
+                disabled={isDeletingStakeholder}
+              >
+                {isDeletingStakeholder ? 'Removing…' : 'Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

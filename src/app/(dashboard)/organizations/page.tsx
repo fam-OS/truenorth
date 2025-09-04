@@ -359,7 +359,7 @@ export default function OrganizationsPage() {
       {companyAccount && (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-900">My organizations and teams</h1>
+            <h1 className="text-xl font-semibold text-gray-900">My Organizations and Teams</h1>
             <button
               onClick={() => {
                 setEditingOrg(null);
