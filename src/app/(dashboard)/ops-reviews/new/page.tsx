@@ -52,13 +52,8 @@ export default function NewOpsReviewPage() {
     };
 
     const fetchTeams = async () => {
-      if (!currentOrg) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        const response = await fetch(`/api/organizations/${currentOrg.id}/teams`);
+        const response = await fetch('/api/teams');
         
         if (!response.ok) {
           throw new Error('Failed to fetch teams');
@@ -80,9 +75,9 @@ export default function NewOpsReviewPage() {
 
     if (!currentOrg) {
       fetchOrganizations();
-    } else {
-      fetchTeams();
     }
+    // Always fetch teams regardless of selected organization
+    fetchTeams();
   }, [currentOrg, showToast, setCurrentOrg]);
 
   const queryClient = useQueryClient();
@@ -213,7 +208,7 @@ export default function NewOpsReviewPage() {
             id="title"
             name="title"
             required
-            disabled={isSubmitting || !teams.length}
+            disabled={isSubmitting}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
             placeholder="Enter review title"
           />
@@ -227,7 +222,7 @@ export default function NewOpsReviewPage() {
             id="description"
             name="description"
             rows={3}
-            disabled={isSubmitting || !teams.length}
+            disabled={isSubmitting}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
             placeholder="Enter review description (optional)"
           />
@@ -268,7 +263,7 @@ export default function NewOpsReviewPage() {
               id="quarter"
               name="quarter"
               required
-              disabled={isSubmitting || !teams.length}
+              disabled={isSubmitting}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
               defaultValue="Q3"
             >
@@ -291,7 +286,7 @@ export default function NewOpsReviewPage() {
               required
               min="2000"
               max="3000"
-              disabled={isSubmitting || !teams.length}
+              disabled={isSubmitting}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
               defaultValue={new Date().getFullYear()}
             />

@@ -41,20 +41,28 @@ interface FetchOpsReviewsParams {
   orgId: string;
   year?: number | null;
   quarter?: string | null;
+  teamId?: string | null;
 }
 
-async function fetchOpsReviews(orgId: string, filters: { year?: number | null; quarter?: string | null }) {
+async function fetchOpsReviews(_orgId: string, filters: { year?: number | null; quarter?: string | null; teamId?: string | null }) {
+  // Intentionally omit orgId to avoid scoping to a specific Organization; show company-wide results
   const params = new URLSearchParams({
-    orgId,
     ...(filters.year && { year: filters.year.toString() }),
-    ...(filters.quarter && { quarter: filters.quarter })
+    ...(filters.quarter && { quarter: filters.quarter }),
+    ...(filters.teamId && { teamId: filters.teamId })
   });
 
-  const response = await fetch(`/api/ops-reviews?${params}`);
+  const response = await fetch(`/api/ops-reviews?${params}`, { cache: 'no-store' });
   if (!response.ok) {
-    throw new Error('Failed to fetch Team Ops Reviews');
+    let body = '';
+    try { body = await response.text(); } catch {}
+    throw new Error(`Failed to fetch Team Ops Reviews (${response.status}): ${body || response.statusText}`);
   }
   const data = await response.json();
+  if (!Array.isArray(data)) {
+    console.error('Unexpected Ops Reviews response shape:', data);
+    return [] as OpsReview[];
+  }
   // Transform the data to match the expected format
   return data.map((review: any) => ({
     ...review,
@@ -71,6 +79,7 @@ async function fetchOpsReviews(orgId: string, filters: { year?: number | null; q
 interface FilterState {
   year: number | null;
   quarter: string | null;
+  teamId: string | null;
 }
 
 export default function OpsReviewsPage() {
@@ -78,7 +87,18 @@ export default function OpsReviewsPage() {
   const { showToast } = useToast();
   const [filters, setFilters] = useState<FilterState>({
     year: null,
-    quarter: null
+    quarter: null,
+    teamId: null,
+  });
+
+  // Fetch teams for Team filter
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: async () => {
+      const res = await fetch('/api/teams', { cache: 'no-store' });
+      if (!res.ok) return [] as { id: string; name: string }[];
+      return res.json();
+    },
   });
 
   const {
@@ -86,7 +106,7 @@ export default function OpsReviewsPage() {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['opsReviews', currentOrg?.id, filters.year, filters.quarter],
+    queryKey: ['opsReviews', currentOrg?.id, filters.year, filters.quarter, filters.teamId],
     queryFn: () => currentOrg ? fetchOpsReviews(currentOrg.id, filters) : [],
     enabled: !!currentOrg,
   });
@@ -115,6 +135,23 @@ export default function OpsReviewsPage() {
           <div className="px-4 py-5 sm:p-6 text-center">
             <h3 className="mt-2 text-sm font-medium text-gray-900">Select an organization to view Team Ops Reviews</h3>
             <p className="mt-1 text-sm text-gray-500">Team Ops Reviews are scoped to a specific organization.</p>
+          </div>
+
+          <div>
+            <label htmlFor="team" className="block text-sm font-medium text-gray-700 mb-1">
+              Team
+            </label>
+            <select
+              id="team"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              value={filters.teamId || 'all'}
+              onChange={(e) => handleFilterChange('teamId', e.target.value === 'all' ? null : e.target.value)}
+            >
+              <option value="all">All Teams</option>
+              {teams.map((t: any) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -245,11 +282,6 @@ export default function OpsReviewsPage() {
                         <p className="flex items-center text-sm text-gray-500">
                           <span className="truncate">Team: {review.team_name}</span>
                         </p>
-                        {review.owner_name && (
-                          <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                            <span className="truncate">Owner: {review.owner_name}</span>
-                          </p>
-                        )}
                       </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                         <svg

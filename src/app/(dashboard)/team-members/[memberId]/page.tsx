@@ -26,6 +26,8 @@ export default function TeamMemberDetailPage() {
 
   const [member, setMember] = useState<TeamMember | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const managerOptions = useMemo(
     () => teamMembers.filter((m) => m.id !== member?.id),
@@ -101,22 +103,24 @@ export default function TeamMemberDetailPage() {
     }
   }
 
-  async function handleDelete() {
+  async function handleConfirmDelete() {
     if (!member) return;
     try {
-      const confirmed = confirm(`Delete member ${member.name}? This cannot be undone.`);
-      if (!confirmed) return;
+      setDeleting(true);
       const res = await fetch(`/api/team-members/${member.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete member");
       showToast({ title: "Member deleted", description: `${member.name} was removed.` });
-      // Navigate back to the team page
       router.push(`/teams/${member.teamId}`);
+      router.refresh();
     } catch (err) {
       showToast({
         title: "Failed to delete member",
         description: err instanceof Error ? err.message : "Unknown error",
         type: "destructive",
       });
+    } finally {
+      setDeleting(false);
+      setShowConfirm(false);
     }
   }
 
@@ -203,7 +207,7 @@ export default function TeamMemberDetailPage() {
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setShowConfirm(true)}
             className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
           >
             Delete Member
@@ -217,6 +221,33 @@ export default function TeamMemberDetailPage() {
           </button>
         </div>
       </div>
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowConfirm(false)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Team Member</h3>
+            <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete this team member? This action cannot be undone.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={deleting}
+                onClick={() => { void handleConfirmDelete(); }}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

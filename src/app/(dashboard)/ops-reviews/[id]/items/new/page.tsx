@@ -39,15 +39,18 @@ interface Team {
 
 interface TeamMember {
   id: string;
-  user: {
-    name: string;
-    email: string;
-  };
+  name: string | null;
+  email: string | null;
+  teamId?: string;
 }
 
-// API response shape for team members used on this page
-interface ApiTeamMember extends TeamMember {
-  teamId: string;
+// API response shape for team members used on this page (flat fields from /api/team-members)
+interface ApiTeamMember {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role?: string | null;
+  teamId?: string;
 }
 
 interface Review {
@@ -56,6 +59,7 @@ interface Review {
   teamId: string;
   quarter: string;
   year: number;
+  teamName?: string | null;
 }
 
 interface PageProps {
@@ -67,7 +71,9 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
 
   const [review, setReview] = useState<Review | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [allMembers, setAllMembers] = useState<ApiTeamMember[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -80,17 +86,21 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
         const reviewRes = await fetch(`/api/ops-reviews/${id}`).then(res => res.json());
         if (reviewRes.error) throw new Error(reviewRes.error);
         
-        // Fetch team members
+        // Fetch teams for select
+        const teamsRes = await fetch('/api/teams');
+        const teamsJson: Team[] = teamsRes.ok ? await teamsRes.json() : [];
+
+        // Fetch all team members (flat)
         const teamMembersRes: ApiTeamMember[] = await fetch('/api/team-members').then(res => res.ok ? res.json() : []);
-        
+
         // Filter team members for the current review's team
-        const currentTeamMembers = teamMembersRes.filter(
-          (member) => member.teamId === reviewRes.teamId
-        );
-        
+        const currentTeamMembers = teamMembersRes.filter((member) => member.teamId === reviewRes.teamId);
+
         setReview(reviewRes);
-        setTeamMembers(currentTeamMembers);
-        setTeams([{ id: reviewRes.teamId, name: reviewRes.team?.name || 'Team' }]);
+        setTeams(teamsJson);
+        setAllMembers(teamMembersRes);
+        setSelectedTeamId(reviewRes.teamId);
+        setTeamMembers(currentTeamMembers as TeamMember[]);
         
       } catch (err) {
         setError('Failed to load data. Please try again.');
@@ -103,6 +113,13 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
 
     fetchData();
   }, [id, showToast]);
+
+  // When team changes, filter members list
+  useEffect(() => {
+    if (!selectedTeamId) return;
+    const filtered = allMembers.filter((m) => m.teamId === selectedTeamId);
+    setTeamMembers(filtered);
+  }, [selectedTeamId, allMembers]);
 
   if (isLoading) {
     return (
@@ -184,29 +201,38 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
         <h1 className="text-2xl font-bold mb-6">Add New Review Item</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Title row */}
+          <div className="space-y-1">
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              name="title"
+              required
+              placeholder="Enter item title"
+            />
+            <p className="text-sm text-gray-500">What are you measuring?</p>
+          </div>
+
+          {/* Team and Owner row */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                name="title"
-                required
-                placeholder="Enter item title"
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="teamId">Team</Label>
-              <Input
+              <select
                 id="teamId"
                 name="teamId"
-                type="hidden"
-                value={review.teamId}
-                readOnly
-              />
-              <div className="px-3 py-2 bg-gray-100 rounded-md text-sm text-gray-700">
-                {teams[0]?.name || 'Team'}
-              </div>
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={selectedTeamId || ''}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select team
+                </option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
@@ -218,14 +244,23 @@ export default function NewOpsReviewItemPage({ params }: PageProps) {
                 defaultValue=""
               >
                 <option value="">Unassigned</option>
-                {teamMembers.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.user?.name || member.user?.email || `Member ${member.id}`}
+                {teamMembers.length === 0 ? (
+                  <option value="" disabled>
+                    No members in this team
                   </option>
-                ))}
+                ) : (
+                  teamMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name || member.email || `Member ${member.id}`}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
+          </div>
 
+          {/* Metrics row */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="targetMetric">Target Metric</Label>
               <Input

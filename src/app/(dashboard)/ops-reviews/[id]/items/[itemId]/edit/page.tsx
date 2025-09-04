@@ -34,12 +34,16 @@ const Textarea = ({ id, name, ...props }: { id: string, name: string } & React.T
 
 interface TeamMember {
   id: string;
-  user?: { name?: string | null; email?: string | null };
+  name: string | null;
+  email: string | null;
+  teamId?: string;
 }
 
 interface ApiTeamMember extends TeamMember {
   teamId: string;
 }
+
+interface Team { id: string; name: string }
 
 interface OpsReviewItem {
   id: string;
@@ -67,22 +71,34 @@ export default function EditOpsReviewItemPage({ params }: PageProps) {
 
   const [item, setItem] = useState<OpsReviewItem | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [allMembers, setAllMembers] = useState<ApiTeamMember[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch the existing item
-        const itemRes = await fetch(`/api/ops-reviews/${id}/items/${itemId}`);
-        const itemJson = await itemRes.json();
-        if (!itemRes.ok) throw new Error(itemJson?.error || 'Failed to load item');
+        // Fetch items for this review and pick the one by itemId
+        const itemsRes = await fetch(`/api/ops-reviews/${id}/items`, { cache: 'no-store' });
+        const itemsJson = await itemsRes.json();
+        if (!itemsRes.ok) throw new Error(itemsJson?.error || 'Failed to load items');
+        const itemJson = (Array.isArray(itemsJson) ? itemsJson : []).find((it: any) => it.id === itemId);
+        if (!itemJson) throw new Error('Item not found');
 
-        // Fetch team members for the item's team
+        // Fetch all teams for select
+        const teamsRes = await fetch('/api/teams');
+        const teamsJson: Team[] = teamsRes.ok ? await teamsRes.json() : [];
+
+        // Fetch all team members (flat fields)
         const teamMembersRes: ApiTeamMember[] = await fetch('/api/team-members').then(res => res.ok ? res.json() : []);
         const currentTeamMembers = teamMembersRes.filter(tm => tm.teamId === itemJson.teamId);
 
         setItem(itemJson as OpsReviewItem);
+        setTeams(teamsJson);
+        setAllMembers(teamMembersRes);
+        setSelectedTeamId(itemJson.teamId);
         setTeamMembers(currentTeamMembers);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -92,9 +108,18 @@ export default function EditOpsReviewItemPage({ params }: PageProps) {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [id, itemId, showToast]);
+
+  // When team changes, filter members (top-level effect)
+  useEffect(() => {
+    if (!selectedTeamId) {
+      setTeamMembers([]);
+      return;
+    }
+    const filtered = allMembers.filter((m) => m.teamId === selectedTeamId);
+    setTeamMembers(filtered);
+  }, [selectedTeamId, allMembers]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -112,8 +137,7 @@ export default function EditOpsReviewItemPage({ params }: PageProps) {
           targetMetric: formData.get('targetMetric') ? Number(formData.get('targetMetric')) : null,
           actualMetric: formData.get('actualMetric') ? Number(formData.get('actualMetric')) : null,
           ownerId: formData.get('ownerId') || null,
-          // teamId is fixed to the item's team
-          teamId: item.teamId,
+          teamId: formData.get('teamId') || item.teamId,
           // keep original period unless changed later
           quarter: item.quarter,
           year: item.year,
@@ -176,13 +200,27 @@ export default function EditOpsReviewItemPage({ params }: PageProps) {
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="title">Title *</Label>
               <Input id="title" name="title" required defaultValue={item.title} />
+              <p className="text-sm text-gray-500">What are you measuring?</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="team">Team</Label>
-              <div className="px-3 py-2 bg-gray-100 rounded-md text-sm text-gray-700">
-                {item.team?.name || 'Team'}
-              </div>
+              <Label htmlFor="teamId">Team</Label>
+              <select
+                id="teamId"
+                name="teamId"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={selectedTeamId || ''}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select team
+                </option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
@@ -190,15 +228,22 @@ export default function EditOpsReviewItemPage({ params }: PageProps) {
               <select
                 id="ownerId"
                 name="ownerId"
+                key={`owner-${selectedTeamId || 'none'}`}
                 defaultValue={item.ownerId || ''}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Unassigned</option>
-                {teamMembers.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.user?.name || member.user?.email || `Member ${member.id}`}
+                {teamMembers.length === 0 ? (
+                  <option value="" disabled>
+                    No members in this team
                   </option>
-                ))}
+                ) : (
+                  teamMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name || member.email || `Member ${member.id}`}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 

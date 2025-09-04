@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { TeamMembers } from '@/components/TeamMembers';
 import { TeamEditForm } from '@/components/TeamEditForm';
 import { PencilIcon, TrashIcon } from '@heroicons/react/20/solid';
+import { useToast } from '@/components/ui/toast';
 
 type Team = {
   id: string;
@@ -22,7 +23,9 @@ function TeamPageContent({ teamId }: { teamId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const fetchTeam = async () => {
@@ -52,37 +55,28 @@ function TeamPageContent({ teamId }: { teamId: string }) {
     setIsEditing(false);
   };
 
-  const handleDeleteTeam = async () => {
+  const handleConfirmDelete = async () => {
     if (!team) return;
-    
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the team "${team.name}"? This action cannot be undone and will remove all team members.`
-    );
-    
-    if (!confirmed) return;
-
     try {
       setIsDeleting(true);
-      const response = await fetch(`/api/teams/${teamId}`, {
-        method: 'DELETE',
-      });
-
+      const response = await fetch(`/api/teams/${teamId}`, { method: 'DELETE' });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to delete team');
       }
-
-      // Navigate back to the organization page that contains this team
+      showToast({ title: 'Team deleted', description: `"${team.name}" was removed.` });
       if (team.organizationId) {
         router.push(`/organizations/${team.organizationId}`);
       } else {
         router.push('/organizations');
       }
+      router.refresh();
     } catch (error) {
       console.error('Error deleting team:', error);
-      alert(`Failed to delete team: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showToast({ title: 'Failed to delete team', description: error instanceof Error ? error.message : 'Unknown error', type: 'destructive' });
     } finally {
       setIsDeleting(false);
+      setShowConfirm(false);
     }
   };
 
@@ -106,7 +100,7 @@ function TeamPageContent({ teamId }: { teamId: string }) {
             </button>
             <button
               type="button"
-              onClick={handleDeleteTeam}
+              onClick={() => setShowConfirm(true)}
               disabled={isDeleting}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
             >
@@ -143,6 +137,33 @@ function TeamPageContent({ teamId }: { teamId: string }) {
 
           <div className="px-6 py-4">
             <TeamMembers teamId={team.id} />
+          </div>
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowConfirm(false)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Team</h3>
+            <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete this team? This action cannot be undone and may remove team members.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={isDeleting}
+                onClick={() => { void handleConfirmDelete(); }}
+              >
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -16,7 +16,7 @@ export async function GET() {
         teamId: true,
         isActive: true,
       },
-      where: { isActive: true },
+      // Return all members; some seeds may not set isActive
       orderBy: {
         name: 'asc'
       }
