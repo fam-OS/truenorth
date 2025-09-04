@@ -21,7 +21,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -302,7 +302,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Stakeholder {
@@ -397,10 +397,10 @@ model User {
   emailVerified  DateTime?
   image          String?
   passwordHash   String?
-  Account        Account[]
+  accounts       Account[]
   CompanyAccount CompanyAccount?
   FeatureRequest FeatureRequest[]
-  Session        Session[]
+  sessions       Session[]
   SupportRequest SupportRequest[]
   Organization   Organization[]
 }

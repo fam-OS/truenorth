@@ -20,22 +20,22 @@ export async function PUT(
     const json = await request.json();
 
     // Verify the goal exists and belongs to the business unit
-    const existingGoal = await prisma.goal.findUnique({
+    const existingGoal = (await prisma.goal.findUnique({
       where: { id: goalId },
       include: {
-        Stakeholder: {
+        stakeholder: {
           include: {
-            BusinessUnit: true,
+            businessUnit: true,
           },
         },
-      },
-    });
+      } as any,
+    })) as any;
 
     if (!existingGoal) {
       return new NextResponse('Goal not found', { status: 404 });
     }
 
-    if (!existingGoal.Stakeholder || existingGoal.Stakeholder?.businessUnitId !== businessUnitId) {
+    if (!existingGoal.stakeholder || existingGoal.stakeholder?.businessUnitId !== businessUnitId) {
       return new NextResponse('Goal does not belong to this business unit', { status: 403 });
     }
 
@@ -51,8 +51,8 @@ export async function PUT(
         progressNotes: json.progressNotes || null,
       },
       include: {
-        Stakeholder: true,
-      },
+        stakeholder: true,
+      } as any,
     });
 
     return NextResponse.json(updatedGoal);
