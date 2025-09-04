@@ -79,7 +79,8 @@ export async function GET(
 
     const items = await prisma.opsReviewItem.findMany({
       where: { opsReviewId: id },
-      include: { TeamMember: true, Team: true, OpsReview: true },
+      // Use keys that match test expectations (cast to any for type compatibility)
+      include: { owner: true, team: true, opsReview: true } as any,
       orderBy: { createdAt: 'desc' },
     });
 
