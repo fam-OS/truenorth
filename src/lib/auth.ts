@@ -82,15 +82,44 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
-    // Optional hardening: only allow linking/sign-in when Google reports a verified email.
-    // Uncomment if you want stricter checks.
-    // async signIn({ account, profile }) {
-    //   if (account?.provider === 'google') {
-    //     const googleProfile = profile as { email_verified?: boolean } | null;
-    //     return !!googleProfile?.email_verified;
-    //   }
-    //   return true;
-    // },
+    // Explicitly link Google account to existing user by email to avoid OAuthAccountNotLinked.
+    async signIn({ user, account }) {
+      try {
+        if (account?.provider === 'google' && user?.email) {
+          // Find existing user by email
+          const existing = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { accounts: true },
+          });
+          if (existing) {
+            const alreadyLinked = existing.accounts.some(
+              (a) => a.provider === 'google' && a.providerAccountId === account.providerAccountId
+            );
+            if (!alreadyLinked) {
+              await prisma.account.create({
+                data: {
+                  userId: existing.id,
+                  type: account.type as string,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: (account as any).access_token ?? null,
+                  refresh_token: (account as any).refresh_token ?? null,
+                  expires_at: typeof (account as any).expires_at === 'number' ? (account as any).expires_at : null,
+                  token_type: (account as any).token_type ?? null,
+                  scope: (account as any).scope ?? null,
+                  id_token: (account as any).id_token ?? null,
+                  session_state: (account as any).session_state ?? null,
+                },
+              });
+            }
+          }
+        }
+        return true;
+      } catch (err) {
+        console.error('[NextAuth][signIn] linking error:', err);
+        return false;
+      }
+    },
   },
   pages: {
     signIn: "/auth/signin",
