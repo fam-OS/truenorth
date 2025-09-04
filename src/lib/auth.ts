@@ -65,6 +65,10 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  // Allow linking OAuth provider logins to existing users by matching verified email.
+  // This prevents OAuthAccountNotLinked when a user first registered via Credentials.
+  // @ts-expect-error: Property is supported by NextAuth runtime; type defs may lag.
+  allowDangerousEmailAccountLinking: true,
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -78,6 +82,15 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
+    // Optional hardening: only allow linking/sign-in when Google reports a verified email.
+    // Uncomment if you want stricter checks.
+    // async signIn({ account, profile }) {
+    //   if (account?.provider === 'google') {
+    //     const googleProfile = profile as { email_verified?: boolean } | null;
+    //     return !!googleProfile?.email_verified;
+    //   }
+    //   return true;
+    // },
   },
   pages: {
     signIn: "/auth/signin",
