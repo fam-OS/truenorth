@@ -1,4 +1,5 @@
 import { AuthOptions } from "next-auth";
+import { randomUUID } from "crypto";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -89,15 +90,21 @@ export const authOptions: AuthOptions = {
           // Find existing user by email
           const existing = await prisma.user.findUnique({
             where: { email: user.email },
-            include: { accounts: true },
           });
           if (existing) {
-            const alreadyLinked = existing.accounts.some(
-              (a) => a.provider === 'google' && a.providerAccountId === account.providerAccountId
-            );
+            // Check if this Google account is already linked for this user
+            const linked = await prisma.account.findFirst({
+              where: {
+                userId: existing.id,
+                provider: 'google',
+                providerAccountId: account.providerAccountId,
+              },
+            });
+            const alreadyLinked = Boolean(linked);
             if (!alreadyLinked) {
               await prisma.account.create({
                 data: {
+                  id: randomUUID(),
                   userId: existing.id,
                   type: account.type as string,
                   provider: account.provider,

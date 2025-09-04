@@ -12,7 +12,7 @@ export async function GET(
     const { id } = await params;
     const task = await prisma.task.findUnique({
       where: { id },
-      include: { Note: true },
+      include: { notes: true } as any,
     });
 
     if (!task) {
@@ -49,15 +49,20 @@ export async function PUT(
       );
     }
 
+    // Build updates object with only provided fields to match test expectations
+    const updateData: any = {};
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.description !== undefined) updateData.description = data.description;
+    // Only set dueDate if it was explicitly present in the input payload
+    if (Object.prototype.hasOwnProperty.call(json, 'dueDate')) {
+      updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+    }
+
     const updatedTask = await prisma.task.update({
       where: { id },
-      data: {
-        title: data.title,
-        description: data.description,
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-        status: data.status,
-      },
-      include: { Note: true },
+      data: updateData,
+      include: { notes: true } as any,
     });
 
     return NextResponse.json(updatedTask);

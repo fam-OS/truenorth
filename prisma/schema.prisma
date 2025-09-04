@@ -231,12 +231,12 @@ model Metric {
 }
 
 model Note {
-  id        String   @id
+  id        String   @id @default(cuid())
   content   String
   taskId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Task      Task     @relation(fields: [taskId], references: [id])
+  task      Task     @relation(fields: [taskId], references: [id])
 }
 
 model OpsReview {
@@ -345,7 +345,7 @@ model Task {
   status      TaskStatus
   createdAt   DateTime   @default(now())
   updatedAt   DateTime @updatedAt
-  Note        Note[]
+  notes       Note[]
 }
 
 model Team {

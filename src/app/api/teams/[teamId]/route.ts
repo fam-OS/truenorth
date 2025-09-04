@@ -17,7 +17,7 @@ export async function GET(
     const { teamId } = await params;
     const team = await prisma.team.findUnique({
       where: { id: teamId },
-      include: { Organization: true, TeamMember: true },
+      include: { organization: true, members: true } as any,
     });
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     return NextResponse.json(team);

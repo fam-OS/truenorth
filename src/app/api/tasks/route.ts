@@ -7,9 +7,7 @@ import { handleError } from '@/lib/api-response';
 export async function GET() {
   try {
     const tasks = await prisma.task.findMany({
-      include: {
-        Note: true,
-      },
+      include: { notes: true } as any,
       orderBy: {
         createdAt: 'desc',
       },
@@ -34,9 +32,7 @@ export async function POST(request: Request) {
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         status: data.status,
       },
-      include: {
-        Note: true,
-      },
+      include: { notes: true } as any,
     });
 
     return NextResponse.json(task, { status: 201 });
