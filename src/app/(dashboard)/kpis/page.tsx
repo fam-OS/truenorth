@@ -23,6 +23,17 @@ function useKpis(params: { orgId?: string; teamId?: string; quarter?: string | n
   });
 }
 
+function useTeams() {
+  return useQuery({
+    queryKey: ['teams'],
+    queryFn: async () => {
+      const res = await fetch('/api/teams');
+      if (!res.ok) throw new Error('Failed to fetch teams');
+      return res.json();
+    },
+  });
+}
+
 export default function KpisPage() {
   const { currentOrg } = useOrganization();
   const [filters, setFilters] = useState<{ teamId: string; quarter: string | null; year: number | null }>({
@@ -37,6 +48,7 @@ export default function KpisPage() {
     quarter: filters.quarter,
     year: filters.year,
   });
+  const { data: teams = [], isLoading: teamsLoading } = useTeams();
 
   const years = useMemo(() => Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i), []);
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -78,10 +90,20 @@ export default function KpisPage() {
               ))}
             </select>
           </div>
-          {/* Placeholder for a team filter in future (requires team list) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="team">Team</label>
-            <input id="team" placeholder="Filter by team ID" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value={filters.teamId} onChange={(e) => setFilters((f) => ({ ...f, teamId: e.target.value }))} />
+            <select
+              id="team"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              value={filters.teamId || 'all'}
+              onChange={(e) => setFilters((f) => ({ ...f, teamId: e.target.value === 'all' ? '' : e.target.value }))}
+              disabled={teamsLoading}
+            >
+              <option value="all">All Teams</option>
+              {(teams || []).map((t: any) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -120,7 +142,7 @@ export default function KpisPage() {
                     <div className="mt-2 sm:flex sm:justify-between">
                       <div className="sm:flex">
                         <p className="flex items-center text-sm text-gray-500">
-                          <span className="truncate">Team: {k.team?.name || '—'}</span>
+                          <span className="truncate">Team: {k.Team?.name || '—'}</span>
                         </p>
                       </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">

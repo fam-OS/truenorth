@@ -81,7 +81,7 @@ export default function KpiDetailPage() {
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-2xl font-bold">{kpi.name}</h1>
-          <p className="mt-1 text-sm text-gray-500">{kpi.quarter} {kpi.year} — {kpi.team?.name || 'No team'}</p>
+          <p className="mt-1 text-sm text-gray-500">{kpi.quarter} {kpi.year} — {kpi.Team?.name || 'No team'}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -125,12 +125,12 @@ export default function KpiDetailPage() {
         />
       </div>
 
-      {kpi.initiative && (
+      {kpi.Initiative && (
         <div className="mt-8">
           <h2 className="text-sm font-medium text-gray-500">Linked Initiative</h2>
           <p className="mt-1">
-            <Link href={`/initiatives/${kpi.initiative.id}`} className="text-blue-600 hover:underline">
-              {kpi.initiative.name}
+            <Link href={`/initiatives/${kpi.Initiative.id}`} className="text-blue-600 hover:underline">
+              {kpi.Initiative.name}
             </Link>
           </p>
         </div>

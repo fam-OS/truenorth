@@ -29,6 +29,7 @@ export async function GET(request: Request) {
         businessUnitId: true,
         createdAt: true,
         updatedAt: true,
+        Team: { select: { id: true, name: true } },
       },
       where: {
         organizationId: orgId,
