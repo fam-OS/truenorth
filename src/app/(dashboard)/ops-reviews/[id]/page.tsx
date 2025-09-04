@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
+import DeleteOpsReviewButton from '@/components/ops-reviews/DeleteOpsReviewButton';
 import Link from 'next/link';
 
 // Simple card components since we're having issues with the UI library
@@ -40,6 +41,8 @@ interface OpsReviewItem {
   updatedAt: Date;
   owner_name: string | null;
   team_name: string | null;
+  targetMetric?: number | null;
+  actualMetric?: number | null;
 }
 
 interface OpsReview {
@@ -115,6 +118,8 @@ export default async function OpsReviewDetailPage({
             <Button asChild>
               <Link href={`/ops-reviews/${id}/items/new`}>Add Item</Link>
             </Button>
+            {/* Delete Review */}
+            <DeleteOpsReviewButton id={id} />
           </div>
         </div>
 
@@ -128,10 +133,6 @@ export default async function OpsReviewDetailPage({
                 <div>
                   <p className="text-sm text-muted-foreground">Team</p>
                   <p>{review.team_name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Owner</p>
-                  <p>{review.owner_name || 'Unassigned'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Period</p>
@@ -178,15 +179,20 @@ export default async function OpsReviewDetailPage({
                             </p>
                           )}
                         </div>
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/ops-reviews/${id}/items/${item.id}/edit`}>
-                            Edit
-                          </Link>
-                        </Button>
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="text-xs text-gray-600">
+                            <span>Target: {item.targetMetric ?? '—'}</span>
+                            <span className="mx-1">•</span>
+                            <span>Actual: {item.actualMetric ?? '—'}</span>
+                          </div>
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/ops-reviews/${id}/items/${item.id}/edit`}>
+                              Edit
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500">
-                        <span>{item.owner_name || 'Unassigned'}</span>
-                        <span className="mx-2">•</span>
                         <span>Team: {item.team_name || 'No Team'}</span>
                       </div>
                     </div>

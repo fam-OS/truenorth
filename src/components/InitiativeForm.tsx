@@ -15,8 +15,8 @@ export type InitiativeFormValues = {
   implementationDetails?: string;
   releaseDate?: string; // yyyy-mm-dd
   organizationId: string; // from context
-  ownerId?: string;
-  businessUnitId?: string;
+  ownerId?: string | null;
+  businessUnitId?: string | null;
 };
 
 export type InitiativeOwnerOption = {
@@ -57,8 +57,8 @@ export function InitiativeForm({
       ? new Date(defaultValues.releaseDate).toISOString().split('T')[0]
       : '',
     organizationId: defaultValues?.organizationId ?? currentOrg?.id ?? '',
-    ownerId: defaultValues?.ownerId ?? undefined,
-    businessUnitId: defaultValues?.businessUnitId ?? undefined,
+    ownerId: (defaultValues as any)?.ownerId ?? undefined,
+    businessUnitId: (defaultValues as any)?.businessUnitId ?? undefined,
   }));
 
   useEffect(() => {
@@ -240,8 +240,8 @@ export function InitiativeForm({
           <select
             id="ownerId"
             className={inputClasses}
-            value={form.ownerId || ''}
-            onChange={(e) => setForm({ ...form, ownerId: e.target.value || undefined })}
+            value={form.ownerId ?? ''}
+            onChange={(e) => setForm({ ...form, ownerId: e.target.value === '' ? null : e.target.value })}
           >
             <option value="">Unassigned</option>
             {owners.map((o) => (
@@ -259,8 +259,8 @@ export function InitiativeForm({
         <select
           id="businessUnitId"
           className={inputClasses}
-          value={form.businessUnitId || ''}
-          onChange={(e) => setForm({ ...form, businessUnitId: e.target.value || undefined })}
+          value={form.businessUnitId ?? ''}
+          onChange={(e) => setForm({ ...form, businessUnitId: e.target.value === '' ? null : e.target.value })}
         >
           <option value="">None</option>
           {businessUnits.map((bu) => (

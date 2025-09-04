@@ -44,6 +44,11 @@ export default function OrganizationsPage() {
   const [orgTeams, setOrgTeams] = useState<Record<string, Team[]>>({});
   const [showCreateTeamForOrg, setShowCreateTeamForOrg] = useState<string | null>(null);
   const [editTeam, setEditTeam] = useState<{ orgId: string; team: Team } | null>(null);
+  // Delete confirmation state
+  const [confirmDeleteOrgId, setConfirmDeleteOrgId] = useState<string | null>(null);
+  const [deletingOrg, setDeletingOrg] = useState(false);
+  const [confirmDeleteTeam, setConfirmDeleteTeam] = useState<{ orgId: string; teamId: string; teamName?: string } | null>(null);
+  const [deletingTeam, setDeletingTeam] = useState(false);
   
   // CEO Goals state
   const [ceoGoals, setCeoGoals] = useState<{id?: string; description: string}[]>([
@@ -219,18 +224,21 @@ export default function OrganizationsPage() {
     }
   };
 
-  const handleDeleteTeam = async (orgId: string, teamId: string) => {
-    if (!window.confirm('Are you sure you want to delete this team?')) return;
-    
+  const handleConfirmDeleteTeam = async () => {
+    if (!confirmDeleteTeam) return;
+    const { orgId, teamId } = confirmDeleteTeam;
     try {
+      setDeletingTeam(true);
       const response = await fetch(`/api/teams/${teamId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete team');
-      
       await fetchTeams(orgId);
       showToast({ title: 'Team deleted', description: 'Team was removed.' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete team');
       showToast({ title: 'Failed to delete team', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
+    } finally {
+      setDeletingTeam(false);
+      setConfirmDeleteTeam(null);
     }
   };
 
@@ -359,7 +367,7 @@ export default function OrganizationsPage() {
       {companyAccount && (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-900">My organizations and teams</h1>
+            <h1 className="text-xl font-semibold text-gray-900">My Organizations and Teams</h1>
             <button
               onClick={() => {
                 setEditingOrg(null);
@@ -419,21 +427,9 @@ export default function OrganizationsPage() {
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.preventDefault();
-                            if (window.confirm(`Are you sure you want to delete "${org.name}"?`)) {
-                              try {
-                                const response = await fetch(`/api/organizations/${org.id}`, {
-                                  method: 'DELETE',
-                                });
-                                if (!response.ok) throw new Error('Failed to delete organization');
-                                await fetchOrganizations();
-                                showToast({ title: 'Organization deleted', description: `${org.name} was removed.` });
-                              } catch (err) {
-                                setError(err instanceof Error ? err.message : 'Failed to delete organization');
-                                showToast({ title: 'Failed to delete organization', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
-                              }
-                            }
+                            setConfirmDeleteOrgId(org.id);
                           }}
                           className="p-1 rounded-full text-gray-400 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                           title="Delete organization"
@@ -499,7 +495,7 @@ export default function OrganizationsPage() {
                                   <PencilIcon className="h-3.5 w-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteTeam(org.id, team.id)}
+                                  onClick={() => setConfirmDeleteTeam({ orgId: org.id, teamId: team.id, teamName: team.name })}
                                   className="text-gray-400 hover:text-red-600"
                                   title="Delete team"
                                 >
@@ -574,6 +570,76 @@ export default function OrganizationsPage() {
                   </svg>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Organization Modal */}
+      {confirmDeleteOrgId && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteOrgId(null)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Organization</h3>
+            <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete this organization? This action cannot be undone.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setConfirmDeleteOrgId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={deletingOrg}
+                onClick={async () => {
+                  try {
+                    setDeletingOrg(true);
+                    const response = await fetch(`/api/organizations/${confirmDeleteOrgId}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Failed to delete organization');
+                    await fetchOrganizations();
+                    showToast({ title: 'Organization deleted', description: 'Organization was removed.' });
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Failed to delete organization');
+                    showToast({ title: 'Failed to delete organization', description: err instanceof Error ? err.message : 'Unknown error', type: 'destructive' });
+                  } finally {
+                    setDeletingOrg(false);
+                    setConfirmDeleteOrgId(null);
+                  }
+                }}
+              >
+                {deletingOrg ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Team Modal */}
+      {confirmDeleteTeam && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteTeam(null)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Team</h3>
+            <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete {confirmDeleteTeam.teamName ? `team "${confirmDeleteTeam.teamName}"` : 'this team'}? This action cannot be undone.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setConfirmDeleteTeam(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={deletingTeam}
+                onClick={() => { void handleConfirmDeleteTeam(); }}
+              >
+                {deletingTeam ? 'Deleting…' : 'Delete'}
+              </button>
             </div>
           </div>
         </div>

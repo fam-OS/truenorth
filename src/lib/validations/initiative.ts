@@ -21,12 +21,14 @@ export const createInitiativeSchema = z.object({
     .string()
     .optional()
     .nullable()
-    .transform((v) => (v ? v : undefined)),
+    // Preserve null to signal explicit disconnect; empty string -> undefined
+    .transform((v) => (v === null ? null : v ? v : undefined)),
   businessUnitId: z
     .string()
     .optional()
     .nullable()
-    .transform((v) => (v ? v : undefined)),
+    // Preserve null to signal explicit disconnect; empty string -> undefined
+    .transform((v) => (v === null ? null : v ? v : undefined)),
 });
 
 export const updateInitiativeSchema = createInitiativeSchema.partial();

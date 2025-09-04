@@ -35,7 +35,7 @@ function useTeamMembers() {
 export default function InitiativesPage() {
   const { currentOrg } = useOrganization();
   const [filters, setFilters] = useState<{ year: number | null; quarter: string | null; ownerId: string }>(
-    { year: new Date().getFullYear(), quarter: null, ownerId: '' }
+    { year: null, quarter: null, ownerId: '' }
   );
 
   const { data: initiatives = [], isLoading } = useInitiatives({ orgId: currentOrg?.id, ownerId: filters.ownerId || undefined });

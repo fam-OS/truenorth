@@ -29,6 +29,8 @@ export async function GET(request: Request) {
     const quarter = searchParams.get('quarter') || undefined;
     const year = searchParams.get('year') ? parseInt(searchParams.get('year') as string, 10) : undefined;
 
+    console.log('[GET /api/ops-reviews] params', { orgId, teamId, quarter, year });
+
     // Use raw SQL to fetch reviews with item counts
     const reviews = await prisma.$queryRaw<OpsReviewWithRelations[]>`
       SELECT 
@@ -56,6 +58,8 @@ export async function GET(request: Request) {
       ...review,
       item_count: Number(review.item_count)
     }));
+
+    console.log('[GET /api/ops-reviews] returned', safeReviews.length, 'rows');
 
     return NextResponse.json(safeReviews);
   } catch (error) {

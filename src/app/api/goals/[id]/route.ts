@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -13,15 +13,16 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     // Get goal first
     const goal = await prisma.goal.findUnique({
-      where: { id: context?.params?.id }
+      where: { id }
     });
 
     if (!goal) {
       console.warn('GET /api/goals/[id] 404: goal not found', {
         userId: session.user.id,
-        goalId: context?.params?.id
+        goalId: id
       });
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
@@ -54,7 +55,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -65,21 +66,22 @@ export async function PUT(
     const body = await request.json();
     const { title, description, status, progressNotes, quarter, year, stakeholderId } = body;
 
+    const { id } = await params;
     // Find goal with includes
     const goal = await prisma.goal.findUnique({
-      where: { id: context?.params?.id },
+      where: { id },
     });
 
     if (!goal) {
       console.warn('PUT /api/goals/[id] 404: goal not found', {
         userId: session.user.id,
-        goalId: context?.params?.id
+        goalId: id
       });
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
     const updatedGoal = await prisma.goal.update({
-      where: { id: context?.params?.id },
+      where: { id },
       data: {
         title,
         description,
@@ -104,22 +106,25 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    console.log('DELETE /api/goals/[id] called', { id });
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
+      console.warn('DELETE /api/goals/[id] unauthorized', { id });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const goal = await prisma.goal.findUnique({
-      where: { id: context?.params?.id }
+      where: { id }
     });
 
     if (!goal) {
       console.warn('DELETE /api/goals/[id] 404: goal not found', {
         userId: session.user.id,
-        goalId: context?.params?.id
+        goalId: id
       });
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
@@ -127,9 +132,9 @@ export async function DELETE(
     // Note: Skipping ownership verification due to lack of organizationId on BusinessUnit model
 
     await prisma.goal.delete({
-      where: { id: context?.params?.id }
+      where: { id }
     });
-
+    console.log('DELETE /api/goals/[id] success', { id });
     return NextResponse.json({ message: 'Goal deleted successfully' });
   } catch (error) {
     console.error('Error deleting goal:', error);

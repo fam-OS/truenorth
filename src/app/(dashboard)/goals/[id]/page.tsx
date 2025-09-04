@@ -28,7 +28,9 @@ export default function GoalDetailPage() {
   
   const [goal, setGoal] = useState<GoalWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     fetchGoal();
@@ -46,6 +48,38 @@ export default function GoalDetailPage() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDeleteGoal() {
+    if (!goal) return;
+    console.log('Confirming deletion...', { goalId });
+
+    try {
+      setDeleting(true);
+      console.log('Deleting goal...', { goalId });
+      const res = await fetch(`/api/goals/${goalId}`, { method: 'DELETE', cache: 'no-store' });
+      const raw = await res.clone().text();
+      console.log('Delete response status:', res.status, 'raw:', raw);
+      if (!res.ok) {
+        let msg = 'Failed to delete goal';
+        try {
+          const json = JSON.parse(raw);
+          msg = json?.error || msg;
+        } catch {}
+        alert(`Delete failed (status ${res.status}): ${msg}`);
+        throw new Error(msg);
+      }
+      alert('Goal deleted successfully');
+      // Navigate back to Business Units list (no standalone /goals route)
+      await router.push('/business-units');
+      router.refresh();
+    } catch (err) {
+      console.error('Delete goal failed:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete goal');
+    } finally {
+      setDeleting(false);
+      setShowConfirm(false);
     }
   }
 
@@ -111,42 +145,32 @@ export default function GoalDetailPage() {
               </div>
             </div>
             
-            <button
-              onClick={() => router.push(`/goals/${goalId}/edit`)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <PencilIcon className="h-4 w-4 mr-2" />
-              Edit Goal
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push(`/goals/${goalId}/edit`)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <PencilIcon className="h-4 w-4 mr-2" />
+                Edit Goal
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
+                disabled={deleting}
+                className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Delete goal"
+              >
+                {deleting ? 'Deleting…' : 'Delete Goal'}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Description</h2>
-              <p className="text-gray-700 whitespace-pre-wrap">
-                {goal.description || 'No description provided.'}
-              </p>
-            </div>
-
-            {/* Requirements section removed: field no longer exists on Goal */}
-
-            {/* Progress Notes */}
-            {goal.progressNotes && (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Progress Notes</h2>
-                <p className="text-gray-700 whitespace-pre-wrap">{goal.progressNotes}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column - Sidebar */}
+        <div className="grid grid-cols-1 gap-8">
+          {/* Main Details */}
           <div className="space-y-6">
-            {/* Goal Details */}
+            {/* Goal Details moved above Description */}
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Goal Details</h2>
               <dl className="space-y-3">
@@ -163,7 +187,7 @@ export default function GoalDetailPage() {
                     </span>
                   </dd>
                 </div>
-                
+
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Period</dt>
                   <dd className="mt-1 text-sm text-gray-900">
@@ -201,22 +225,53 @@ export default function GoalDetailPage() {
               </dl>
             </div>
 
-            {/* Actions */}
+            {/* Description */}
             <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Actions</h2>
-              <div className="space-y-3">
-                <button
-                  onClick={() => router.push(`/goals/${goalId}/edit`)}
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  <PencilIcon className="h-4 w-4 mr-2" />
-                  Edit Goal
-                </button>
-              </div>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Description</h2>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {goal.description || 'No description provided.'}
+              </p>
             </div>
+
+            {/* Requirements section removed: field no longer exists on Goal */}
+
+            {/* Progress Notes */}
+            {goal.progressNotes && (
+              <div className="bg-white shadow rounded-lg p-6">
+                <h2 className="text-lg font-medium text-gray-900 mb-4">Progress Notes</h2>
+                <p className="text-gray-700 whitespace-pre-wrap">{goal.progressNotes}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowConfirm(false)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Goal</h3>
+            <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete this goal? This action cannot be undone.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={deleting}
+                onClick={() => { console.log('Delete confirmed'); void handleDeleteGoal(); }}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

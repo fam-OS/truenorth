@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import DeleteOpsReviewItemButton from '@/components/ops-reviews/DeleteOpsReviewItemButton';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 
@@ -62,6 +63,7 @@ export default async function OpsReviewItemDetailPage({
           >
             Edit Item
           </Link>
+          <DeleteOpsReviewItemButton reviewId={id} itemId={item.id} />
         </div>
       </div>
 

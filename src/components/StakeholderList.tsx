@@ -7,12 +7,14 @@ interface StakeholderListProps {
   stakeholders: Stakeholder[];
   onSelectStakeholder: (stakeholder: Stakeholder) => void;
   onCreateStakeholder: () => void;
+  onRemoveStakeholder?: (stakeholder: Stakeholder) => void;
 }
 
 export function StakeholderList({
   stakeholders,
   onSelectStakeholder,
   onCreateStakeholder,
+  onRemoveStakeholder,
 }: StakeholderListProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -101,7 +103,21 @@ export function StakeholderList({
                         </div>
                       </div>
                     </div>
-                    <div className="ml-6">
+                    <div className="ml-6 flex items-center gap-3">
+                      {onRemoveStakeholder && (
+                        <button
+                          type="button"
+                          className="text-xs text-red-600 hover:text-red-800"
+                          title="Remove from this business unit"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onRemoveStakeholder(stakeholder);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      )}
                       <svg
                         className="h-5 w-5 text-gray-400"
                         xmlns="http://www.w3.org/2000/svg"

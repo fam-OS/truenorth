@@ -23,6 +23,17 @@ function useInitiatives(params: { orgId?: string; ownerId?: string; businessUnit
   });
 }
 
+function useTeams() {
+  return useQuery({
+    queryKey: ['teams'],
+    queryFn: async () => {
+      const res = await fetch('/api/teams');
+      if (!res.ok) throw new Error('Failed to fetch teams');
+      return res.json();
+    },
+  });
+}
+
 function useTeamMembers() {
   return useQuery({
     queryKey: ['team-members'],
@@ -77,6 +88,7 @@ export default function InitiativesAndKpisPage() {
     quarter: kpiFilters.quarter,
     year: kpiFilters.year,
   });
+  const { data: teams = [], isLoading: teamsLoading } = useTeams();
 
   const years = useMemo(() => Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i), []);
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -274,7 +286,18 @@ export default function InitiativesAndKpisPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="kpi-team">Team</label>
-              <input id="kpi-team" placeholder="Filter by team ID" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value={kpiFilters.teamId} onChange={(e) => setKpiFilters((f) => ({ ...f, teamId: e.target.value }))} />
+              <select
+                id="kpi-team"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                value={kpiFilters.teamId || 'all'}
+                onChange={(e) => setKpiFilters((f) => ({ ...f, teamId: e.target.value === 'all' ? '' : e.target.value }))}
+                disabled={teamsLoading}
+              >
+                <option value="all">All Teams</option>
+                {(teams || []).map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -313,7 +336,7 @@ export default function InitiativesAndKpisPage() {
                       </div>
                       <div className="mt-2 sm:flex sm:justify-between">
                         <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500"><span className="truncate">Team: {k.team?.name || '—'}</span></p>
+                          <p className="flex items-center text-sm text-gray-500"><span className="truncate">Team: {k.Team?.name || '—'}</span></p>
                         </div>
                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0"><span>Target: {k.targetMetric ?? '—'} • Actual: {k.actualMetric ?? '—'}</span></div>
                       </div>

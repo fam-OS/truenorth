@@ -27,28 +27,29 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ o
   const [mounted, setMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { showToast } = useToast();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
-      return;
-    }
-
+  const handleConfirmDelete = async () => {
     try {
+      setDeleting(true);
       const response = await fetch(`/api/organizations/${organizationId}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete organization');
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error || 'Failed to delete organization');
       }
 
       showToast({ title: 'Organization deleted successfully', type: 'default' });
-      // Use replace instead of push to prevent back navigation to deleted organization
       router.replace('/organizations');
     } catch (error) {
       console.error('Error deleting organization:', error);
-      showToast({ title: 'Failed to delete organization', type: 'destructive' });
+      showToast({ title: 'Failed to delete organization', description: error instanceof Error ? error.message : 'Unknown error', type: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setShowConfirm(false);
     }
   };
 
@@ -154,7 +155,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ o
                   Edit
                 </button>
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setShowConfirm(true)}
                   className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
                   <TrashIcon className="h-4 w-4 mr-1" />
@@ -286,6 +287,34 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ o
               )}
             </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowConfirm(false)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Organization</h3>
+            <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete this organization? This action cannot be undone.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={deleting}
+                onClick={() => { void handleConfirmDelete(); }}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

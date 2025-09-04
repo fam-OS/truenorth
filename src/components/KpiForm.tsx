@@ -96,6 +96,7 @@ export function KpiForm({
       <div>
         <label className="block text-sm font-medium text-gray-700" htmlFor="name">Name</label>
         <input id="name" className={input} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <p className="mt-1 text-xs text-gray-500">What are you measuring?</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -521,41 +521,49 @@ export default function TeamsPage() {
                 <label className="block text-gray-600 mb-1">Q1 Forecast</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q1Forecast}
                   onChange={(e) => updateForm("q1Forecast", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Q1 Actual</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q1Actual}
                   onChange={(e) => updateForm("q1Actual", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Q2 Forecast</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q2Forecast}
                   onChange={(e) => updateForm("q2Forecast", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Q2 Actual</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q2Actual}
                   onChange={(e) => updateForm("q2Actual", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Q3 Forecast</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q3Forecast}
                   onChange={(e) => updateForm("q3Forecast", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Q3 Actual</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q3Actual}
                   onChange={(e) => updateForm("q3Actual", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Q4 Forecast</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q4Forecast}
                   onChange={(e) => updateForm("q4Forecast", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Q4 Actual</label>
                 <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q4Actual}
                   onChange={(e) => updateForm("q4Actual", Number(e.target.value))} min={0} />
+                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
               </div>
               <div className="md:col-span-2 lg:col-span-4">
                 <label className="block text-gray-600 mb-1">Notes</label>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/toast';
 
 type Member = { id: string; name: string; email: string; role: string; teamId?: string | null };
 
@@ -9,6 +10,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   // Add form state
   const [addOpen, setAddOpen] = useState(false);
@@ -27,6 +29,10 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   const [editEmail, setEditEmail] = useState('');
   const [editRole, setEditRole] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Delete confirmation state
+  const [confirmDeleteMember, setConfirmDeleteMember] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchMembers = async () => {
     try {
@@ -131,14 +137,22 @@ export function TeamMembers({ teamId }: { teamId: string }) {
     }
   };
 
-  const handleDelete = async (memberId: string) => {
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteMember) return;
     try {
       setError(null);
-      const res = await fetch(`/api/team-members/${memberId}`, { method: 'DELETE' });
+      setDeleting(true);
+      const res = await fetch(`/api/team-members/${confirmDeleteMember.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete member');
+      showToast({ title: 'Member deleted', description: `${confirmDeleteMember.name} was removed.` });
       await fetchMembers();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete member');
+      const msg = e instanceof Error ? e.message : 'Failed to delete member';
+      setError(msg);
+      showToast({ title: 'Failed to delete member', description: msg, type: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteMember(null);
     }
   };
 
@@ -320,9 +334,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                       Edit
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(`Delete member ${m.name}?`)) void handleDelete(m.id);
-                      }}
+                      onClick={() => setConfirmDeleteMember({ id: m.id, name: m.name })}
                       className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200"
                     >
                       Delete
@@ -333,6 +345,33 @@ export function TeamMembers({ teamId }: { teamId: string }) {
             </li>
           ))}
         </ul>
+      )}
+      {/* Confirm Delete Member Modal */}
+      {confirmDeleteMember && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteMember(null)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Member</h3>
+            <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete {`"${confirmDeleteMember.name}"`}? This action cannot be undone.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setConfirmDeleteMember(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={deleting}
+                onClick={() => { void handleConfirmDelete(); }}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
