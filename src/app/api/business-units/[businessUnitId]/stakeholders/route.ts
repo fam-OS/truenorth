@@ -81,10 +81,17 @@ export async function DELETE(
   try {
     const { businessUnitId } = await params;
     console.log('DELETE /api/business-units/[businessUnitId]/stakeholders called', { businessUnitId });
+    // Support both JSON body and query string for stakeholderId for flexibility
+    const url = new URL(request.url);
+    const qsStakeholderId = url.searchParams.get('stakeholderId') ?? undefined;
     const body = await request.json().catch(() => ({}));
-    console.log('Request body:', body);
-    const schema = z.object({ stakeholderId: z.string().min(1) });
-    const { stakeholderId } = schema.parse(body);
+    console.log('Request body:', body, 'Query:', { stakeholderId: qsStakeholderId });
+    const schema = z.object({ stakeholderId: z.string().min(1).optional() });
+    const parsed = schema.safeParse(body);
+    const stakeholderId = (parsed.success ? parsed.data.stakeholderId : undefined) ?? qsStakeholderId;
+    if (!stakeholderId) {
+      return NextResponse.json({ error: 'stakeholderId is required' }, { status: 400 });
+    }
 
     const stakeholder = await prisma.stakeholder.findUnique({ where: { id: stakeholderId } });
     if (!stakeholder) {

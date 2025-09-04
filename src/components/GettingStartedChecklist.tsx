@@ -36,7 +36,7 @@ export default function GettingStartedChecklist() {
       id: 'initiatives',
       title: 'Add initiatives and KPIs for initiatives',
       description: 'Create strategic projects and success metrics',
-      href: '/initiatives',
+      href: '/initiatives-kpis',
       completed: false,
       icon: '🚀'
     },

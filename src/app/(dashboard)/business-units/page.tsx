@@ -221,8 +221,10 @@ export default function BusinessUnitsPage() {
         return;
       }
 
+      // Preserve current view after deletion (if initiated from the stakeholders view, stay there)
+      const currentView = viewMode;
       await fetchData();
-      setViewMode('detail');
+      setViewMode(currentView === 'stakeholders' ? 'stakeholders' : 'detail');
       showToast({ title: 'Stakeholder removed', description: stakeholderToRemove.name ? `${stakeholderToRemove.name} was unlinked from this business unit.` : 'Stakeholder was unlinked from this business unit.' });
       setIsDeleteStakeholderModalOpen(false);
       setStakeholderToRemove(null);
@@ -564,6 +566,7 @@ export default function BusinessUnitsPage() {
               stakeholders={selectedUnit.Stakeholder || []}
               onSelectStakeholder={setSelectedStakeholder}
               onCreateStakeholder={() => setViewMode('createStakeholder')}
+              onRemoveStakeholder={(s) => handleRemoveStakeholder({ id: s.id, name: s.name })}
             />
           </div>
         ) : null;

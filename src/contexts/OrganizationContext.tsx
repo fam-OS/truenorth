@@ -25,10 +25,54 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const init = async () => {
       try {
+        // 1) Check URL for explicit organization id (query or path)
+        let orgIdFromUrl: string | null = null;
+        try {
+          const loc = window.location;
+          const sp = new URLSearchParams(loc.search);
+          orgIdFromUrl = sp.get('orgId');
+          if (!orgIdFromUrl) {
+            // Try to parse from path: /organizations/{id}
+            const parts = loc.pathname.split('/').filter(Boolean);
+            const idx = parts.indexOf('organizations');
+            if (idx >= 0 && parts[idx + 1]) {
+              orgIdFromUrl = parts[idx + 1];
+            }
+          }
+        } catch {}
+
+        // Fetch all orgs once if needed (for validation and lookup)
+        async function getAllOrgs(): Promise<Array<{ id: string; name: string }>> {
+          try {
+            const res = await fetch('/api/organizations', { cache: 'no-store' });
+            if (!res.ok) return [];
+            return (await res.json()) as Array<{ id: string; name: string }>;
+          } catch {
+            return [];
+          }
+        }
+
+        // If URL provides orgId, use it (and persist) when valid
+        if (orgIdFromUrl) {
+          const orgs = await getAllOrgs();
+          const match = orgs.find((o) => o.id === orgIdFromUrl);
+          if (match && !cancelled) {
+            setCurrentOrg({ id: match.id, name: match.name });
+            try { localStorage.setItem('currentOrg', JSON.stringify({ id: match.id, name: match.name })); } catch {}
+            return;
+          }
+        }
+
         const savedOrg = localStorage.getItem('currentOrg');
         if (savedOrg) {
-          if (!cancelled) setCurrentOrg(JSON.parse(savedOrg));
-          return;
+          // Validate saved org still exists
+          const parsed = JSON.parse(savedOrg) as { id: string; name: string };
+          const orgs = await getAllOrgs();
+          const match = orgs.find((o) => o.id === parsed.id);
+          if (match && !cancelled) {
+            setCurrentOrg({ id: match.id, name: match.name });
+            return;
+          }
         }
 
         // Try to get logged-in user's default org
@@ -46,13 +90,10 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
         // Fallback: select the first available organization automatically
         try {
-          const orgRes = await fetch('/api/organizations', { cache: 'no-store' });
-          if (orgRes.ok) {
-            const orgs: Array<{ id: string; name: string }> = await orgRes.json();
-            if (orgs.length >= 1 && !cancelled) {
-              setCurrentOrg({ id: orgs[0].id, name: orgs[0].name });
-              return;
-            }
+          const orgs = await getAllOrgs();
+          if (orgs.length >= 1 && !cancelled) {
+            setCurrentOrg({ id: orgs[0].id, name: orgs[0].name });
+            return;
           }
         } catch {}
       } catch (error) {

@@ -36,6 +36,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updateData.Organization = { connect: { id: organizationId } };
     }
     if (ownerId !== undefined) {
+      console.debug('[Initiatives][PUT] ownerId received:', ownerId);
       updateData.TeamMember = ownerId ? { connect: { id: ownerId } } : { disconnect: true };
     }
     if (businessUnitId !== undefined) {
