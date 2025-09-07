@@ -74,18 +74,15 @@ export async function POST(
       return new NextResponse('Business unit not found', { status: 404 });
     }
 
-    // Validate stakeholder exists
+    // Validate stakeholder exists (only when provided)
     if (json.stakeholderId) {
       const stakeholder = await prisma.stakeholder.findUnique({
-        where: { 
-          id: json.stakeholderId
-        }
+        where: { id: json.stakeholderId },
+        select: { id: true, businessUnitId: true },
       });
-
       if (!stakeholder) {
         return new NextResponse('Stakeholder not found', { status: 400 });
       }
-      // Ensure stakeholder belongs to the same business unit
       if (stakeholder.businessUnitId !== businessUnitId) {
         return new NextResponse('Stakeholder must belong to this Business Unit', { status: 400 });
       }
@@ -99,8 +96,8 @@ export async function POST(
       year: z.number().int().min(2020).max(2030),
       status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'AT_RISK', 'BLOCKED', 'CANCELLED']).optional(),
       progressNotes: z.string().nullable().optional(),
-      // stakeholderId must be provided but is not constrained to UUID in tests
-      stakeholderId: z.string().min(1, 'stakeholderId is required'),
+      // stakeholderId optional; when provided it must be non-empty
+      stakeholderId: z.string().min(1).optional(),
     });
 
     const parsedJson = createGoalSchema.parse(json);
@@ -114,7 +111,7 @@ export async function POST(
         year: parsedJson.year,
         businessUnitId,
         ...(parsedJson.status && { status: parsedJson.status as $Enums.GoalStatus }),
-        stakeholderId: parsedJson.stakeholderId,
+        stakeholderId: parsedJson.stakeholderId ?? null,
         progressNotes: parsedJson.progressNotes ?? null,
       },
     });

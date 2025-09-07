@@ -170,9 +170,11 @@ export default function GoalDetailPage() {
         <div className="grid grid-cols-1 gap-8">
           {/* Main Details */}
           <div className="space-y-6">
-            {/* Goal Details moved above Description */}
+            {/* Goal Summary for Business Unit */}
             <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Goal Details</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                {`Goal for ${goal.businessUnit?.name ?? 'Business Unit'}`}
+              </h2>
               <dl className="space-y-3">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Status</dt>

@@ -97,6 +97,24 @@ export async function POST(request: Request) {
       },
     });
 
+    // Also link this BusinessUnit to an accessible Organization by creating a default Team
+    try {
+      const viewerOrgIds = await getViewerCompanyOrgIds(userId);
+      const orgId = viewerOrgIds[0];
+      if (orgId) {
+        await prisma.team.create({
+          data: {
+            name: `${data.name} Team`,
+            description: `Auto-created team for business unit ${data.name}`,
+            organizationId: orgId,
+            businessUnitId: businessUnit.id,
+          },
+        });
+      }
+    } catch (linkErr) {
+      console.warn('BusinessUnit created but could not link to an Organization via Team:', linkErr);
+    }
+
     return NextResponse.json(businessUnit, { status: 201 });
   } catch (error) {
     console.error('Error creating business unit:', error);

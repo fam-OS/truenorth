@@ -170,8 +170,8 @@ export default function GettingStartedChecklist() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-semibold">Getting Started</CardTitle>
-          <div className="text-sm text-gray-500">
+          <CardTitle className="text-xl font-semibold text-gray-100">Getting Started</CardTitle>
+          <div className="text-sm text-gray-300">
             {completedCount}/{checklist.length} completed
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function GettingStartedChecklist() {
             style={{ width: `${progressPercentage}%` }}
           ></div>
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-300">
           Complete these steps to set up your organization in TrueNorth
         </p>
       </CardHeader>
