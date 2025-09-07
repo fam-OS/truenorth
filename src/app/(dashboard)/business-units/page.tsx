@@ -29,6 +29,11 @@ export default function BusinessUnitsPage() {
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Search state for 3-column overview
+  const [searchBU, setSearchBU] = useState('');
+  const [searchStake, setSearchStake] = useState('');
+  const [searchGoal, setSearchGoal] = useState('');
+  const [recentGoals, setRecentGoals] = useState<any[]>([]);
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
   const { showToast } = useToast();
@@ -100,6 +105,19 @@ export default function BusinessUnitsPage() {
         }
       } catch {
         if (isMounted.current) setAllStakeholders([]);
+      }
+
+      // Fetch recent goals for overview
+      try {
+        const goalsRes = await fetch('/api/goals?recentDays=30&limit=5', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+        if (goalsRes.ok) {
+          const g = await goalsRes.json();
+          if (isMounted.current) setRecentGoals(Array.isArray(g) ? g : []);
+        } else {
+          if (isMounted.current) setRecentGoals([]);
+        }
+      } catch {
+        if (isMounted.current) setRecentGoals([]);
       }
 
       if (selectedUnit) {
@@ -312,13 +330,17 @@ export default function BusinessUnitsPage() {
   };
 
   async function handleCreateGoal(data: any) {
-    if (!selectedUnit) return;
-
+    // Allow creating from global modal by using selectedUnit OR the BU chosen in the form
+    const targetBU = selectedUnit?.id || data.businessUnitId;
+    if (!targetBU) {
+      showToast({ title: 'Business unit required', description: 'Please select a Business Unit for this goal.', type: 'destructive' });
+      return;
+    }
     try {
       setIsSubmitting(true);
       setError('');
       
-      const response = await fetch(`/api/business-units/${selectedUnit.id}/goals`, {
+      const response = await fetch(`/api/business-units/${targetBU}/goals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -330,7 +352,7 @@ export default function BusinessUnitsPage() {
       }
       
       await fetchData();
-      setViewMode('detail');
+      setViewMode(selectedUnit ? 'detail' : 'list');
       showToast({ title: 'Goal created', description: 'Goal was created successfully.' });
     } catch (err) {
       console.error('Error creating goal:', err);
@@ -644,6 +666,12 @@ export default function BusinessUnitsPage() {
                   >
                     New Business Unit
                   </button>
+                  <button
+                    onClick={() => { setEditingGoal(null); setViewMode('createGoal'); }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    New Goal
+                  </button>
                 </div>
               )}
             </div>
@@ -659,43 +687,107 @@ export default function BusinessUnitsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-8">
-                {/* Business Units section */}
-                <div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Column 1: Business Units */}
+                <div className="bg-white shadow rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold">Business Units</h2>
+                    <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/business-units'}>View all</button>
                   </div>
-                  <BusinessUnitList
-                    businessUnits={businessUnits}
-                    onSelectUnit={(unit) => {
-                      setSelectedUnit(unit);
-                      setViewMode('detail');
-                    }}
-                    onAddStakeholder={(unit) => {
-                      setSelectedUnit(unit);
-                      setViewMode('createStakeholder');
-                    }}
+                  <input
+                    className="w-full mb-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Search Business Units..."
+                    value={searchBU}
+                    onChange={(e) => setSearchBU(e.target.value)}
                   />
+                  <button
+                    onClick={() => setViewMode('createUnit')}
+                    className="mb-3 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    New Business Unit
+                  </button>
+                  <ul className="divide-y divide-gray-200">
+                    {businessUnits
+                      .filter((u) => (u.name || '').toLowerCase().includes(searchBU.toLowerCase()))
+                      .sort((a, b) => new Date(b.updatedAt || b.createdAt as any).getTime() - new Date(a.updatedAt || a.createdAt as any).getTime())
+                      .slice(0, 5)
+                      .map((u) => (
+                        <li key={u.id} className="py-2 flex justify-between items-center">
+                          <button className="text-sm text-blue-600 hover:underline" onClick={() => { setSelectedUnit(u); setViewMode('detail'); }}>{u.name}</button>
+                        </li>
+                      ))}
+                    {businessUnits.length === 0 && (
+                      <li className="py-6 text-sm text-gray-500 text-center">No business units</li>
+                    )}
+                  </ul>
                 </div>
 
-                {/* Stakeholders section moved from /units-stakeholders */}
-                <div>
+                {/* Column 2: Stakeholders */}
+                <div className="bg-white shadow rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold">Stakeholders</h2>
-                    <button
-                      className="text-sm text-blue-600 hover:underline"
-                      onClick={() => (window.location.href = '/stakeholders')}
-                    >
-                      View all
-                    </button>
+                    <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/stakeholders'}>View all</button>
                   </div>
-                  <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                    <StakeholderList
-                      stakeholders={allStakeholders}
-                      onSelectStakeholder={(s) => (window.location.href = `/stakeholders/${s.id}`)}
-                      onCreateStakeholder={() => (window.location.href = '/stakeholders')}
-                    />
+                  <input
+                    className="w-full mb-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Search Stakeholders..."
+                    value={searchStake}
+                    onChange={(e) => setSearchStake(e.target.value)}
+                  />
+                  <button
+                    onClick={() => setViewMode('createGlobalStakeholder')}
+                    className="mb-3 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+                  >
+                    New Stakeholder
+                  </button>
+                  <ul className="divide-y divide-gray-200">
+                    {allStakeholders
+                      .filter((s) => (s.name || '').toLowerCase().includes(searchStake.toLowerCase()))
+                      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+                      .slice(0, 5)
+                      .map((s) => (
+                        <li key={s.id} className="py-2 flex justify-between items-center">
+                          <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = `/stakeholders/${s.id}`}>{s.name}</button>
+                          <span className="text-xs text-gray-500">{s.role}</span>
+                        </li>
+                      ))}
+                    {allStakeholders.length === 0 && (
+                      <li className="py-6 text-sm text-gray-500 text-center">No stakeholders</li>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Column 3: Goals */}
+                <div className="bg-white shadow rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold">Goals</h2>
+                    <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/initiatives-kpis'}>View all</button>
                   </div>
+                  <input
+                    className="w-full mb-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Search Goals..."
+                    value={searchGoal}
+                    onChange={(e) => setSearchGoal(e.target.value)}
+                  />
+                  <button
+                    onClick={() => { setEditingGoal(null); setViewMode('createGoal'); }}
+                    className="mb-3 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    New Goal
+                  </button>
+                  <ul className="divide-y divide-gray-200">
+                    {recentGoals
+                      .filter((g) => (g.title || '').toLowerCase().includes(searchGoal.toLowerCase()))
+                      .map((g) => (
+                        <li key={g.id} className="py-2 flex justify-between items-center">
+                          <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = `/goals/${g.id}`}>{g.title}</button>
+                          <span className="text-xs text-gray-500">{g.quarter} {g.year} {g.status ? `| ${g.status}` : ''}</span>
+                        </li>
+                      ))}
+                    {recentGoals.length === 0 && (
+                      <li className="py-6 text-sm text-gray-500 text-center">No goals</li>
+                    )}
+                  </ul>
                 </div>
               </div>
             )}
