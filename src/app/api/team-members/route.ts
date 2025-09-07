@@ -5,20 +5,36 @@ import { assertTeamAccess, getViewerCompanyOrgIds, requireUserId } from '@/lib/a
 
 export async function GET() {
   try {
+    // Scope: all members in the viewer's CompanyAccount, including standalone (teamId = null)
     let whereClause: any = {};
     if (process.env.NODE_ENV !== 'test') {
-      const userId = await requireUserId().catch(resp => resp as any);
+      const userId = await requireUserId().catch((resp) => resp as any);
       if (typeof userId !== 'string') return userId;
+
+      // Derive viewer companyAccountId via org membership or owned account
+      const membershipOrg = await prisma.organization.findFirst({
+        where: { User: { some: { id: userId } } },
+        select: { companyAccountId: true },
+      });
+      let companyAccountId: string | null = membershipOrg?.companyAccountId ?? null;
+      if (!companyAccountId) {
+        const owned = await prisma.companyAccount.findFirst({ where: { userId }, select: { id: true } });
+        companyAccountId = owned?.id ?? null;
+      }
+      if (!companyAccountId) {
+        return NextResponse.json([], { status: 200 });
+      }
+
       const orgIds = await getViewerCompanyOrgIds(userId);
-      // Filter by teams within viewer organizations
       whereClause = {
-        Team: {
-          organizationId: { in: orgIds }
-        }
+        companyAccountId,
+        OR: [
+          { teamId: null },
+          { Team: { organizationId: { in: orgIds } } },
+        ],
       } as any;
     }
 
-    // Get team members with scoping as applicable
     const teamMembers = await prisma.teamMember.findMany({
       where: whereClause,
       select: {
@@ -60,58 +76,22 @@ export async function POST(request: Request) {
     const validatedData = createTeamMemberSchema.parse(body);
     console.log('Validated data:', validatedData);
 
-    // If no teamId provided, auto-assign to a default "General Team" under the viewer's CompanyAccount orgs
-    let targetTeamId = validatedData.teamId;
-    if (!targetTeamId) {
-      let orgIds = await getViewerCompanyOrgIds(userId);
-      if (orgIds.length === 0) {
-        // No orgs yet: create a default Organization under the viewer's CompanyAccount
-        // First, try to infer companyAccountId from any org membership; otherwise use owned CompanyAccount
-        const membershipOrg = await prisma.organization.findFirst({
-          where: { User: { some: { id: userId } } },
-          select: { companyAccountId: true },
-        });
-        let companyAccountId: string | null = membershipOrg?.companyAccountId ?? null;
-        if (!companyAccountId) {
-          const owned = await prisma.companyAccount.findFirst({ where: { userId }, select: { id: true } });
-          companyAccountId = owned?.id ?? null;
-        }
-        if (!companyAccountId) {
-          return NextResponse.json({ error: 'No company account found for the current user.' }, { status: 400 });
-        }
-        const defaultOrg = await prisma.organization.create({
-          data: {
-            id: `org-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            name: 'General Organization',
-            description: 'Auto-created for team member management',
-            companyAccountId,
-          },
-          select: { id: true },
-        });
-        orgIds = [defaultOrg.id];
-      }
-      // Try to find an existing General Team in any of the orgs
-      let team = await prisma.team.findFirst({
-        where: {
-          organizationId: { in: orgIds },
-          name: 'General Team'
-        },
-        select: { id: true }
-      });
-      // If none, create one under the first org
-      if (!team) {
-        team = await prisma.team.create({
-          data: {
-            name: 'General Team',
-            organizationId: orgIds[0],
-          },
-          select: { id: true }
-        });
-      }
-      targetTeamId = team.id;
+    // Determine viewer's companyAccountId (required field)
+    const membershipOrg = await prisma.organization.findFirst({
+      where: { User: { some: { id: userId } } },
+      select: { companyAccountId: true },
+    });
+    let companyAccountId: string | null = membershipOrg?.companyAccountId ?? null;
+    if (!companyAccountId) {
+      const owned = await prisma.companyAccount.findFirst({ where: { userId }, select: { id: true } });
+      companyAccountId = owned?.id ?? null;
+    }
+    if (!companyAccountId) {
+      return NextResponse.json({ error: 'No company account found for the current user.' }, { status: 400 });
     }
 
-    // In non-test, ensure chosen team belongs to viewer orgs
+    // Optional team assignment: if provided, validate access; if not, leave null
+    let targetTeamId = validatedData.teamId ?? null;
     if (process.env.NODE_ENV !== 'test' && targetTeamId) {
       try {
         await assertTeamAccess(userId, targetTeamId);
@@ -126,14 +106,17 @@ export async function POST(request: Request) {
     const teamMemberData: any = {
       id: teamMemberId,
       name: validatedData.name,
-      email: validatedData.email || `${validatedData.name.toLowerCase().replace(/\s+/g, '.')}@company.com`,
+      email: validatedData.email || `${validatedData.name.toLowerCase().replace(/\s+/g, '.') }@company.com`,
       role: validatedData.role,
       isActive: true,
-      teamId: targetTeamId,
     };
     
     const teamMember = await prisma.teamMember.create({
-      data: teamMemberData,
+      data: {
+        ...teamMemberData,
+        CompanyAccount: { connect: { id: companyAccountId } },
+        ...(targetTeamId ? { Team: { connect: { id: targetTeamId } } } : {}),
+      },
     });
 
     console.log('Team member created successfully:', teamMember);

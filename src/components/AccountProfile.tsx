@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -601,7 +602,16 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
             </div>
           ) : (
             <p className="text-gray-600">
-              {companyAccount.founder?.name || 'No founder specified'}
+              {companyAccount.founder ? (
+                <Link
+                  href={`/team-members/${companyAccount.founder.id}`}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {companyAccount.founder.name}
+                </Link>
+              ) : (
+                'No founder specified'
+              )}
             </p>
           )}
         </div>

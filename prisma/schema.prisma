@@ -27,17 +27,17 @@ model Account {
 }
 
 model BusinessUnit {
-  id             String        @id
-  name           String
-  description    String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  Goal           Goal[]
-  Initiative     Initiative[]
-  Kpi            Kpi[]
-  Metric         Metric[]
-  Stakeholder    Stakeholder[]
-  Team           Team[]
+  id          String        @id
+  name        String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Goal        Goal[]
+  Initiative  Initiative[]
+  Kpi         Kpi[]
+  Metric      Metric[]
+  Stakeholder Stakeholder[]
+  Team        Team[]
 }
 
 model CeoGoal {
@@ -46,7 +46,7 @@ model CeoGoal {
   order          Int          @default(0)
   organizationId String
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime      @updatedAt
+  updatedAt      DateTime     @updatedAt
   Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
@@ -57,7 +57,7 @@ model CompanyAccount {
   userId            String         @unique
   name              String
   description       String?
-  founderId         String?
+  founderId         String?        @unique
   employees         String?
   headquarters      String?
   launchedDate      String?
@@ -68,7 +68,8 @@ model CompanyAccount {
   linkedinLink      String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
-  TeamMember        TeamMember?    @relation(fields: [founderId], references: [id])
+  founder           TeamMember?    @relation("CompanyFounder", fields: [founderId], references: [id])
+  teamMembers       TeamMember[]   @relation("AccountMembers")
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   Organization      Organization[]
 }
@@ -120,7 +121,7 @@ model Goal {
   stakeholderId  String?
   progressNotes  String?
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime      @updatedAt
+  updatedAt      DateTime     @updatedAt
   businessUnitId String
   quarter        Quarter
   year           Int
@@ -165,7 +166,7 @@ model Initiative {
   organizationId        String
   ownerId               String?
   createdAt             DateTime          @default(now())
-  updatedAt             DateTime @updatedAt
+  updatedAt             DateTime          @updatedAt
   businessUnitId        String?
   type                  InitiativeType?
   atRisk                Boolean           @default(false)
@@ -191,7 +192,7 @@ model Kpi {
   teamId            String
   initiativeId      String?
   createdAt         DateTime      @default(now())
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime      @updatedAt
   businessUnitId    String?
   metTarget         Boolean?
   metTargetPercent  Float?
@@ -214,7 +215,7 @@ model Meeting {
   notes         String
   stakeholderId String
   createdAt     DateTime    @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime    @updatedAt
   Stakeholder   Stakeholder @relation(fields: [stakeholderId], references: [id])
 }
 
@@ -226,7 +227,7 @@ model Metric {
   unit           String
   businessUnitId String
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime      @updatedAt
+  updatedAt      DateTime     @updatedAt
   BusinessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
 }
 
@@ -253,9 +254,6 @@ model OpsReview {
   TeamMember    TeamMember?     @relation(fields: [ownerId], references: [id])
   Team          Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
   OpsReviewItem OpsReviewItem[]
-
-  @@index([ownerId])
-  @@index([teamId])
 }
 
 model OpsReviewItem {
@@ -270,7 +268,7 @@ model OpsReviewItem {
   teamId       String
   ownerId      String?
   createdAt    DateTime    @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime    @updatedAt
   OpsReview    OpsReview   @relation(fields: [opsReviewId], references: [id], onDelete: Cascade)
   TeamMember   TeamMember? @relation(fields: [ownerId], references: [id])
   Team         Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -344,7 +342,7 @@ model Task {
   dueDate     DateTime?
   status      TaskStatus
   createdAt   DateTime   @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime   @updatedAt
   notes       Note[]
 }
 
@@ -362,29 +360,28 @@ model Team {
   BusinessUnit     BusinessUnit?      @relation(fields: [businessUnitId], references: [id])
   Organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   TeamMember       TeamMember[]
-
-  @@unique([organizationId, name])
-  @@index([organizationId])
 }
 
 model TeamMember {
-  id               String           @id @default(cuid())
+  id               String          @id @default(cuid())
   name             String
   email            String?
   role             String?
-  teamId           String
-  isActive         Boolean          @default(true)
+  teamId           String?
+  companyAccountId String?
+  isActive         Boolean         @default(true)
   reportsToId      String?
-  CompanyAccount   CompanyAccount[]
+  CompanyAccount   CompanyAccount? @relation("AccountMembers", fields: [companyAccountId], references: [id], onDelete: Cascade)
+  FoundedCompany   CompanyAccount? @relation("CompanyFounder")
   Initiative       Initiative[]
   OpsReview        OpsReview[]
   OpsReviewItem    OpsReviewItem[]
-  TeamMember       TeamMember?      @relation("TeamMemberToTeamMember", fields: [reportsToId], references: [id])
-  other_TeamMember TeamMember[]     @relation("TeamMemberToTeamMember")
-  Team             Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  TeamMember       TeamMember?     @relation("TeamMemberToTeamMember", fields: [reportsToId], references: [id])
+  other_TeamMember TeamMember[]    @relation("TeamMemberToTeamMember")
+  Team             Team?           @relation(fields: [teamId], references: [id], onDelete: SetNull)
   Stakeholder      Stakeholder?
 
-  @@unique([teamId, email])
+  @@unique([companyAccountId, email])
   @@index([teamId])
 }
 
@@ -393,7 +390,7 @@ model User {
   email          String           @unique
   name           String?
   createdAt      DateTime         @default(now())
-  updatedAt      DateTime           @updatedAt
+  updatedAt      DateTime         @updatedAt
   emailVerified  DateTime?
   image          String?
   passwordHash   String?

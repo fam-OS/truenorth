@@ -112,6 +112,66 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Always ensure there is at least one Organization for this CompanyAccount
+    // Use the company name as the default organization name
+    let organization = await prisma.organization.findFirst({
+      where: { companyAccountId: companyAccount.id },
+      select: { id: true }
+    });
+
+    if (!organization) {
+      organization = await prisma.organization.create({
+        data: {
+          id: `org-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+          name: companyAccount.name,
+          description: companyAccount.description ?? null,
+          companyAccountId: companyAccount.id,
+        },
+        select: { id: true },
+      });
+    }
+
+    // Always create or ensure Executive Team exists under that organization
+    let executiveTeam = await prisma.team.findFirst({
+      where: { organizationId: organization.id, name: 'Executive Team' },
+      select: { id: true },
+    });
+    if (!executiveTeam) {
+      try {
+        executiveTeam = await prisma.team.create({
+          data: {
+            name: 'Executive Team',
+            organizationId: organization.id,
+            description: 'Company leadership team',
+          },
+          select: { id: true },
+        });
+      } catch (e: any) {
+        // In case of a race or unique constraint, fetch existing
+        executiveTeam = await prisma.team.findFirst({
+          where: { organizationId: organization.id, name: 'Executive Team' },
+          select: { id: true },
+        });
+      }
+    }
+
+    // If a founderId was provided, relate that TeamMember to the Executive Team
+    if (founderId && executiveTeam?.id) {
+      try {
+        await prisma.teamMember.update({
+          where: { id: founderId },
+          data: {
+            // Ensure the member is tied to this company account and team
+            CompanyAccount: { connect: { id: companyAccount.id } },
+            Team: { connect: { id: executiveTeam.id } },
+          },
+        });
+      } catch (e) {
+        // Non-fatal; if the founder team member doesn't exist yet, ignore
+        console.warn('Founder team member could not be linked to Executive Team:', e);
+      }
+    }
+
     return NextResponse.json(companyAccount, { status: 201 });
   } catch (error) {
     console.error('Error creating company account:', error);
