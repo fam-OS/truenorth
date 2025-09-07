@@ -25,12 +25,13 @@ export async function GET() {
         return NextResponse.json([], { status: 200 });
       }
 
-      const orgIds = await getViewerCompanyOrgIds(userId);
+      // Include all members under the viewer's CompanyAccount, and also legacy members
+      // that may not have companyAccountId set but belong to a Team whose Organization
+      // is within the viewer's CompanyAccount.
       whereClause = {
-        companyAccountId,
         OR: [
-          { teamId: null },
-          { Team: { organizationId: { in: orgIds } } },
+          { companyAccountId },
+          { Team: { Organization: { companyAccountId } } },
         ],
       } as any;
     }

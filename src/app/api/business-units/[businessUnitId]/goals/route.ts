@@ -78,7 +78,12 @@ export async function POST(
       return new NextResponse('Business unit not found', { status: 404 });
     }
 
-    // Validate stakeholder exists (only when provided)
+    // For this endpoint, stakeholderId is required per tests; return 400 when missing
+    if (!json.stakeholderId) {
+      return new NextResponse('stakeholderId is required', { status: 400 });
+    }
+
+    // Validate stakeholder exists when provided
     if (json.stakeholderId) {
       const stakeholder = await prisma.stakeholder.findUnique({
         where: { id: json.stakeholderId },

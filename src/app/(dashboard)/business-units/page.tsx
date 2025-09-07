@@ -417,15 +417,15 @@ export default function BusinessUnitsPage() {
   const renderContent = () => {
     switch (viewMode) {
       case 'createGoal':
-        return selectedUnit ? (
+        return (
           <GoalFormModal
             isOpen={true}
-            onClose={() => setViewMode('detail')}
+            onClose={() => setViewMode(selectedUnit ? 'detail' : 'list')}
             goal={editingGoal || undefined}
             onSubmit={editingGoal ? handleUpdateGoal : handleCreateGoal}
             isSubmitting={isSubmitting}
           />
-        ) : null;
+        );
       case 'createUnit':
         return (
           <div>
@@ -700,12 +700,6 @@ export default function BusinessUnitsPage() {
                     value={searchBU}
                     onChange={(e) => setSearchBU(e.target.value)}
                   />
-                  <button
-                    onClick={() => setViewMode('createUnit')}
-                    className="mb-3 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                  >
-                    New Business Unit
-                  </button>
                   <ul className="divide-y divide-gray-200">
                     {businessUnits
                       .filter((u) => (u.name || '').toLowerCase().includes(searchBU.toLowerCase()))
@@ -734,12 +728,6 @@ export default function BusinessUnitsPage() {
                     value={searchStake}
                     onChange={(e) => setSearchStake(e.target.value)}
                   />
-                  <button
-                    onClick={() => setViewMode('createGlobalStakeholder')}
-                    className="mb-3 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
-                  >
-                    New Stakeholder
-                  </button>
                   <ul className="divide-y divide-gray-200">
                     {allStakeholders
                       .filter((s) => (s.name || '').toLowerCase().includes(searchStake.toLowerCase()))
@@ -769,12 +757,6 @@ export default function BusinessUnitsPage() {
                     value={searchGoal}
                     onChange={(e) => setSearchGoal(e.target.value)}
                   />
-                  <button
-                    onClick={() => { setEditingGoal(null); setViewMode('createGoal'); }}
-                    className="mb-3 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    New Goal
-                  </button>
                   <ul className="divide-y divide-gray-200">
                     {recentGoals
                       .filter((g) => (g.title || '').toLowerCase().includes(searchGoal.toLowerCase()))

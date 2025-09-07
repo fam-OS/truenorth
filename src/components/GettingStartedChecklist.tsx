@@ -166,6 +166,19 @@ export default function GettingStartedChecklist() {
 
   const progressPercentage = Math.round((completedCount / checklist.length) * 100);
 
+  const allCompleted = checklist.length > 0 && checklist.every((i) => i.completed);
+  if (allCompleted) {
+    return (
+      <div className="w-full p-3 rounded-md bg-green-50 border border-green-200 text-sm text-green-700 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🎉</span>
+          <span>All getting started steps completed. You’re all set!</span>
+        </div>
+        <Link href="/organizations" className="underline text-xs text-green-700 hover:text-green-800">View organization</Link>
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>

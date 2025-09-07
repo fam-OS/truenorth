@@ -16,6 +16,7 @@ export default function EditGoalPage() {
   const goalId = params.id as string;
   
   const [goal, setGoal] = useState<GoalWithRelations | null>(null);
+  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,13 +30,21 @@ export default function EditGoalPage() {
     progressNotes: '',
     quarter: 'Q1',
     year: new Date().getFullYear().toString(),
-    stakeholderId: ''
+    stakeholderId: '',
+    businessUnitId: ''
   });
 
   useEffect(() => {
     fetchGoal();
-    fetchStakeholders();
+    fetchBusinessUnits();
   }, [goalId]);
+
+  useEffect(() => {
+    // reload stakeholders when BU changes
+    if (formData.businessUnitId) {
+      void fetchStakeholders(formData.businessUnitId);
+    }
+  }, [formData.businessUnitId]);
 
   async function fetchGoal() {
     try {
@@ -53,7 +62,8 @@ export default function EditGoalPage() {
         progressNotes: data.progressNotes || '',
         quarter: data.quarter || 'Q1',
         year: data.year?.toString() || new Date().getFullYear().toString(),
-        stakeholderId: data.stakeholderId || ''
+        stakeholderId: data.stakeholderId || '',
+        businessUnitId: data.businessUnitId || (data.BusinessUnit?.id || data.businessUnit?.id || '')
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -62,17 +72,29 @@ export default function EditGoalPage() {
     }
   }
 
-  async function fetchStakeholders() {
+  async function fetchStakeholders(businessUnitId?: string) {
     try {
-      if (!goal?.businessUnit?.id) return;
-      
-      const response = await fetch(`/api/business-units/${goal.businessUnit.id}/stakeholders`);
+      const buId = businessUnitId || goal?.businessUnit?.id || (goal as any)?.BusinessUnit?.id;
+      if (!buId) return;
+      const response = await fetch(`/api/business-units/${buId}/stakeholders`);
       if (response.ok) {
         const data = await response.json();
         setStakeholders(data);
       }
     } catch (err) {
       console.error('Error fetching stakeholders:', err);
+    }
+  }
+
+  async function fetchBusinessUnits() {
+    try {
+      const res = await fetch('/api/business-units', { cache: 'no-store' });
+      if (res.ok) {
+        const list = await res.json();
+        setBusinessUnits(list || []);
+      }
+    } catch (e) {
+      // ignore
     }
   }
 
@@ -155,6 +177,23 @@ export default function EditGoalPage() {
         {/* Form */}
         <div className="bg-white shadow rounded-lg">
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Business Unit */}
+            <div>
+              <label htmlFor="businessUnitId" className="block text-sm font-medium text-gray-700">
+                Business Unit
+              </label>
+              <select
+                id="businessUnitId"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                value={formData.businessUnitId}
+                onChange={(e) => setFormData({ ...formData, businessUnitId: e.target.value, stakeholderId: '' })}
+              >
+                <option value="">Select a business unit</option>
+                {businessUnits.map((bu) => (
+                  <option key={bu.id} value={bu.id}>{bu.name}</option>
+                ))}
+              </select>
+            </div>
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">

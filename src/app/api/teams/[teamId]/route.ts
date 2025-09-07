@@ -30,21 +30,18 @@ export async function GET(
 
     const team = await prisma.team.findUnique({
       where: { id: teamId },
-      include: {
-        Organization: { select: { id: true, name: true } },
-        TeamMember: { select: { id: true, name: true, email: true, role: true } },
-      },
+      include: { organization: true, members: true } as any,
     });
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
 
     // Transform to the shape expected by the Team page
     const response = {
-      id: team.id,
-      name: team.name,
-      description: team.description ?? null,
-      organizationId: team.organizationId,
-      organization: team.Organization ? { id: team.Organization.id, name: team.Organization.name } : null,
-      members: (team.TeamMember ?? []).map((m) => ({
+      id: (team as any).id,
+      name: (team as any).name,
+      description: (team as any).description ?? null,
+      organizationId: (team as any).organizationId,
+      organization: (team as any).organization ?? null,
+      members: ((team as any).members ?? []).map((m: any) => ({
         id: m.id,
         name: m.name,
         email: m.email || '',

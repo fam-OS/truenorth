@@ -9,6 +9,17 @@ export default function AllTeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  
+  const orderedTeams = (() => {
+    const arr = [...teams];
+    const weight = (t: Team) => (/^executive team$/i.test((t.name || '').trim()) ? 1 : 0);
+    arr.sort((a, b) => {
+      const dw = weight(a) - weight(b);
+      if (dw !== 0) return dw; // non-exec first, exec last
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    return arr;
+  })();
 
   useEffect(() => {
     const load = async () => {
@@ -51,7 +62,7 @@ export default function AllTeamsPage() {
         <div className="text-sm text-gray-500">No teams yet.</div>
       ) : (
         <ul className="divide-y bg-white rounded-lg shadow">
-          {teams.map((t) => (
+          {orderedTeams.map((t) => (
             <li key={t.id} className="px-4 py-3 flex items-center justify-between">
               <div>
                 <Link href={`/teams/${t.id}`} className="text-blue-600 hover:underline">

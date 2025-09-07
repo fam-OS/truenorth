@@ -180,12 +180,22 @@ export default function TeamMemberDetailPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Role</label>
-          <input
+          <select
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
             value={member.role ?? ""}
-            onChange={(e) => setMember({ ...member, role: e.target.value })}
-            placeholder="e.g., Manager"
-          />
+            onChange={(e) => setMember({ ...member, role: e.target.value || null })}
+          >
+            <option value="">— Select Role —</option>
+            <option value="CEO">CEO</option>
+            <option value="COO">COO</option>
+            <option value="CTO">CTO</option>
+            <option value="CIO">CIO</option>
+            <option value="CFO">CFO</option>
+            <option value="Executive">Executive</option>
+            <option value="Director">Director</option>
+            <option value="Manager">Manager</option>
+            <option value="Team Member">Team Member</option>
+          </select>
         </div>
 
         <div>

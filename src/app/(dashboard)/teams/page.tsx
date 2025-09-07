@@ -303,11 +303,28 @@ export default function TeamsPage() {
   // Keep for future normalization if API shape changes again
   const displayMembers = useMemo(() => members, [members]);
 
+  const orderedTeams = useMemo(() => {
+    const arr = [...teams];
+    const weight = (t: Team) => (/^executive team$/i.test(t.name?.trim() ?? '') ? 1 : 0);
+    // Sort by weight first (non-exec before exec), then by name asc
+    arr.sort((a, b) => {
+      const dw = weight(a) - weight(b);
+      if (dw !== 0) return dw;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    return arr;
+  }, [teams]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Team Management</h1>
         <div className="text-sm text-gray-500">Teams and Members</div>
+      </div>
+      <div>
+        <Link href="/org-chart" className="text-sm text-blue-600 hover:underline">
+          Visualize Org Chart
+        </Link>
       </div>
 
       {error && (
@@ -329,8 +346,9 @@ export default function TeamsPage() {
             {teams.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No teams found.</div>
             ) : (
+              <>
               <ul className="divide-y">
-                {teams.map((t) => (
+                {orderedTeams.slice(0, 5).map((t) => (
                   <li key={t.id} className="px-4 py-3 flex items-center justify-between">
                     <div>
                       <Link href={`/teams/${t.id}`} className="text-sm text-blue-600 hover:underline">
@@ -344,6 +362,8 @@ export default function TeamsPage() {
                   </li>
                 ))}
               </ul>
+              
+              </>
             )}
           </div>
 
@@ -356,8 +376,9 @@ export default function TeamsPage() {
             {displayMembers.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No team members found.</div>
             ) : (
+              <>
               <ul className="divide-y">
-                {members.map((m, idx) => (
+                {displayMembers.slice(0, 5).map((m, idx) => (
                   <li key={m.id ?? `row-${idx}`} className="px-4 py-3 flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       {m.id ? (
@@ -378,6 +399,7 @@ export default function TeamsPage() {
                 ))}
               </ul>
               
+              </>
             )}
           </div>
 
@@ -527,7 +549,7 @@ export default function TeamsPage() {
 
           {/* Headcount Tracker (Create) */}
           <div className="bg-white shadow rounded-lg lg:col-span-2">
-            <div className="px-4 py-3 border-b flex items-center gap-2">
+            <div className="px-4 py-3 border-b flex items-center justify-between gap-2">
               <div className="font-medium">Headcount Tracker — Add Record</div>
               <button
                 type="button"

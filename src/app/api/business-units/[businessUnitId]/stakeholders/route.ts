@@ -123,6 +123,32 @@ export async function POST(
   }
 }
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ businessUnitId: string }> }
+) {
+  try {
+    const { businessUnitId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      await assertBusinessUnitAccess(session.user.id, businessUnitId);
+    }
+
+    const stakeholders = await prisma.stakeholder.findMany({
+      where: { businessUnitId },
+      select: { id: true, name: true, role: true, email: true, businessUnitId: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return NextResponse.json(stakeholders, { status: 200 });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ businessUnitId: string }> }

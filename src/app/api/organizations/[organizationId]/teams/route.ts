@@ -18,7 +18,7 @@ export async function GET(
     const teams = await prisma.team.findMany({
       where: { organizationId },
       orderBy: { name: 'asc' },
-      include: { TeamMember: true },
+      include: { members: true } as any,
     });
     return NextResponse.json(teams);
   } catch (error) {

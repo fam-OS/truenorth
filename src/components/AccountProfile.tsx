@@ -45,6 +45,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
   const [newMemberName, setNewMemberName] = useState('')
   const [newMemberEmail, setNewMemberEmail] = useState('')
   const [showNewMemberForm, setShowNewMemberForm] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
 
   const [overviewData, setOverviewData] = useState({
     name: companyAccount?.name || '',
@@ -109,6 +110,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
 
       if (response.ok) {
         setIsEditingOverview(false)
+        setIsCollapsed(true)
         onUpdate?.()
         window.location.reload()
       } else {
@@ -352,10 +354,10 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   />
                 </div>
 
-                {/* Launch Date */}
+                {/* Company founded */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Launch Date
+                    Company founded
                   </label>
                   <Input
                     value={overviewData.launchedDate}
@@ -475,15 +477,27 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
     <Card className="bg-white text-gray-900 dark:bg-white dark:text-gray-900">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-gray-900 dark:text-gray-100">Company Overview</CardTitle>
-        {!isEditingOverview ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditingOverview(true)}
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit
+        {isCollapsed ? (
+          <Button variant="outline" size="sm" onClick={() => setIsCollapsed(false)}>
+            Show
           </Button>
+        ) : !isEditingOverview ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingOverview(true)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setIsCollapsed(true)}
+            >
+              Hide
+            </Button>
+          </div>
         ) : (
           <div className="flex gap-2">
             <Button
@@ -495,17 +509,14 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSaveOverview}
-              disabled={isLoading}
-            >
+            <Button size="sm" onClick={handleSaveOverview} disabled={isLoading}>
               <Save className="h-4 w-4 mr-2" />
               {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </div>
         )}
       </CardHeader>
+      {!isCollapsed && (
       <CardContent className="space-y-6">
         {/* Company Name */}
         <div>
@@ -650,10 +661,10 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
             )}
           </div>
 
-          {/* Launch Date */}
+          {/* Company founded */}
           <div>
             <label className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-1 block">
-              Launch Date
+              Company founded
             </label>
             {isEditingOverview ? (
               <Input
@@ -798,7 +809,17 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
             </div>
           </div>
         </div>
+
+        {isEditingOverview && (
+          <div className="pt-2 flex justify-end">
+            <Button size="sm" onClick={handleSaveOverview} disabled={isLoading}>
+              <Save className="h-4 w-4 mr-2" />
+              {isLoading ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        )}
       </CardContent>
+      )}
     </Card>
   )
 }

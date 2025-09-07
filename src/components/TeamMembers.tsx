@@ -12,6 +12,19 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
 
+  // Role ranking for reporting hierarchy (lower = individual contributor)
+  const roleRank = (role?: string | null) => {
+    const r = (role || '').trim().toLowerCase();
+    if (r === 'team member' || r === '') return 1;
+    if (r === 'manager') return 2;
+    if (r === 'director') return 3;
+    if (r === 'executive') return 4;
+    // C-suite
+    if (['cfo','cio','cto','coo','ceo'].includes(r)) return 5;
+    // Unknown titles default to manager level (so they can be selected for ICs)
+    return 2;
+  };
+
   // Add form state
   const [addOpen, setAddOpen] = useState(false);
   const [addName, setAddName] = useState('');
@@ -29,6 +42,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   const [editEmail, setEditEmail] = useState('');
   const [editRole, setEditRole] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editReportsToId, setEditReportsToId] = useState<string>('');
 
   // Delete confirmation state
   const [confirmDeleteMember, setConfirmDeleteMember] = useState<{ id: string; name: string } | null>(null);
@@ -99,9 +113,10 @@ export function TeamMembers({ teamId }: { teamId: string }) {
 
   const openEdit = (m: Member) => {
     setEditingId(m.id);
-    setEditName(m.name);
-    setEditEmail(m.email);
-    setEditRole(m.role);
+    setEditName(m.name || '');
+    setEditEmail((m as any).email ?? '');
+    setEditRole((m as any).role ?? '');
+    setEditReportsToId('');
   };
 
   const cancelEdit = () => {
@@ -109,6 +124,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
     setEditName('');
     setEditEmail('');
     setEditRole('');
+    setEditReportsToId('');
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -121,6 +137,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
         name: editName,
         email: editEmail.trim() === '' ? null : editEmail,
         role: editRole.trim() === '' ? null : editRole,
+        reportsToId: editReportsToId.trim() === '' ? null : editReportsToId,
       };
       const res = await fetch(`/api/team-members/${editingId}`, {
         method: 'PUT',
@@ -134,6 +151,24 @@ export function TeamMembers({ teamId }: { teamId: string }) {
       setError(e instanceof Error ? e.message : 'Failed to update member');
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const handleRemoveFromTeam = async (memberId: string) => {
+    try {
+      setError(null);
+      const res = await fetch(`/api/team-members/${memberId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId: null }),
+      });
+      if (!res.ok) throw new Error('Failed to remove from team');
+      showToast({ title: 'Removed from team', description: 'The member remains active but is no longer assigned to this team.' });
+      await fetchMembers();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to remove from team';
+      setError(msg);
+      showToast({ title: 'Failed to remove from team', description: msg, type: 'destructive' });
     }
   };
 
@@ -217,6 +252,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                 onChange={(e) => setAddEmail(e.target.value)}
                 className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               />
+              <p className="text-xs text-gray-500 md:col-span-3">Enter a work email address (e.g., name@company.com).</p>
               <select
                 value={addRole}
                 onChange={(e) => setAddRole(e.target.value)}
@@ -268,7 +304,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
           {members.map((m) => (
             <li key={m.id} className="p-3">
               {editingId === m.id ? (
-                <form onSubmit={handleSaveEdit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <form onSubmit={handleSaveEdit} className="grid grid-cols-1 md:grid-cols-5 gap-3">
                   <input
                     type="text"
                     required
@@ -282,6 +318,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                     onChange={(e) => setEditEmail(e.target.value)}
                     className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                   />
+                  <p className="text-xs text-gray-500">Enter a work email address (e.g., name@company.com).</p>
                   <select
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value)}
@@ -297,6 +334,22 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                     <option value="Director">Director</option>
                     <option value="Manager">Manager</option>
                     <option value="Team Member">Team Member</option>
+                  </select>
+                  <select
+                    value={editReportsToId}
+                    onChange={(e) => setEditReportsToId(e.target.value)}
+                    className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="">Reports To (optional)</option>
+                    {allActiveMembers
+                      .filter((am) => am.id !== editingId)
+                      .filter((am) => {
+                        const r = (am.role || '').trim().toLowerCase();
+                        return r !== '' && r !== 'team member';
+                      })
+                      .map((am) => (
+                        <option key={am.id} value={am.id}>{am.name}{am.role ? ` — ${am.role}` : ''}</option>
+                      ))}
                   </select>
                   <div className="flex gap-2 justify-end md:col-span-1">
                     <button
@@ -332,6 +385,13 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                       className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200"
                     >
                       Edit
+                    </button>
+                    <button
+                      onClick={() => handleRemoveFromTeam(m.id)}
+                      className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      title="Remove from team"
+                    >
+                      Remove from team
                     </button>
                     <button
                       onClick={() => setConfirmDeleteMember({ id: m.id, name: m.name })}
