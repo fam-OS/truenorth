@@ -1,7 +1,7 @@
 'use client';
 
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Goal } from '@prisma/client';
 
 type GoalFormData = {
@@ -12,6 +12,7 @@ type GoalFormData = {
   status?: string;
   progressNotes?: string;
   stakeholderId?: string;
+  businessUnitId?: string;
 };
 
 interface GoalFormModalProps {
@@ -29,6 +30,24 @@ export function GoalFormModal({
   onSubmit,
   isSubmitting,
 }: GoalFormModalProps) {
+  const [businessUnits, setBusinessUnits] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/business-units', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setBusinessUnits(data.map((u: any) => ({ id: u.id, name: u.name })));
+        }
+      } catch {
+        // ignore
+      }
+    };
+    void load();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -40,6 +59,7 @@ export function GoalFormModal({
       status: formData.get('status') as string || undefined,
       progressNotes: formData.get('progressNotes') as string || undefined,
       stakeholderId: formData.get('stakeholderId') as string || undefined,
+      businessUnitId: (formData.get('businessUnitId') as string) || undefined,
     };
     await onSubmit(data);
   };

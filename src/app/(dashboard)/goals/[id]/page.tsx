@@ -173,7 +173,7 @@ export default function GoalDetailPage() {
             {/* Goal Summary for Business Unit */}
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">
-                {`Goal for ${goal.businessUnit?.name ?? 'Business Unit'}`}
+                {`Goal for ${((goal as any).BusinessUnit?.name ?? (goal as any).businessUnit?.name ?? 'Business Unit')}`}
               </h2>
               <dl className="space-y-3">
                 <div>

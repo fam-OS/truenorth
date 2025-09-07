@@ -58,16 +58,20 @@ export async function POST(
   try {
     const { businessUnitId } = await params;
     const json = await request.json();
+
+    // Support overriding business unit through the payload when creating from a generic form
+    const effectiveBusinessUnitId: string = (json.businessUnitId && typeof json.businessUnitId === 'string' && json.businessUnitId.length > 0)
+      ? json.businessUnitId
+      : businessUnitId;
+
     if (process.env.NODE_ENV !== 'test') {
       const userId = await requireUserId();
-      await assertBusinessUnitAccess(userId, businessUnitId);
+      await assertBusinessUnitAccess(userId, effectiveBusinessUnitId);
     }
 
     // Validate business unit exists
     const businessUnit = await prisma.businessUnit.findUnique({
-      where: { 
-        id: businessUnitId,
-      },
+      where: { id: effectiveBusinessUnitId },
     });
 
     if (!businessUnit) {
@@ -83,7 +87,7 @@ export async function POST(
       if (!stakeholder) {
         return new NextResponse('Stakeholder not found', { status: 400 });
       }
-      if (stakeholder.businessUnitId !== businessUnitId) {
+      if (stakeholder.businessUnitId !== effectiveBusinessUnitId) {
         return new NextResponse('Stakeholder must belong to this Business Unit', { status: 400 });
       }
     }
@@ -98,6 +102,7 @@ export async function POST(
       progressNotes: z.string().nullable().optional(),
       // stakeholderId optional; when provided it must be non-empty
       stakeholderId: z.string().min(1).optional(),
+      businessUnitId: z.string().min(1).optional(),
     });
 
     const parsedJson = createGoalSchema.parse(json);
@@ -109,7 +114,7 @@ export async function POST(
         description: parsedJson.description ?? null,
         quarter: parsedJson.quarter,
         year: parsedJson.year,
-        businessUnitId,
+        businessUnitId: effectiveBusinessUnitId,
         ...(parsedJson.status && { status: parsedJson.status as $Enums.GoalStatus }),
         stakeholderId: parsedJson.stakeholderId ?? null,
         progressNotes: parsedJson.progressNotes ?? null,

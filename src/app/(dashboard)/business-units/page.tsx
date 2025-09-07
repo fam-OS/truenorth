@@ -449,9 +449,6 @@ export default function BusinessUnitsPage() {
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedUnit.name}
                 </h2>
-                <p className="text-sm text-gray-500">
-                  {selectedUnit.Organization?.name || 'No organization'}
-                </p>
               </div>
               <div className="flex items-center space-x-4">
                 <button
