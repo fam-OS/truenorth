@@ -272,7 +272,10 @@ export default function TeamsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Teams Column */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 border-b font-medium">Teams</div>
+            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+              <span>Teams ({teams.length})</span>
+              <Link href="/teams/list" className="text-xs text-blue-600 hover:underline">View All Teams</Link>
+            </div>
             {teams.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No teams found.</div>
             ) : (
@@ -296,7 +299,10 @@ export default function TeamsPage() {
 
           {/* Team Members Column */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 border-b font-medium">Team Members ({members.length})</div>
+            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+              <span>Team Members ({members.length})</span>
+              <Link href="/team-members/list" className="text-xs text-blue-600 hover:underline">View All Team Members</Link>
+            </div>
             {displayMembers.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No team members found.</div>
             ) : (

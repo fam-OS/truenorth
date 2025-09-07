@@ -90,8 +90,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No company account found for the current user.' }, { status: 400 });
     }
 
-    // Optional team assignment: if provided, validate access; if not, leave null
+    // Determine target team for this member.
+    // If role is Founder, always place them on the "Executive Team". Create it (and an Organization) if needed.
+    // Otherwise, honor provided teamId (if any) with access checks.
     let targetTeamId = validatedData.teamId ?? null;
+    if (validatedData.role?.toLowerCase() === 'founder') {
+      // Ensure an organization exists for this company account
+      let org = await prisma.organization.findFirst({
+        where: { companyAccountId },
+        select: { id: true, name: true },
+      });
+      if (!org) {
+        // Use company account name if available, else default
+        const ca = await prisma.companyAccount.findUnique({ where: { id: companyAccountId }, select: { name: true, description: true } });
+        org = await prisma.organization.create({
+          data: {
+            id: `org-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            name: ca?.name || 'Default Organization',
+            description: ca?.description ?? null,
+            companyAccountId,
+          },
+          select: { id: true, name: true },
+        });
+      }
+      // Ensure Executive Team exists within that organization
+      const execName = 'Executive Team';
+      let execTeam = await prisma.team.findFirst({ where: { organizationId: org.id, name: execName }, select: { id: true } });
+      if (!execTeam) {
+        try {
+          execTeam = await prisma.team.create({
+            data: { name: execName, organizationId: org.id, description: 'Company leadership team' },
+            select: { id: true },
+          });
+        } catch {
+          execTeam = await prisma.team.findFirst({ where: { organizationId: org.id, name: execName }, select: { id: true } });
+        }
+      }
+      targetTeamId = execTeam?.id ?? null;
+    }
+
+    // Access check only if a target team is set and we're not in test
     if (process.env.NODE_ENV !== 'test' && targetTeamId) {
       try {
         await assertTeamAccess(userId, targetTeamId);

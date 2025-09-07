@@ -137,6 +137,56 @@ export async function PUT(
       }
     });
 
+    // If a founderId is set, ensure Executive Team exists and link the founder TeamMember to it
+    if (companyAccount.founderId) {
+      // Ensure an organization exists for this company account
+      let org = await prisma.organization.findFirst({
+        where: { companyAccountId: companyAccount.id },
+        select: { id: true, name: true },
+      });
+      if (!org) {
+        org = await prisma.organization.create({
+          data: {
+            id: `org-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            name: companyAccount.name,
+            description: companyAccount.description ?? null,
+            companyAccountId: companyAccount.id,
+          },
+          select: { id: true, name: true },
+        });
+      }
+
+      // Ensure Executive Team exists under that organization
+      const execName = 'Executive Team';
+      let execTeam = await prisma.team.findFirst({
+        where: { organizationId: org.id, name: execName },
+        select: { id: true },
+      });
+      if (!execTeam) {
+        try {
+          execTeam = await prisma.team.create({
+            data: { name: execName, organizationId: org.id, description: 'Company leadership team' },
+            select: { id: true },
+          });
+        } catch {
+          execTeam = await prisma.team.findFirst({ where: { organizationId: org.id, name: execName }, select: { id: true } });
+        }
+      }
+
+      // Link founder TeamMember to CompanyAccount and Executive Team (ignore if founder not found)
+      try {
+        await prisma.teamMember.update({
+          where: { id: companyAccount.founderId },
+          data: {
+            CompanyAccount: { connect: { id: companyAccount.id } },
+            ...(execTeam?.id ? { Team: { connect: { id: execTeam.id } } } : {}),
+          },
+        });
+      } catch (e) {
+        console.warn('Could not link founder to Executive Team on update:', e);
+      }
+    }
+
     console.log('Updated company account:', companyAccount);
     return NextResponse.json(companyAccount);
   } catch (error) {

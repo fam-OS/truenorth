@@ -30,12 +30,24 @@ export async function GET(request: Request) {
       }
     }
 
+    // Build where to include costs linked via Team when organizationId is null
+    const where: any = { year };
+    if (teamId) where.teamId = teamId;
+    if (organizationId) {
+      // explicit org filter
+      where.OR = [
+        { organizationId },
+        { Team: { organizationId } },
+      ];
+    } else if (orgIdsFilter) {
+      where.OR = [
+        { organizationId: { in: orgIdsFilter } },
+        { Team: { organizationId: { in: orgIdsFilter } } },
+      ];
+    }
+
     const items = await prisma.cost.findMany({
-      where: {
-        teamId,
-        organizationId: orgIdsFilter ? { in: orgIdsFilter } : (organizationId as any),
-        year,
-      },
+      where,
       orderBy: [{ teamId: 'asc' }, { year: 'asc' }, { type: 'asc' }],
     });
 
@@ -59,11 +71,17 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
+    // Derive organizationId from Team when not supplied so GET filters can find it
+    let derivedOrgId: string | undefined = data.organizationId ?? undefined;
+    if (!derivedOrgId) {
+      const team = await prisma.team.findUnique({ where: { id: data.teamId }, select: { organizationId: true } });
+      derivedOrgId = team?.organizationId;
+    }
     const created = await prisma.cost.create({
       data: {
         id: crypto.randomUUID(),
         teamId: data.teamId,
-        organizationId: data.organizationId ?? undefined,
+        organizationId: derivedOrgId ?? undefined,
         year: data.year,
         type: data.type,
         q1Forecast: (data.q1Forecast ?? 0) as any,

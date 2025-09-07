@@ -23,6 +23,12 @@ const updateMemberSchema = z.object({
     .optional()
     .or(z.literal('').transform(() => null))
     .or(z.null()),
+  teamId: z
+    .string()
+    .min(1)
+    .optional()
+    .or(z.literal('').transform(() => null))
+    .or(z.null()),
 });
 
 export async function GET(
@@ -56,9 +62,19 @@ export async function PUT(
     if (data.role !== undefined) updateData.role = data.role === null ? null : data.role;
     if (data.reportsToId !== undefined) updateData.reportsToId = data.reportsToId === null ? null : data.reportsToId;
     
+    // Build payload using nested Team relation ops to avoid TS type friction on nullable scalars
+    const updatePayload: any = { ...updateData };
+    if (data.teamId !== undefined) {
+      if (data.teamId === null) {
+        updatePayload.Team = { disconnect: true };
+      } else {
+        updatePayload.Team = { connect: { id: data.teamId } };
+      }
+    }
+
     const updated = await prisma.teamMember.update({
       where: { id: memberId },
-      data: updateData
+      data: updatePayload,
     });
 
     return NextResponse.json(updated);

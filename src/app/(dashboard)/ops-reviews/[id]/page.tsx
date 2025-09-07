@@ -108,6 +108,7 @@ export default async function OpsReviewDetailPage({
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
+            <Link href="/ops-reviews" className="text-sm text-blue-700 hover:underline inline-block mb-2">← Back to Ops Reviews</Link>
             <h1 className="text-3xl font-bold">{review.title}</h1>
             <p className="text-muted-foreground">{review.team_name} • {review.quarter} {review.year}</p>
           </div>

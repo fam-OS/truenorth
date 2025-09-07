@@ -86,7 +86,7 @@ function TeamPageContent({ teamId }: { teamId: string }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6 flex justify-between items-center">
-        <Link href="/organizations" className="text-sm text-blue-700 hover:underline">← Back to Organizations</Link>
+        <Link href="/teams/list" className="text-sm text-blue-700 hover:underline">← Back to Teams</Link>
         
         {!isEditing && (
           <div className="flex items-center space-x-3">
