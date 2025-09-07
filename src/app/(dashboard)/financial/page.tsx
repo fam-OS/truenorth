@@ -178,6 +178,50 @@ export default function FinancialPage() {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
   }
 
+  // Export current costs to CSV
+  const exportCostsCSV = () => {
+    try {
+      const headers = [
+        'Team',
+        'Type',
+        'Year',
+        'Q1 Forecast','Q1 Actual',
+        'Q2 Forecast','Q2 Actual',
+        'Q3 Forecast','Q3 Actual',
+        'Q4 Forecast','Q4 Actual',
+        'Notes',
+      ];
+      const lines: string[] = [];
+      lines.push(headers.join(','));
+      for (const r of costs) {
+        const teamName = teams.find((t) => t.id === r.teamId)?.name ?? '';
+        const row = [
+          teamName,
+          r.type,
+          String(r.year),
+          String(r.q1Forecast), String(r.q1Actual),
+          String(r.q2Forecast), String(r.q2Actual),
+          String(r.q3Forecast), String(r.q3Actual),
+          String(r.q4Forecast), String(r.q4Actual),
+          (r.notes ?? '').replace(/\r?\n/g, ' ').replace(/,/g, ';'),
+        ];
+        lines.push(row.map((v) => `"${(v ?? '').toString().replace(/"/g, '""')}"`).join(','));
+      }
+      const csv = lines.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `costs_${year}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to export CSV');
+    }
+  };
+
   const updateForm = (field: string, value: any) => setForm((p) => ({ ...p, [field]: value }));
 
   const submit = async (e: React.FormEvent) => {
@@ -209,7 +253,6 @@ export default function FinancialPage() {
         <div className="flex items-center gap-3">
           <label className="text-sm text-gray-600">Year</label>
           <input type="number" className="w-24 border rounded px-2 py-1 text-sm" value={year} onChange={(e) => setYear(Number(e.target.value))} />
-          <Link href="/api/costs" className="text-xs text-blue-600 hover:underline">API</Link>
         </div>
       </div>
 
@@ -244,7 +287,10 @@ export default function FinancialPage() {
 
           {/* Table */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 border-b font-medium">Costs</div>
+            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+              <span>Costs</span>
+              <button onClick={exportCostsCSV} type="button" className="text-xs px-2 py-1 border rounded hover:bg-gray-50">Export CSV</button>
+            </div>
             {costs.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No cost records. Add one below.</div>
             ) : (
