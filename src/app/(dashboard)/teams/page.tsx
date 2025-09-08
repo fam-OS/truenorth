@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 
 type Team = { id: string; name: string; description?: string | null };
@@ -31,6 +32,9 @@ type HeadcountRow = {
 };
 
 export default function TeamsPage() {
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') || 'team-management') as 'org-chart' | 'team-planning' | 'team-management';
+  const [activeTab, setActiveTab] = useState<'org-chart' | 'team-planning' | 'team-management'>(initialTab);
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +116,13 @@ export default function TeamsPage() {
     };
     void loadHeadcount();
   }, [currentYear]);
+
+  // Keep activeTab in sync with URL changes (e.g., back/forward navigation)
+  useEffect(() => {
+    const t = (searchParams.get('tab') || 'team-management') as 'org-chart' | 'team-planning' | 'team-management';
+    setActiveTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function currency(n: number) {
     return new Intl.NumberFormat(undefined, {
@@ -317,25 +328,61 @@ export default function TeamsPage() {
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Team Management</h1>
-        <div className="text-sm text-gray-500">Teams and Members</div>
+        <h1 className="text-lg font-semibold">Teams</h1>
+        <div className="text-sm text-gray-500">Organization, Planning, and Management</div>
       </div>
-      <div>
-        <Link href="/org-chart" className="text-sm text-blue-600 hover:underline">
-          Visualize Org Chart
-        </Link>
+
+      {/* Tabs */}
+      <div className="border-b">
+        <nav className="-mb-px flex gap-6" aria-label="Tabs">
+          {[
+            { id: 'team-management', label: 'Team Management', href: '/teams?tab=team-management' },
+            { id: 'team-planning', label: 'Team Planning', href: '/teams?tab=team-planning' },
+            { id: 'org-chart', label: 'Org Chart', href: '/teams?tab=org-chart' },
+          ].map((t) => (
+            <Link
+              key={t.id}
+              href={t.href}
+              onClick={() => setActiveTab(t.id as any)}
+              className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
+                activeTab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </nav>
       </div>
 
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
       )}
 
-      {loading ? (
+      {loading && (
         <div className="min-h-[200px] flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
-      ) : (
+      )}
+
+      {!loading && activeTab === 'org-chart' && (
+        <div className="space-y-4">
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+              <span>Org Chart</span>
+            </div>
+            <div className="p-4 text-sm text-gray-700">
+              Visualize your organization structure.
+              <div className="mt-3">
+                <Link href="/org-chart" className="inline-flex items-center px-3 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Open Org Chart</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loading && activeTab === 'team-management' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Teams Column */}
           <div className="bg-white shadow rounded-lg">
@@ -403,8 +450,13 @@ export default function TeamsPage() {
             )}
           </div>
 
+        </div>
+      )}
+
+      {activeTab === 'team-planning' && (
+        <div className="space-y-6">
           {/* Team Planning -> Headcount Manager */}
-          <div className="bg-white shadow rounded-lg lg:col-span-2">
+          <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-3 border-b flex items-center justify-between">
               <div className="font-medium">Team Planning — Headcount Manager ({currentYear})</div>
               <div className="flex items-center gap-3">
@@ -416,139 +468,139 @@ export default function TeamsPage() {
               <div className="p-6 text-sm text-gray-500">Loading headcount…</div>
             ) : (
               <>
-              <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm items-start">
-                <div className="min-w-0">
-                  <div className="text-gray-500">Total Forecast HC</div>
-                  <div className="font-semibold truncate leading-snug" title={`${headcountSummary.forecastHC}`}>{headcountSummary.forecastHC}</div>
+                <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm items-start">
+                  <div className="min-w-0">
+                    <div className="text-gray-500">Total Forecast HC</div>
+                    <div className="font-semibold truncate leading-snug" title={`${headcountSummary.forecastHC}`}>{headcountSummary.forecastHC}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-gray-500">Total Actual HC</div>
+                    <div className="font-semibold truncate leading-snug" title={`${headcountSummary.actualHC}`}>{headcountSummary.actualHC}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-gray-500">HC Variance</div>
+                    <div className="font-semibold truncate leading-snug" title={`${headcountSummary.hcVariance}`}>{headcountSummary.hcVariance}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-gray-500">Forecast Salary</div>
+                    <div className="font-semibold truncate leading-snug" title={currency(headcountSummary.forecastSalary)}>{currency(headcountSummary.forecastSalary)}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-gray-500">Actual Salary</div>
+                    <div className="font-semibold truncate leading-snug" title={currency(headcountSummary.actualSalary)}>{currency(headcountSummary.actualSalary)}</div>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-gray-500">Total Actual HC</div>
-                  <div className="font-semibold truncate leading-snug" title={`${headcountSummary.actualHC}`}>{headcountSummary.actualHC}</div>
-                </div>
-                <div className="min-w-0">
-                  <div className="text-gray-500">HC Variance</div>
-                  <div className="font-semibold truncate leading-snug" title={`${headcountSummary.hcVariance}`}>{headcountSummary.hcVariance}</div>
-                </div>
-                <div className="min-w-0">
-                  <div className="text-gray-500">Forecast Salary</div>
-                  <div className="font-semibold truncate leading-snug" title={currency(headcountSummary.forecastSalary)}>{currency(headcountSummary.forecastSalary)}</div>
-                </div>
-                <div className="min-w-0">
-                  <div className="text-gray-500">Actual Salary</div>
-                  <div className="font-semibold truncate leading-snug" title={currency(headcountSummary.actualSalary)}>{currency(headcountSummary.actualSalary)}</div>
-                </div>
-              </div>
-            {headcount.length === 0 ? (
-              <div className="p-4 text-sm text-gray-500">No records yet. Add one below.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Team</th>
-                      <th className="px-3 py-2 text-left">Role</th>
-                      <th className="px-3 py-2 text-left">Level</th>
-                      <th className="px-3 py-2 text-right">Salary</th>
-                      <th className="px-3 py-2 text-right">Q1 F</th>
-                      <th className="px-3 py-2 text-right">Q1 A</th>
-                      <th className="px-3 py-2 text-right">Q2 F</th>
-                      <th className="px-3 py-2 text-right">Q2 A</th>
-                      <th className="px-3 py-2 text-right">Q3 F</th>
-                      <th className="px-3 py-2 text-right">Q3 A</th>
-                      <th className="px-3 py-2 text-right">Q4 F</th>
-                      <th className="px-3 py-2 text-right">Q4 A</th>
-                      <th className="px-3 py-2 text-left">Notes</th>
-                      <th className="px-3 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {headcount.map((r) => {
-                      const isEditing = !!editing[r.id];
-                      const edit = editing[r.id] as any;
-                      const teamName = teams.find((t) => t.id === r.teamId)?.name || '—';
-                      return (
-                        <tr key={r.id} className="align-top">
-                          <td className="px-3 py-2 whitespace-nowrap cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
-                            {isEditing ? (
-                              <select className="w-36 border rounded px-2 py-1" value={(edit.teamId ?? r.teamId) || ''}
-                                onChange={(e) => changeEdit(r.id, 'teamId', e.target.value)}>
-                                <option value="">—</option>
-                                {teams.map((t) => (
-                                  <option key={t.id} value={t.id}>{t.name}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span>{teamName}</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
-                            {isEditing ? (
-                              <input className="w-36 border rounded px-2 py-1" value={edit.role ?? r.role}
-                                onChange={(e) => changeEdit(r.id, 'role', e.target.value)} />
-                            ) : (
-                              <span>{r.role}</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
-                            {isEditing ? (
-                              <input className="w-28 border rounded px-2 py-1" value={edit.level ?? r.level}
-                                onChange={(e) => changeEdit(r.id, 'level', e.target.value)} />
-                            ) : (
-                              <span>{r.level}</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-right cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
-                            {isEditing ? (
-                              <input type="number" step="0.01" className="w-28 border rounded px-2 py-1 text-right" value={edit.salary ?? r.salary}
-                                onChange={(e) => changeEdit(r.id, 'salary', e.target.value)} />
-                            ) : (
-                              <span>{currency(typeof r.salary === 'string' ? parseFloat(r.salary) : r.salary)}</span>
-                            )}
-                          </td>
-                          {(['q1Forecast','q1Actual','q2Forecast','q2Actual','q3Forecast','q3Actual','q4Forecast','q4Actual'] as const).map((field) => (
-                            <td key={field} className="px-3 py-2 text-right cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
-                              {isEditing ? (
-                                <input type="number" className="w-20 border rounded px-2 py-1 text-right" value={(edit as any)[field] ?? (r as any)[field]}
-                                  onChange={(e) => changeEdit(r.id, field as any, Number(e.target.value))} />
-                              ) : (
-                                <span>{(r as any)[field]}</span>
-                              )}
-                            </td>
-                          ))}
-                          <td className="px-3 py-2">
-                            {isEditing ? (
-                              <input className="w-56 border rounded px-2 py-1" value={edit.notes ?? r.notes ?? ''}
-                                onChange={(e) => changeEdit(r.id, 'notes', e.target.value)} />
-                            ) : (
-                              <span className="text-gray-600 line-clamp-2 max-w-[18rem]">{r.notes}</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-right">
-                            {isEditing ? (
-                              <div className="flex items-center gap-2 justify-end">
-                                <button disabled={rowBusy[r.id]} onClick={() => saveEdit(r.id)} type="button" className="px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50">{rowBusy[r.id] ? 'Saving…' : 'Save'}</button>
-                                <button disabled={rowBusy[r.id]} onClick={() => cancelEdit(r.id)} type="button" className="px-2 py-1 border rounded">Cancel</button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 justify-end">
-                                <button onClick={() => beginEdit(r)} type="button" className="px-2 py-1 border rounded">Edit</button>
-                                <button disabled={rowBusy[r.id]} onClick={() => deleteRow(r.id)} type="button" className="px-2 py-1 border rounded text-red-600">{rowBusy[r.id] ? 'Deleting…' : 'Delete'}</button>
-                              </div>
-                            )}
-                          </td>
+                {headcount.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500">No records yet. Add one below.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Team</th>
+                          <th className="px-3 py-2 text-left">Role</th>
+                          <th className="px-3 py-2 text-left">Level</th>
+                          <th className="px-3 py-2 text-right">Salary</th>
+                          <th className="px-3 py-2 text-right">Q1 F</th>
+                          <th className="px-3 py-2 text-right">Q1 A</th>
+                          <th className="px-3 py-2 text-right">Q2 F</th>
+                          <th className="px-3 py-2 text-right">Q2 A</th>
+                          <th className="px-3 py-2 text-right">Q3 F</th>
+                          <th className="px-3 py-2 text-right">Q3 A</th>
+                          <th className="px-3 py-2 text-right">Q4 F</th>
+                          <th className="px-3 py-2 text-right">Q4 A</th>
+                          <th className="px-3 py-2 text-left">Notes</th>
+                          <th className="px-3 py-2"></th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
+                      </thead>
+                      <tbody className="divide-y">
+                        {headcount.map((r) => {
+                          const isEditing = !!editing[r.id];
+                          const edit = editing[r.id] as any;
+                          const teamName = teams.find((t) => t.id === r.teamId)?.name || '—';
+                          return (
+                            <tr key={r.id} className="align-top">
+                              <td className="px-3 py-2 whitespace-nowrap cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
+                                {isEditing ? (
+                                  <select className="w-36 border rounded px-2 py-1" value={(edit.teamId ?? r.teamId) || ''}
+                                    onChange={(e) => changeEdit(r.id, 'teamId', e.target.value)}>
+                                    <option value="">—</option>
+                                    {teams.map((t) => (
+                                      <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span>{teamName}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
+                                {isEditing ? (
+                                  <input className="w-36 border rounded px-2 py-1" value={edit.role ?? r.role}
+                                    onChange={(e) => changeEdit(r.id, 'role', e.target.value)} />
+                                ) : (
+                                  <span>{r.role}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
+                                {isEditing ? (
+                                  <input className="w-28 border rounded px-2 py-1" value={edit.level ?? r.level}
+                                    onChange={(e) => changeEdit(r.id, 'level', e.target.value)} />
+                                ) : (
+                                  <span>{r.level}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-right cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
+                                {isEditing ? (
+                                  <input type="number" step="0.01" className="w-28 border rounded px-2 py-1 text-right" value={edit.salary ?? r.salary}
+                                    onChange={(e) => changeEdit(r.id, 'salary', e.target.value)} />
+                                ) : (
+                                  <span>{currency(typeof r.salary === 'string' ? parseFloat(r.salary) : r.salary)}</span>
+                                )}
+                              </td>
+                              {(['q1Forecast','q1Actual','q2Forecast','q2Actual','q3Forecast','q3Actual','q4Forecast','q4Actual'] as const).map((field) => (
+                                <td key={field} className="px-3 py-2 text-right cursor-pointer" onDoubleClick={() => beginEdit(r)} title="Double-click to edit row">
+                                  {isEditing ? (
+                                    <input type="number" className="w-20 border rounded px-2 py-1 text-right" value={(edit as any)[field] ?? (r as any)[field]}
+                                      onChange={(e) => changeEdit(r.id, field as any, Number(e.target.value))} />
+                                  ) : (
+                                    <span>{(r as any)[field]}</span>
+                                  )}
+                                </td>
+                              ))}
+                              <td className="px-3 py-2">
+                                {isEditing ? (
+                                  <input className="w-56 border rounded px-2 py-1" value={edit.notes ?? r.notes ?? ''}
+                                    onChange={(e) => changeEdit(r.id, 'notes', e.target.value)} />
+                                ) : (
+                                  <span className="text-gray-600 line-clamp-2 max-w-[18rem]">{r.notes}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-right">
+                                {isEditing ? (
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <button disabled={rowBusy[r.id]} onClick={() => saveEdit(r.id)} type="button" className="px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50">{rowBusy[r.id] ? 'Saving…' : 'Save'}</button>
+                                    <button disabled={rowBusy[r.id]} onClick={() => cancelEdit(r.id)} type="button" className="px-2 py-1 border rounded">Cancel</button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <button onClick={() => beginEdit(r)} type="button" className="px-2 py-1 border rounded">Edit</button>
+                                    <button disabled={rowBusy[r.id]} onClick={() => deleteRow(r.id)} type="button" className="px-2 py-1 border rounded text-red-600">{rowBusy[r.id] ? 'Deleting…' : 'Delete'}</button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           {/* Headcount Tracker (Create) */}
-          <div className="bg-white shadow rounded-lg lg:col-span-2">
+          <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-3 border-b flex items-center justify-between gap-2">
               <div className="font-medium">Headcount Tracker — Add Record</div>
               <button
@@ -562,102 +614,102 @@ export default function TeamsPage() {
               </button>
             </div>
             {hcFormOpen && (
-            <form id="headcount-add-form" onSubmit={submitHeadcount} className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-              <div>
-                <label className="block text-gray-600 mb-1">Team</label>
-                <select
-                  className="w-full border rounded px-2 py-1"
-                  value={hcForm.teamId}
-                  onChange={(e) => updateForm("teamId", e.target.value)}
-                  required
-                >
-                  <option value="">Select team…</option>
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Year</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.year}
-                  onChange={(e) => updateForm("year", Number(e.target.value))} required />
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Role</label>
-                <input type="text" className="w-full border rounded px-2 py-1" value={hcForm.role}
-                  onChange={(e) => updateForm("role", e.target.value)} required />
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Level</label>
-                <input type="text" className="w-full border rounded px-2 py-1" value={hcForm.level}
-                  onChange={(e) => updateForm("level", e.target.value)} required />
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Salary (USD)</label>
-                <input type="number" step="0.01" className="w-full border rounded px-2 py-1" value={hcForm.salary}
-                  onChange={(e) => updateForm("salary", e.target.value)} required />
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q1 Forecast</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q1Forecast}
-                  onChange={(e) => updateForm("q1Forecast", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q1 Actual</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q1Actual}
-                  onChange={(e) => updateForm("q1Actual", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q2 Forecast</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q2Forecast}
-                  onChange={(e) => updateForm("q2Forecast", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q2 Actual</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q2Actual}
-                  onChange={(e) => updateForm("q2Actual", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q3 Forecast</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q3Forecast}
-                  onChange={(e) => updateForm("q3Forecast", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q3 Actual</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q3Actual}
-                  onChange={(e) => updateForm("q3Actual", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q4 Forecast</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q4Forecast}
-                  onChange={(e) => updateForm("q4Forecast", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
-              </div>
-              <div>
-                <label className="block text-gray-600 mb-1">Q4 Actual</label>
-                <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q4Actual}
-                  onChange={(e) => updateForm("q4Actual", Number(e.target.value))} min={0} />
-                <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
-              </div>
-              <div className="md:col-span-2 lg:col-span-4">
-                <label className="block text-gray-600 mb-1">Notes</label>
-                <textarea className="w-full border rounded px-2 py-1" rows={2} value={hcForm.notes}
-                  onChange={(e) => updateForm("notes", e.target.value)} />
-              </div>
-              <div className="md:col-span-2 lg:col-span-4 flex items-center gap-3">
-                <button type="submit" disabled={hcSubmitting || !hcForm.teamId || !hcForm.role || !hcForm.level || !hcForm.salary}
-                  className="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white disabled:opacity-50">
-                  {hcSubmitting ? "Saving…" : "Add Record"}
-                </button>
-                <div className="text-xs text-gray-500">Adds a headcount line that rolls into the manager totals above.</div>
-              </div>
-            </form>
+              <form id="headcount-add-form" onSubmit={submitHeadcount} className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <label className="block text-gray-600 mb-1">Team</label>
+                  <select
+                    className="w-full border rounded px-2 py-1"
+                    value={hcForm.teamId}
+                    onChange={(e) => updateForm('teamId', e.target.value)}
+                    required
+                  >
+                    <option value="">Select team…</option>
+                    {teams.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Year</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.year}
+                    onChange={(e) => updateForm('year', Number(e.target.value))} required />
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Role</label>
+                  <input type="text" className="w-full border rounded px-2 py-1" value={hcForm.role}
+                    onChange={(e) => updateForm('role', e.target.value)} required />
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Level</label>
+                  <input type="text" className="w-full border rounded px-2 py-1" value={hcForm.level}
+                    onChange={(e) => updateForm('level', e.target.value)} required />
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Salary (USD)</label>
+                  <input type="number" step="0.01" className="w-full border rounded px-2 py-1" value={hcForm.salary}
+                    onChange={(e) => updateForm('salary', e.target.value)} required />
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q1 Forecast</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q1Forecast}
+                    onChange={(e) => updateForm('q1Forecast', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q1 Actual</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q1Actual}
+                    onChange={(e) => updateForm('q1Actual', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q2 Forecast</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q2Forecast}
+                    onChange={(e) => updateForm('q2Forecast', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q2 Actual</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q2Actual}
+                    onChange={(e) => updateForm('q2Actual', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q3 Forecast</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q3Forecast}
+                    onChange={(e) => updateForm('q3Forecast', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q3 Actual</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q3Actual}
+                    onChange={(e) => updateForm('q3Actual', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q4 Forecast</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q4Forecast}
+                    onChange={(e) => updateForm('q4Forecast', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Forecasted count of individuals</p>
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">Q4 Actual</label>
+                  <input type="number" className="w-full border rounded px-2 py-1" value={hcForm.q4Actual}
+                    onChange={(e) => updateForm('q4Actual', Number(e.target.value))} min={0} />
+                  <p className="mt-1 text-xs text-gray-500">Actual count of individuals</p>
+                </div>
+                <div className="md:col-span-2 lg:col-span-4">
+                  <label className="block text-gray-600 mb-1">Notes</label>
+                  <textarea className="w-full border rounded px-2 py-1" rows={2} value={hcForm.notes}
+                    onChange={(e) => updateForm('notes', e.target.value)} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-4 flex items-center gap-3">
+                  <button type="submit" disabled={hcSubmitting || !hcForm.teamId || !hcForm.role || !hcForm.level || !hcForm.salary}
+                    className="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white disabled:opacity-50">
+                    {hcSubmitting ? 'Saving…' : 'Add Record'}
+                  </button>
+                  <div className="text-xs text-gray-500">Adds a headcount line that rolls into the manager totals above.</div>
+                </div>
+              </form>
             )}
           </div>
         </div>
