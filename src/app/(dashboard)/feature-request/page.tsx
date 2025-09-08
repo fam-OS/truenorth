@@ -9,7 +9,6 @@ export default function FeatureRequestPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [priority, setPriority] = useState('medium');
   const [useCase, setUseCase] = useState('');
   
   const [loading, setLoading] = useState(false);
@@ -17,15 +16,14 @@ export default function FeatureRequestPage() {
   const [error, setError] = useState('');
 
   const categories = [
-    { value: 'dashboard', label: 'Dashboard & Analytics' },
-    { value: 'teams', label: 'Team Management' },
-    { value: 'initiatives', label: 'Initiatives & KPIs' },
-    { value: 'financial', label: 'Financial Tracking' },
+    { value: 'dashboard', label: 'Dashboard' },
+    { value: 'organizations', label: 'Organizations' },
+    { value: 'team-management', label: 'Team Management' },
     { value: 'business-units', label: 'Business Units' },
-    { value: 'ops-reviews', label: 'Ops Reviews' },
-    { value: 'reporting', label: 'Reporting & Exports' },
-    { value: 'integrations', label: 'Integrations' },
-    { value: 'mobile', label: 'Mobile Experience' },
+    { value: 'initiatives-kpis', label: 'Initiatives & KPIs' },
+    { value: 'team-ops-reviews', label: 'Team Ops Reviews' },
+    { value: 'financial-management', label: 'Financial management' },
+    { value: 'mobile-experience', label: 'Mobile experience' },
     { value: 'other', label: 'Other' },
   ];
 
@@ -42,7 +40,6 @@ export default function FeatureRequestPage() {
           title,
           description,
           category,
-          priority,
           useCase,
         }),
       });
@@ -59,7 +56,6 @@ export default function FeatureRequestPage() {
       setTitle('');
       setDescription('');
       setCategory('');
-      setPriority('medium');
       setUseCase('');
       
       // Hide success message after 5 seconds
@@ -139,22 +135,7 @@ export default function FeatureRequestPage() {
             </select>
           </div>
 
-          <div>
-            <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
-              Priority Level
-            </label>
-            <select
-              id="priority"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="low">Low - Nice to have</option>
-              <option value="medium">Medium - Would be helpful</option>
-              <option value="high">High - Important for my workflow</option>
-              <option value="critical">Critical - Blocking my work</option>
-            </select>
-          </div>
+          
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">
@@ -185,15 +166,7 @@ export default function FeatureRequestPage() {
             />
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-md">
-            <h3 className="text-sm font-medium text-blue-800 mb-2">Tips for great feature requests:</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Be specific about what you want the feature to do</li>
-              <li>• Explain the problem you&apos;re trying to solve</li>
-              <li>• Consider how it might work with existing features</li>
-              <li>• Include any relevant examples or mockups if you have them</li>
-            </ul>
-          </div>
+          
 
           <div className="flex justify-end">
             <button

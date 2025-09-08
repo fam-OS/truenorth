@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
@@ -31,7 +31,7 @@ type HeadcountRow = {
   notes?: string | null;
 };
 
-export default function TeamsPage() {
+function TeamsClient() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') || 'team-management') as 'org-chart' | 'team-planning' | 'team-management';
   const [activeTab, setActiveTab] = useState<'org-chart' | 'team-planning' | 'team-management'>(initialTab);
@@ -92,6 +92,7 @@ export default function TeamsPage() {
       } finally {
         setLoading(false);
       }
+
     };
     void load();
     return () => {
@@ -363,22 +364,6 @@ export default function TeamsPage() {
       {loading && (
         <div className="min-h-[200px] flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      )}
-
-      {!loading && activeTab === 'org-chart' && (
-        <div className="space-y-4">
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
-              <span>Org Chart</span>
-            </div>
-            <div className="p-4 text-sm text-gray-700">
-              Visualize your organization structure.
-              <div className="mt-3">
-                <Link href="/org-chart" className="inline-flex items-center px-3 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Open Org Chart</Link>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 

@@ -74,7 +74,6 @@ describe('Goals API', () => {
             description: 'Optimize system performance',
             quarter: 'Q1',
             year: 2025,
-            status: 'IN_PROGRESS',
             stakeholderId: 'stakeholder1',
             progressNotes: null,
           }),
@@ -224,7 +223,6 @@ describe('Goals API', () => {
           description: 'Updated description',
           quarter: 'Q2',
           year: 2025,
-          status: 'COMPLETED',
           progressNotes: 'Great progress made',
         },
         include: {

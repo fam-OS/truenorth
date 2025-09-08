@@ -22,9 +22,7 @@ export default function SupportPage() {
     { value: 'data', label: 'Data Problems' },
     { value: 'performance', label: 'Performance Issues' },
     { value: 'login', label: 'Login/Authentication' },
-    { value: 'billing', label: 'Billing Questions' },
     { value: 'feature', label: 'Feature Questions' },
-    { value: 'integration', label: 'Integration Support' },
     { value: 'training', label: 'Training/How-to' },
     { value: 'other', label: 'Other' },
   ];
@@ -139,22 +137,7 @@ export default function SupportPage() {
             </select>
           </div>
 
-          <div>
-            <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
-              Priority Level
-            </label>
-            <select
-              id="priority"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="low">Low - General question</option>
-              <option value="medium">Medium - Issue affecting work</option>
-              <option value="high">High - Significant problem</option>
-              <option value="urgent">Urgent - System down/critical issue</option>
-            </select>
-          </div>
+          
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">
@@ -188,15 +171,7 @@ export default function SupportPage() {
             />
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-md">
-            <h3 className="text-sm font-medium text-blue-800 mb-2">Tips for faster support:</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Be specific about what you were doing when the issue occurred</li>
-              <li>• Include any error messages you saw</li>
-              <li>• Mention which browser and device you&apos;re using</li>
-              <li>• For account issues, include your email address</li>
-            </ul>
-          </div>
+          
 
           <div className="flex justify-end">
             <button
