@@ -25,8 +25,16 @@ export default function GettingStartedChecklist() {
       icon: '🏢'
     },
     {
+      id: 'teams',
+      title: 'Team Management',
+      description: 'Headcount, roles, and team setup',
+      href: '/teams',
+      completed: false,
+      icon: '👥'
+    },
+    {
       id: 'business-units',
-      title: 'Add business units and track their goals',
+      title: 'Business Units',
       description: 'Organize your company structure and key people',
       href: '/business-units',
       completed: false,
@@ -34,32 +42,24 @@ export default function GettingStartedChecklist() {
     },
     {
       id: 'initiatives',
-      title: 'Add initiatives and KPIs for initiatives',
+      title: 'Initiatives',
       description: 'Create strategic projects and success metrics',
       href: '/initiatives-kpis',
       completed: false,
       icon: '🚀'
     },
     {
-      id: 'teams',
-      title: 'Define your team and team members',
-      description: 'Add team structure and personnel',
-      href: '/teams',
+      id: 'ops-reviews',
+      title: 'Team Ops Reviews',
+      description: 'Run regular team operations reviews',
+      href: '/ops-reviews',
       completed: false,
-      icon: '👥'
-    },
-    {
-      id: 'hiring',
-      title: 'Add hiring forecast and salary information',
-      description: 'Plan future hiring and compensation',
-      href: '/teams',
-      completed: false,
-      icon: '💼'
+      icon: '📝'
     },
     {
       id: 'budget',
-      title: 'Forecast your org\'s budget',
-      description: 'Create financial projections and budgets',
+      title: 'Financial Management',
+      description: 'Track costs, forecasts, and actuals',
       href: '/financial',
       completed: false,
       icon: '💰'
@@ -88,18 +88,20 @@ export default function GettingStartedChecklist() {
     // Check completion status based on existing data
     const checkCompletion = async () => {
       try {
-        const [companyRes, orgsRes, teamsRes, initiativesRes] = await Promise.all([
+        const [companyRes, orgsRes, teamsRes, initiativesRes, opsReviewsRes] = await Promise.all([
           fetch('/api/company-account'),
           fetch('/api/organizations'),
           fetch('/api/teams'),
-          fetch('/api/initiatives')
+          fetch('/api/initiatives'),
+          fetch('/api/ops-reviews')
         ]);
 
-        const [companyData, organizationsData, teamsData, initiativesData] = await Promise.all([
+        const [companyData, organizationsData, teamsData, initiativesData, opsReviewsData] = await Promise.all([
           companyRes.json(),
           orgsRes.json(),
           teamsRes.json(),
-          initiativesRes.json()
+          initiativesRes.json(),
+          opsReviewsRes.json()
         ]);
 
         const hasCompany = companyRes.ok && companyData && !companyData.error;
@@ -108,6 +110,7 @@ export default function GettingStartedChecklist() {
         const organizations = Array.isArray(organizationsData) ? organizationsData : [];
         const teams = Array.isArray(teamsData) ? teamsData : [];
         const initiatives = Array.isArray(initiativesData) ? initiativesData : [];
+        const opsReviews = Array.isArray(opsReviewsData) ? opsReviewsData : [];
 
         // Auto-complete items based on actual data (but don't override manual selections)
         setChecklist(prev => prev.map(item => {
@@ -129,6 +132,8 @@ export default function GettingStartedChecklist() {
               return { ...item, completed: teams.length > 0 };
             case 'initiatives':
               return { ...item, completed: initiatives.length > 0 };
+            case 'ops-reviews':
+              return { ...item, completed: opsReviews.length > 0 };
             default:
               return { ...item, completed: false };
           }

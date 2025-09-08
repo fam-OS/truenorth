@@ -109,14 +109,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    if (process.env.NODE_ENV !== 'test') {
+    // If a founderId was provided, ensure an Organization and an Executive Team exist,
+    // and link the founder to that Executive Team. Do not create any other teams automatically.
+    if (process.env.NODE_ENV !== 'test' && founderId) {
       // Ensure there is at least one Organization for this CompanyAccount
-      // Use the company name as the default organization name
       let organization = await prisma.organization.findFirst({
         where: { companyAccountId: companyAccount.id },
-        select: { id: true }
+        select: { id: true, name: true },
       });
-
       if (!organization) {
         organization = await prisma.organization.create({
           data: {
@@ -125,47 +125,38 @@ export async function POST(request: NextRequest) {
             description: companyAccount.description ?? null,
             companyAccountId: companyAccount.id,
           },
-          select: { id: true },
+          select: { id: true, name: true },
         });
       }
 
       // Ensure Executive Team exists under that organization
+      const execName = 'Executive Team';
       let executiveTeam = await prisma.team.findFirst({
-        where: { organizationId: organization.id, name: 'Executive Team' },
+        where: { organizationId: organization.id, name: execName },
         select: { id: true },
       });
       if (!executiveTeam) {
         try {
           executiveTeam = await prisma.team.create({
-            data: {
-              name: 'Executive Team',
-              organizationId: organization.id,
-              description: 'Company leadership team',
-            },
+            data: { name: execName, organizationId: organization.id, description: 'Company leadership team' },
             select: { id: true },
           });
-        } catch (e: any) {
-          // In case of a race or unique constraint, fetch existing
-          executiveTeam = await prisma.team.findFirst({
-            where: { organizationId: organization.id, name: 'Executive Team' },
-            select: { id: true },
-          });
+        } catch {
+          executiveTeam = await prisma.team.findFirst({ where: { organizationId: organization.id, name: execName }, select: { id: true } });
         }
       }
 
-      // If a founderId was provided, relate that TeamMember to the Executive Team
-      if (founderId && executiveTeam?.id) {
-        try {
-          await prisma.teamMember.update({
-            where: { id: founderId },
-            data: {
-              CompanyAccount: { connect: { id: companyAccount.id } },
-              Team: { connect: { id: executiveTeam.id } },
-            },
-          });
-        } catch (e) {
-          console.warn('Founder team member could not be linked to Executive Team:', e);
-        }
+      // Link founder TeamMember to CompanyAccount and Executive Team (ignore if missing)
+      try {
+        await prisma.teamMember.update({
+          where: { id: founderId },
+          data: {
+            CompanyAccount: { connect: { id: companyAccount.id } },
+            ...(executiveTeam?.id ? { Team: { connect: { id: executiveTeam.id } } } : {}),
+          },
+        });
+      } catch (e) {
+        console.warn('Founder team member could not be linked to Executive Team on creation:', e);
       }
     }
 

@@ -28,20 +28,30 @@ export async function GET(
       if (!allowed) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
+    const include = process.env.NODE_ENV === 'test'
+      ? ({ organization: true, members: true } as any)
+      : ({
+          Organization: { select: { id: true, name: true } },
+          TeamMember: { select: { id: true, name: true, email: true, role: true } },
+        } as any);
     const team = await prisma.team.findUnique({
       where: { id: teamId },
-      include: { organization: true, members: true } as any,
+      include,
     });
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
 
     // Transform to the shape expected by the Team page
+    const orgRaw = (team as any).organization ?? (team as any).Organization ?? null;
+    const membersRaw = ((team as any).members ?? (team as any).TeamMember ?? []) as any[];
     const response = {
       id: (team as any).id,
       name: (team as any).name,
       description: (team as any).description ?? null,
       organizationId: (team as any).organizationId,
-      organization: (team as any).organization ?? null,
-      members: ((team as any).members ?? []).map((m: any) => ({
+      organization: orgRaw
+        ? { id: orgRaw.id, name: orgRaw.name }
+        : null,
+      members: membersRaw.map((m: any) => ({
         id: m.id,
         name: m.name,
         email: m.email || '',

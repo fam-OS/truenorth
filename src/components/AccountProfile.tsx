@@ -478,22 +478,24 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-gray-100">Company Overview</CardTitle>
         {isCollapsed ? (
-          <Button variant="default" size="sm" onClick={() => setIsCollapsed(false)}>
+          <Button variant="outline" size="sm" className="text-gray-100 hover:text-gray-100" onClick={() => setIsCollapsed(false)}>
             Show
           </Button>
         ) : !isEditingOverview ? (
           <div className="flex gap-2">
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
+              className="text-gray-100 hover:text-gray-100"
               onClick={() => setIsEditingOverview(true)}
             >
               <Pencil className="h-4 w-4 mr-2" />
               Edit
             </Button>
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
+              className="text-gray-100 hover:text-gray-100"
               onClick={() => setIsCollapsed(true)}
             >
               Hide
@@ -502,15 +504,16 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
         ) : (
           <div className="flex gap-2">
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
+              className="text-gray-100 hover:text-gray-100"
               onClick={handleCancelEdit}
               disabled={isLoading}
             >
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button variant="default" size="sm" onClick={handleSaveOverview} disabled={isLoading}>
+            <Button variant="outline" size="sm" className="text-gray-100 hover:text-gray-100" onClick={handleSaveOverview} disabled={isLoading}>
               <Save className="h-4 w-4 mr-2" />
               {isLoading ? 'Saving...' : 'Save'}
             </Button>
@@ -782,7 +785,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   Glassdoor Profile <ExternalLink className="h-3 w-3" />
                 </a>
               ) : (
-                <p className="text-gray-300 text-sm">Not provided</p>
+                <p className="text-gray-500 text-sm">Not provided</p>
               )}
             </div>
 
@@ -813,7 +816,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
 
         {isEditingOverview && (
           <div className="pt-2 flex justify-end">
-            <Button variant="default" size="sm" onClick={handleSaveOverview} disabled={isLoading}>
+            <Button variant="outline" size="sm" className="text-gray-100 hover:text-gray-100" onClick={handleSaveOverview} disabled={isLoading}>
               <Save className="h-4 w-4 mr-2" />
               {isLoading ? 'Saving...' : 'Save'}
             </Button>
