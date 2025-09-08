@@ -36,7 +36,7 @@ export default function DashboardLayout({
         { href: '/organizations', label: 'Organizations', icon: BuildingOfficeIcon, desc: 'Manage company and your organizations' },
         { href: '/teams', label: 'Team Management', icon: UserGroupIcon, desc: 'Headcount, roles, and team setup' },
         { href: '/business-units', label: 'Business Units', icon: BuildingOfficeIcon, desc: 'Business Units, stakeholders, and goals' },
-        { href: '/initiatives-kpis', label: 'Initiatives', icon: PresentationChartBarIcon, desc: 'Plan, execute, and measure outcomes' },
+        { href: '/initiatives-kpis', label: 'Initiatives & KPIs', icon: PresentationChartBarIcon, desc: 'Plan, execute, and measure outcomes' },
         { href: '/ops-reviews', label: 'Team Ops Reviews', icon: PresentationChartBarIcon, desc: 'Quarterly operational reviews' },
         { href: '/financial', label: 'Financial Management', icon: PresentationChartBarIcon, desc: 'Track costs, forecasts, and actuals' },
       ],

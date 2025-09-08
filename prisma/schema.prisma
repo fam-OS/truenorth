@@ -3,6 +3,32 @@ generator client {
   previewFeatures = ["clientExtensions"]
 }
 
+model KpiStatus {
+  id        String   @id @default(cuid())
+  kpiId     String
+  year      Int
+  quarter   Quarter
+  amount    Float    // Metric amount for the period
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Kpi       Kpi      @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+
+  @@index([kpiId])
+  @@index([year])
+}
+
+model KpiBusinessUnit {
+  id             String       @id @default(cuid())
+  kpiId          String
+  businessUnitId String
+  createdAt      DateTime     @default(now())
+  Kpi            Kpi          @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  BusinessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([kpiId, businessUnitId])
+  @@index([businessUnitId])
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -38,6 +64,7 @@ model BusinessUnit {
   Metric      Metric[]
   Stakeholder Stakeholder[]
   Team        Team[]
+  KpiBusinessUnit KpiBusinessUnit[]
 }
 
 model CeoGoal {
@@ -196,12 +223,14 @@ model Kpi {
   businessUnitId    String?
   metTarget         Boolean?
   metTargetPercent  Float?
-  actualRevenue     Float?
-  forecastedRevenue Float?
+  kpiType           KPIType?
+  revenueImpacting  Boolean       @default(false)
   BusinessUnit      BusinessUnit? @relation(fields: [businessUnitId], references: [id])
   Initiative        Initiative?   @relation(fields: [initiativeId], references: [id])
   Organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   Team              Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  KpiBusinessUnit   KpiBusinessUnit[]
+  KpiStatus         KpiStatus[]
 
   @@index([businessUnitId])
   @@index([initiativeId])
@@ -444,6 +473,11 @@ enum Quarter {
   Q2
   Q3
   Q4
+}
+
+enum KPIType {
+  QUALITATIVE
+  QUANTITATIVE
 }
 
 enum TaskStatus {

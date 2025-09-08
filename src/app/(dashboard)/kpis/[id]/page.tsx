@@ -20,6 +20,19 @@ function useKpi(id?: string) {
   });
 }
 
+function useKpiStatuses(kpiId?: string) {
+  return useQuery({
+    queryKey: ['kpi-statuses', kpiId],
+    queryFn: async () => {
+      if (!kpiId) return [] as any[];
+      const res = await fetch(`/api/kpis/${kpiId}/statuses`);
+      if (!res.ok) throw new Error('Failed to fetch KPI Statuses');
+      return res.json();
+    },
+    enabled: !!kpiId,
+  });
+}
+
 export default function KpiDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -28,8 +41,15 @@ export default function KpiDetailPage() {
   const { showToast } = useToast();
 
   const { data: kpi, isLoading } = useKpi(id);
+  const { data: statuses = [], isLoading: statusesLoading } = useKpiStatuses(id);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newStatus, setNewStatus] = useState<{ year: number; quarter: 'Q1'|'Q2'|'Q3'|'Q4'; amount: number }>({
+    year: new Date().getFullYear(),
+    quarter: 'Q1',
+    amount: 0,
+  });
 
   async function handleUpdate(values: KpiFormValues) {
     const res = await fetch(`/api/kpis/${id}`, {
@@ -44,6 +64,64 @@ export default function KpiDetailPage() {
     }
     await queryClient.invalidateQueries({ queryKey: ['kpi', id] });
     showToast({ title: 'KPI updated', description: 'Your changes have been saved.' });
+  }
+
+  async function addStatus() {
+    if (!id) return;
+    try {
+      setCreating(true);
+      const res = await fetch(`/api/kpis/${id}/statuses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newStatus),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast({ title: 'Add status failed', description: err.error || 'Failed to add status', type: 'destructive' });
+        return;
+      }
+      setNewStatus({ year: new Date().getFullYear(), quarter: 'Q1', amount: 0 });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['kpi-statuses', id] }),
+        queryClient.invalidateQueries({ queryKey: ['kpi', id] }),
+      ]);
+      showToast({ title: 'Status added', description: 'KPI status created and KPI updated.' });
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function updateStatus(statusId: string, patch: Partial<{ year: number; quarter: 'Q1'|'Q2'|'Q3'|'Q4'; amount: number }>) {
+    if (!id) return;
+    const res = await fetch(`/api/kpis/${id}/statuses/${statusId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast({ title: 'Update failed', description: err.error || 'Could not update status', type: 'destructive' });
+      return;
+    }
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['kpi-statuses', id] }),
+      queryClient.invalidateQueries({ queryKey: ['kpi', id] }),
+    ]);
+  }
+
+  async function deleteStatus(statusId: string) {
+    if (!id) return;
+    const res = await fetch(`/api/kpis/${id}/statuses/${statusId}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast({ title: 'Delete failed', description: err.error || 'Could not delete status', type: 'destructive' });
+      return;
+    }
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['kpi-statuses', id] }),
+      queryClient.invalidateQueries({ queryKey: ['kpi', id] }),
+    ]);
+    showToast({ title: 'Status removed', description: 'KPI updated.' });
   }
 
   async function handleConfirmDelete() {
@@ -119,10 +197,92 @@ export default function KpiDetailPage() {
             organizationId: kpi.organizationId,
             teamId: kpi.teamId,
             initiativeId: kpi.initiativeId ?? undefined,
+            kpiType: (kpi as any).kpiType,
+            revenueImpacting: (kpi as any).revenueImpacting ?? false,
+            businessUnitIds: Array.isArray((kpi as any).KpiBusinessUnit) ? (kpi as any).KpiBusinessUnit.map((j: any) => j.businessUnitId) : ((kpi as any).businessUnitId ? [(kpi as any).businessUnitId] : []),
           }}
           onSubmit={handleUpdate}
           submitLabel="Update KPI"
         />
+      </div>
+
+      {/* KPI Status Management */}
+      <div className="mt-8 bg-white shadow rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900">KPI Status</h2>
+        <p className="text-sm text-gray-500">Track progress entries by quarter. Actual is computed from the sum.</p>
+
+        {/* Add new status */}
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Year</label>
+            <input type="number" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value={newStatus.year} onChange={(e) => setNewStatus((s) => ({ ...s, year: parseInt(e.target.value || '0') }))} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Quarter</label>
+            <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value={newStatus.quarter} onChange={(e) => setNewStatus((s) => ({ ...s, quarter: e.target.value as any }))}>
+              {['Q1','Q2','Q3','Q4'].map((q) => <option key={q} value={q}>{q}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Metric Amount</label>
+            <input type="number" step="any" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value={newStatus.amount} onChange={(e) => setNewStatus((s) => ({ ...s, amount: Number(e.target.value || 0) }))} />
+          </div>
+          <div>
+            <button onClick={() => { void addStatus(); }} disabled={creating} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">{creating ? 'Adding…' : 'Add Status'}</button>
+          </div>
+        </div>
+
+        {/* Status list */}
+        <div className="mt-6 overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quarter</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-4 py-2"/>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {(statuses || []).map((s: any) => (
+                <tr key={s.id}>
+                  <td className="px-4 py-2">
+                    <input type="number" className="w-28 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" defaultValue={s.year} onBlur={(e) => updateStatus(s.id, { year: parseInt(e.target.value || '0') })} />
+                  </td>
+                  <td className="px-4 py-2">
+                    <select className="w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" defaultValue={s.quarter} onChange={(e) => updateStatus(s.id, { quarter: e.target.value as any })}>
+                      {['Q1','Q2','Q3','Q4'].map((q) => <option key={q} value={q}>{q}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-4 py-2">
+                    <input type="number" step="any" className="w-36 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" defaultValue={s.amount ?? 0} onBlur={(e) => updateStatus(s.id, { amount: Number(e.target.value || 0) })} />
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <button onClick={() => { void deleteStatus(s.id); }} className="px-3 py-1.5 text-sm rounded-md border border-red-300 text-red-700 bg-white hover:bg-red-50">Delete</button>
+                  </td>
+                </tr>
+              ))}
+              {(!statuses || statuses.length === 0) && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-4 text-center text-sm text-gray-500">No status entries yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Quarterly Breakdown Cards */}
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {(['Q1','Q2','Q3','Q4'] as const).map((q) => {
+          const total = (statuses || []).filter((s: any) => s.quarter === q).reduce((acc: number, s: any) => acc + (s.amount || 0), 0);
+          return (
+            <div key={q} className="bg-white shadow rounded-lg p-4">
+              <div className="text-sm text-gray-500">{q} Total</div>
+              <div className="text-2xl font-semibold text-gray-900">{total}</div>
+            </div>
+          );
+        })}
       </div>
 
       {kpi.Initiative && (

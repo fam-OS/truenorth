@@ -28,23 +28,10 @@ export async function GET(request: Request) {
     }
 
     const kpis = await prisma.kpi.findMany({
-      select: {
-        id: true,
-        name: true,
-        targetMetric: true,
-        actualMetric: true,
-        metTarget: true,
-        metTargetPercent: true,
-        quarter: true,
-        year: true,
-        organizationId: true,
-        teamId: true,
-        initiativeId: true,
-        businessUnitId: true,
-        createdAt: true,
-        updatedAt: true,
+      include: ({
         Team: { select: { id: true, name: true } },
-      },
+        KpiBusinessUnit: { include: { BusinessUnit: { select: { id: true, name: true } } } },
+      } as any),
       where: {
         organizationId: orgIdsFilter ? { in: orgIdsFilter } : (orgId as any),
         teamId: teamId,
@@ -69,7 +56,7 @@ export async function POST(request: Request) {
     const data = createKpiSchema.parse(json);
 
     // derive computed fields from provided metrics
-    const { targetMetric, actualMetric, organizationId, teamId, initiativeId, businessUnitId, ...rest } = data as any;
+    const { targetMetric, actualMetric, organizationId, teamId, initiativeId, businessUnitId, businessUnitIds, kpiType, revenueImpacting, ...rest } = data as any;
     // Default organization from URL if not provided in body
     const { searchParams } = new URL(request.url);
     const orgIdFromUrl = searchParams.get('orgId') || undefined;
@@ -107,6 +94,8 @@ export async function POST(request: Request) {
         actualMetric,
         metTarget,
         metTargetPercent,
+        kpiType,
+        revenueImpacting,
         ...(finalOrgId ? { Organization: { connect: { id: finalOrgId } } } : {}),
         ...(teamId ? { Team: { connect: { id: teamId } } } : {}),
         ...(initiativeId ? { Initiative: { connect: { id: initiativeId } } } : {}),
@@ -114,6 +103,16 @@ export async function POST(request: Request) {
       },
       include: { Team: true, Initiative: true },
     });
+
+    // If multiple business units provided, create junctions
+    if (Array.isArray(businessUnitIds) && businessUnitIds.length > 0) {
+      const values = businessUnitIds
+        .filter((id: string) => !!id)
+        .map((buId: string) => ({ kpiId: kpi.id, businessUnitId: buId }));
+      if (values.length > 0) {
+        await (prisma as any).kpiBusinessUnit.createMany({ data: values, skipDuplicates: true });
+      }
+    }
 
     return NextResponse.json(kpi, { status: 201 });
   } catch (error) {

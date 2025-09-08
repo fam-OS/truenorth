@@ -139,13 +139,30 @@ export default function KpisPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-2 sm:flex sm:justify-between">
-                      <div className="sm:flex">
-                        <p className="flex items-center text-sm text-gray-500">
-                          <span className="truncate">Team: {k.Team?.name || '—'}</span>
-                        </p>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                        <span className="truncate">Team: {k.Team?.name || '—'}</span>
+                        {/* KPI Type */}
+                        {k.kpiType && (
+                          <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">
+                            {k.kpiType === 'QUALITATIVE' ? 'Qualitative' : 'Quantitative'}
+                          </span>
+                        )}
+                        {/* Revenue Impacting */}
+                        {typeof k.revenueImpacting === 'boolean' && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${k.revenueImpacting ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
+                            {k.revenueImpacting ? 'Revenue Impacting' : 'Not Revenue Impacting'}
+                          </span>
+                        )}
                       </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {(k.KpiBusinessUnit || []).map((j: any) => (
+                          <span key={j.businessUnitId} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                            {j.BusinessUnit?.name || 'Business Unit'}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
                         <span>Target: {k.targetMetric ?? '—'} • Actual: {k.actualMetric ?? '—'}</span>
                       </div>
                     </div>
