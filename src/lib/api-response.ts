@@ -4,6 +4,11 @@ import { ZodError } from 'zod';
 export function handleError(error: unknown) {
   console.error(error);
   
+  if (error instanceof Response) {
+    // Pass-through responses thrown by access helpers (e.g., 401/403)
+    return error;
+  }
+
   if (error instanceof ZodError) {
     return NextResponse.json(
       { error: 'Validation error', details: error.issues },

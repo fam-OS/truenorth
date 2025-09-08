@@ -86,7 +86,7 @@ function TeamPageContent({ teamId }: { teamId: string }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6 flex justify-between items-center">
-        <Link href="/organizations" className="text-sm text-blue-700 hover:underline">← Back to Organizations</Link>
+        <Link href="/teams/list" className="text-sm text-blue-700 hover:underline">← Back to Teams</Link>
         
         {!isEditing && (
           <div className="flex items-center space-x-3">
@@ -125,7 +125,10 @@ function TeamPageContent({ teamId }: { teamId: string }) {
             </h3>
             {team.organization && (
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Organization: {team.organization.name}
+                <span className="font-medium text-gray-700">Parent Organization:</span>{' '}
+                <Link href={`/organizations/${team.organization.id}`} className="text-blue-700 hover:underline">
+                  {team.organization.name}
+                </Link>
               </p>
             )}
             {team.description && (

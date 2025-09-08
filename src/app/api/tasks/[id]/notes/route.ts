@@ -26,10 +26,9 @@ export async function POST(
 
     const note = await prisma.note.create({
       data: {
-        id: randomUUID(),
         content: data.content,
         taskId: id,
-      },
+      } as any,
     });
 
     return NextResponse.json(note, { status: 201 });

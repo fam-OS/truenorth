@@ -60,15 +60,11 @@ export async function POST(
     }
 
     // Otherwise, create a new member on this team
+    const createData: any = { name: data.name, teamId };
+    if (data.email !== undefined) createData.email = data.email;
+    if (data.role !== undefined) createData.role = data.role;
     const member = await prisma.teamMember.create({
-      data: {
-        id: randomUUID(),
-        name: data.name,
-        email: data.email,
-        role: data.role,
-        teamId,
-        isActive: true,
-      },
+      data: createData,
     });
 
     return NextResponse.json(member, { status: 201 });

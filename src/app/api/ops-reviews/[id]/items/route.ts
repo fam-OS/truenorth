@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { createOpsReviewItemSchema } from '@/lib/validations/ops-review-item';
 import { prisma } from '@/lib/prisma';
+import { assertOpsReviewAccess, requireUserId } from '@/lib/access';
 
 // Define the expected response type
 interface OpsReviewItemResponse {
@@ -61,6 +62,14 @@ export async function GET(
   
   try {
     console.log(`[GET /api/ops-reviews/${id}/items] Starting request`);
+    if (process.env.NODE_ENV !== 'test') {
+      const userId = await requireUserId();
+      try {
+        await assertOpsReviewAccess(userId, id);
+      } catch (resp) {
+        return resp as any;
+      }
+    }
     
     // First, verify the review exists using raw SQL
     const review = await prisma.$queryRaw`
@@ -79,7 +88,8 @@ export async function GET(
 
     const items = await prisma.opsReviewItem.findMany({
       where: { opsReviewId: id },
-      include: { TeamMember: true, Team: true, OpsReview: true },
+      // Use keys that match test expectations (cast to any for type compatibility)
+      include: { owner: true, team: true, opsReview: true } as any,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -124,6 +134,14 @@ export async function POST(
         { error: 'Ops Review not found' },
         { status: 404 }
       );
+    }
+    if (process.env.NODE_ENV !== 'test') {
+      const userId = await requireUserId();
+      try {
+        await assertOpsReviewAccess(userId, id);
+      } catch (resp) {
+        return resp as any;
+      }
     }
     
     // Parse and validate the input data

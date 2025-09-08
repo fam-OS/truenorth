@@ -1,4 +1,5 @@
 import { AuthOptions } from "next-auth";
+import { randomUUID } from "crypto";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -65,6 +66,10 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  // Allow linking OAuth provider logins to existing users by matching verified email.
+  // This prevents OAuthAccountNotLinked when a user first registered via Credentials.
+  // @ts-expect-error: Property is supported by NextAuth runtime; type defs may lag.
+  allowDangerousEmailAccountLinking: true,
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -77,6 +82,50 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
       }
       return session;
+    },
+    // Explicitly link Google account to existing user by email to avoid OAuthAccountNotLinked.
+    async signIn({ user, account }) {
+      try {
+        if (account?.provider === 'google' && user?.email) {
+          // Find existing user by email
+          const existing = await prisma.user.findUnique({
+            where: { email: user.email },
+          });
+          if (existing) {
+            // Check if this Google account is already linked for this user
+            const linked = await prisma.account.findFirst({
+              where: {
+                userId: existing.id,
+                provider: 'google',
+                providerAccountId: account.providerAccountId,
+              },
+            });
+            const alreadyLinked = Boolean(linked);
+            if (!alreadyLinked) {
+              await prisma.account.create({
+                data: {
+                  id: randomUUID(),
+                  userId: existing.id,
+                  type: account.type as string,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: (account as any).access_token ?? null,
+                  refresh_token: (account as any).refresh_token ?? null,
+                  expires_at: typeof (account as any).expires_at === 'number' ? (account as any).expires_at : null,
+                  token_type: (account as any).token_type ?? null,
+                  scope: (account as any).scope ?? null,
+                  id_token: (account as any).id_token ?? null,
+                  session_state: (account as any).session_state ?? null,
+                },
+              });
+            }
+          }
+        }
+        return true;
+      } catch (err) {
+        console.error('[NextAuth][signIn] linking error:', err);
+        return false;
+      }
     },
   },
   pages: {

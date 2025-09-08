@@ -31,6 +31,7 @@ export default function GoalDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [relatedQuarters, setRelatedQuarters] = useState<string[]>([]);
 
   useEffect(() => {
     fetchGoal();
@@ -44,6 +45,34 @@ export default function GoalDetailPage() {
       }
       const data = await response.json();
       setGoal(data);
+      // Also fetch other quarters for the same goal series (same BU, title, year)
+      try {
+        const buId = (data as any).businessUnitId || (data as any).BusinessUnit?.id;
+        if (buId) {
+          const res = await fetch(`/api/business-units/${buId}/goals`, { cache: 'no-store' });
+          if (res.ok) {
+            const list = await res.json();
+            const norm = (s: any) => (typeof s === 'string' ? s.trim().toLowerCase() : '');
+            const baseTitle = norm(data.title);
+            const quarters = (Array.isArray(list) ? list : [])
+              .filter((g: any) => norm(g.title) === baseTitle && g.year === data.year)
+              .map((g: any) => g.quarter)
+              .filter((q: any) => typeof q === 'string');
+            // Always include the current goal's quarter
+            if (typeof (data as any).quarter === 'string') {
+              quarters.push((data as any).quarter);
+            }
+            const unique = Array.from(new Set(quarters)) as string[];
+            const order = { Q1: 1, Q2: 2, Q3: 3, Q4: 4 } as any;
+            unique.sort((a, b) => (order[a] || 0) - (order[b] || 0));
+            setRelatedQuarters(unique);
+          } else {
+            setRelatedQuarters([]);
+          }
+        }
+      } catch {
+        setRelatedQuarters([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -129,16 +158,6 @@ export default function GoalDetailPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{goal.title}</h1>
               <div className="mt-2 flex items-center space-x-4">
-                {goal.status && (
-                  <span
-                    className={clsx(
-                      'px-3 py-1 text-sm font-medium rounded-full',
-                      statusColors[goal.status]
-                    )}
-                  >
-                    {goal.status.replace('_', ' ')}
-                  </span>
-                )}
                 <span className="text-sm text-gray-500">
                   {goal.quarter} {goal.year}
                 </span>
@@ -170,28 +189,20 @@ export default function GoalDetailPage() {
         <div className="grid grid-cols-1 gap-8">
           {/* Main Details */}
           <div className="space-y-6">
-            {/* Goal Details moved above Description */}
+            {/* Goal Summary for Business Unit */}
             <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Goal Details</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                {`Goal for ${((goal as any).BusinessUnit?.name ?? (goal as any).businessUnit?.name ?? 'Business Unit')}`}
+              </h2>
               <dl className="space-y-3">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Status</dt>
-                  <dd className="mt-1">
-                    <span
-                      className={clsx(
-                        'px-2 py-1 text-xs font-medium rounded-full',
-                        goal.status ? statusColors[goal.status] : 'bg-gray-100 text-gray-800'
-                      )}
-                    >
-                      {goal.status ? goal.status.replace('_', ' ') : 'Not Set'}
-                    </span>
-                  </dd>
-                </div>
+                {/* Status removed */}
 
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Period</dt>
                   <dd className="mt-1 text-sm text-gray-900">
-                    {goal.quarter} {goal.year}
+                    {relatedQuarters.length > 1
+                      ? `${relatedQuarters.join(', ')} ${goal.year}`
+                      : `${goal.quarter} ${goal.year}`}
                   </dd>
                 </div>
 

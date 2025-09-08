@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateOpsReviewSchema } from '@/lib/validations/ops-review';
 import { handleError } from '@/lib/api-response';
+import { assertOpsReviewAccess, requireUserId } from '@/lib/access';
 
 
 interface OpsReviewWithRelations {
@@ -28,6 +29,14 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        const userId = await requireUserId();
+        await assertOpsReviewAccess(userId, id);
+      } catch (resp) {
+        return resp as any;
+      }
+    }
     
     const reviews = await prisma.$queryRaw<Array<OpsReviewWithRelations & { [key: string]: any }>>`
       SELECT 
@@ -95,6 +104,15 @@ export async function PUT(
     const json = await request.json();
     const data = updateOpsReviewSchema.parse(json);
     const now = new Date().toISOString();
+
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        const userId = await requireUserId();
+        await assertOpsReviewAccess(userId, id);
+      } catch (resp) {
+        return resp as any;
+      }
+    }
 
     // First, check if the review exists
     const existingReview = await prisma.$queryRaw<Array<{ id: string }>>`
@@ -203,6 +221,14 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        const userId = await requireUserId();
+        await assertOpsReviewAccess(userId, id);
+      } catch (resp) {
+        return resp as any;
+      }
+    }
     // Use Prisma client delete so tests can mock prisma.opsReview.delete
     await prisma.opsReview.delete({ where: { id } });
 

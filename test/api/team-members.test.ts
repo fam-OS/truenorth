@@ -1,6 +1,6 @@
 import { prismaMock } from '../setup';
 import { GET as GET_MEMBERS, POST as POST_MEMBER } from '@/app/api/teams/[teamId]/members/route';
-import { GET as GET_MEMBER, PUT as PUT_MEMBER, DELETE as DELETE_MEMBER } from '@/app/api/team-members/[memberId]/route';
+import { GET as GET_MEMBER, PUT as PUT_MEMBER, DELETE as DELETE_MEMBER } from '@/app/api/team-members/[id]/route';
 
 const mockMember = {
   id: 'm1',
@@ -59,7 +59,7 @@ describe('Team Members API', () => {
     it('returns a member by id', async () => {
       prismaMock.teamMember.findUnique.mockResolvedValue(mockMember as any);
       const req = new Request('http://localhost/api/team-members/m1');
-      const res = await GET_MEMBER(req as any, { params: Promise.resolve({ memberId: 'm1' }) });
+      const res = await GET_MEMBER(req as any, { params: Promise.resolve({ id: 'm1' }) });
       const data = await res.json();
       expect(res.status).toBe(200);
       expect(data).toEqual(mockMember);
@@ -69,7 +69,7 @@ describe('Team Members API', () => {
     it('returns 404 when not found', async () => {
       prismaMock.teamMember.findUnique.mockResolvedValue(null as any);
       const req = new Request('http://localhost/api/team-members/m404');
-      const res = await GET_MEMBER(req as any, { params: Promise.resolve({ memberId: 'm404' }) });
+      const res = await GET_MEMBER(req as any, { params: Promise.resolve({ id: 'm404' }) });
       const data = await res.json();
       expect(res.status).toBe(404);
       expect(data.error).toBe('Team member not found');
@@ -84,7 +84,7 @@ describe('Team Members API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'Alice B', email: '', role: '' }),
       });
-      const res = await PUT_MEMBER(req as any, { params: Promise.resolve({ memberId: 'm1' }) });
+      const res = await PUT_MEMBER(req as any, { params: Promise.resolve({ id: 'm1' }) });
       const data = await res.json();
       expect(res.status).toBe(200);
       expect(data.name).toBe('Alice B');
@@ -99,7 +99,7 @@ describe('Team Members API', () => {
     it('deletes a member', async () => {
       prismaMock.teamMember.delete.mockResolvedValue(mockMember as any);
       const req = new Request('http://localhost/api/team-members/m1', { method: 'DELETE' });
-      const res = await DELETE_MEMBER(req as any, { params: Promise.resolve({ memberId: 'm1' }) });
+      const res = await DELETE_MEMBER(req as any, { params: Promise.resolve({ id: 'm1' }) });
       const data = await res.json();
       expect(res.status).toBe(200);
       expect(data).toEqual({ success: true });

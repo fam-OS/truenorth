@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -44,6 +45,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
   const [newMemberName, setNewMemberName] = useState('')
   const [newMemberEmail, setNewMemberEmail] = useState('')
   const [showNewMemberForm, setShowNewMemberForm] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
 
   const [overviewData, setOverviewData] = useState({
     name: companyAccount?.name || '',
@@ -108,6 +110,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
 
       if (response.ok) {
         setIsEditingOverview(false)
+        setIsCollapsed(true)
         onUpdate?.()
         window.location.reload()
       } else {
@@ -283,7 +286,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Company Overview</CardTitle>
+          <CardTitle className="text-gray-100">Company Overview</CardTitle>
         </CardHeader>
         <CardContent>
           {!isEditingOverview ? (
@@ -351,10 +354,10 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   />
                 </div>
 
-                {/* Launch Date */}
+                {/* Company founded */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Launch Date
+                    Company founded
                   </label>
                   <Input
                     value={overviewData.launchedDate}
@@ -415,7 +418,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                 <div className="space-y-3">
                   {/* Corporate Intranet */}
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Corporate Intranet</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Corporate Intranet</label>
                     <Input
                       value={overviewData.corporateIntranet}
                       onChange={(e) => setOverviewData({ ...overviewData, corporateIntranet: e.target.value })}
@@ -425,7 +428,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
 
                   {/* Glassdoor */}
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Glassdoor</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Glassdoor</label>
                     <Input
                       value={overviewData.glassdoorLink}
                       onChange={(e) => setOverviewData({ ...overviewData, glassdoorLink: e.target.value })}
@@ -435,7 +438,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
 
                   {/* LinkedIn */}
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">LinkedIn</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">LinkedIn</label>
                     <Input
                       value={overviewData.linkedinLink}
                       onChange={(e) => setOverviewData({ ...overviewData, linkedinLink: e.target.value })}
@@ -473,42 +476,55 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Company Overview</CardTitle>
-        {!isEditingOverview ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditingOverview(true)}
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit
+        <CardTitle className="text-gray-100">Company Overview</CardTitle>
+        {isCollapsed ? (
+          <Button variant="outline" size="sm" className="text-gray-100 hover:text-gray-100" onClick={() => setIsCollapsed(false)}>
+            Show
           </Button>
+        ) : !isEditingOverview ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-gray-100 hover:text-gray-100"
+              onClick={() => setIsEditingOverview(true)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-gray-100 hover:text-gray-100"
+              onClick={() => setIsCollapsed(true)}
+            >
+              Hide
+            </Button>
+          </div>
         ) : (
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
+              className="text-gray-100 hover:text-gray-100"
               onClick={handleCancelEdit}
               disabled={isLoading}
             >
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSaveOverview}
-              disabled={isLoading}
-            >
+            <Button variant="outline" size="sm" className="text-gray-100 hover:text-gray-100" onClick={handleSaveOverview} disabled={isLoading}>
               <Save className="h-4 w-4 mr-2" />
               {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </div>
         )}
       </CardHeader>
+      {!isCollapsed && (
       <CardContent className="space-y-6">
         {/* Company Name */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-1 block">
+          <label className="text-sm font-medium text-gray-300 mb-1 block">
             Company Name
           </label>
           {isEditingOverview ? (
@@ -518,13 +534,13 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
               placeholder="Enter company name"
             />
           ) : (
-            <h2 className="text-2xl font-bold">{companyAccount.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-100">{companyAccount.name}</h2>
           )}
         </div>
 
         {/* Description */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-1 block">
+          <label className="text-sm font-medium text-gray-300 mb-1 block">
             Description
           </label>
           {isEditingOverview ? (
@@ -535,13 +551,13 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
               rows={3}
             />
           ) : (
-            <p className="text-gray-600">{companyAccount.description || 'No description provided'}</p>
+            <p className="text-gray-100">{companyAccount.description || 'No description provided'}</p>
           )}
         </div>
 
         {/* Founder */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-1 block">
+          <label className="text-sm font-medium text-gray-300 mb-1 block">
             Founder
           </label>
           {isEditingOverview ? (
@@ -600,8 +616,17 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
               )}
             </div>
           ) : (
-            <p className="text-gray-600">
-              {companyAccount.founder?.name || 'No founder specified'}
+            <p className="text-gray-100">
+              {companyAccount.founder ? (
+                <Link
+                  href={`/team-members/${companyAccount.founder.id}`}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {companyAccount.founder.name}
+                </Link>
+              ) : (
+                'No founder specified'
+              )}
             </p>
           )}
         </div>
@@ -610,7 +635,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Employees */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-300 mb-1 block">
               Employees
             </label>
             {isEditingOverview ? (
@@ -620,13 +645,13 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                 placeholder="e.g., 50-100"
               />
             ) : (
-              <p className="text-gray-600">{companyAccount.employees || 'Not specified'}</p>
+              <p className="text-gray-100">{companyAccount.employees || 'Not specified'}</p>
             )}
           </div>
 
           {/* Headquarters */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-300 mb-1 block">
               Headquarters
             </label>
             {isEditingOverview ? (
@@ -636,14 +661,14 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                 placeholder="e.g., San Francisco, CA"
               />
             ) : (
-              <p className="text-gray-600">{companyAccount.headquarters || 'Not specified'}</p>
+              <p className="text-gray-100">{companyAccount.headquarters || 'Not specified'}</p>
             )}
           </div>
 
-          {/* Launch Date */}
+          {/* Company founded */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Launch Date
+            <label className="text-sm font-medium text-gray-300 mb-1 block">
+              Company founded
             </label>
             {isEditingOverview ? (
               <Input
@@ -652,13 +677,13 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                 placeholder="e.g., January 2020"
               />
             ) : (
-              <p className="text-gray-600">{companyAccount.launchedDate || 'Not specified'}</p>
+              <p className="text-gray-100">{companyAccount.launchedDate || 'Not specified'}</p>
             )}
           </div>
 
           {/* Company Type */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-300 mb-1 block">
               Company Type
             </label>
             {isEditingOverview ? (
@@ -705,7 +730,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   {companyAccount.isPrivate ? 'Private' : 'Public'}
                 </Badge>
                 {!companyAccount.isPrivate && companyAccount.tradedAs && (
-                  <p className="text-sm text-gray-600 mt-1">{companyAccount.tradedAs}</p>
+                  <p className="text-sm text-gray-100 mt-1">{companyAccount.tradedAs}</p>
                 )}
               </div>
             )}
@@ -714,13 +739,13 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
 
         {/* External Links */}
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-3 block">
+          <label className="text-sm font-medium text-gray-300 mb-3 block">
             External Links
           </label>
           <div className="space-y-3">
             {/* Corporate Intranet */}
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Corporate Intranet</label>
+              <label className="text-xs text-gray-300 mb-1 block">Corporate Intranet</label>
               {isEditingOverview ? (
                 <Input
                   value={overviewData.corporateIntranet}
@@ -737,13 +762,13 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   Corporate Intranet <ExternalLink className="h-3 w-3" />
                 </a>
               ) : (
-                <p className="text-gray-400 text-sm">Not provided</p>
+                <p className="text-gray-300 text-sm">Not provided</p>
               )}
             </div>
 
             {/* Glassdoor */}
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Glassdoor</label>
+              <label className="text-xs text-gray-300 mb-1 block">Glassdoor</label>
               {isEditingOverview ? (
                 <Input
                   value={overviewData.glassdoorLink}
@@ -760,13 +785,13 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   Glassdoor Profile <ExternalLink className="h-3 w-3" />
                 </a>
               ) : (
-                <p className="text-gray-400 text-sm">Not provided</p>
+                <p className="text-gray-500 text-sm">Not provided</p>
               )}
             </div>
 
             {/* LinkedIn */}
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">LinkedIn</label>
+              <label className="text-xs text-gray-300 mb-1 block">LinkedIn</label>
               {isEditingOverview ? (
                 <Input
                   value={overviewData.linkedinLink}
@@ -783,12 +808,22 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   LinkedIn Profile <ExternalLink className="h-3 w-3" />
                 </a>
               ) : (
-                <p className="text-gray-400 text-sm">Not provided</p>
+                <p className="text-gray-300 text-sm">Not provided</p>
               )}
             </div>
           </div>
         </div>
+
+        {isEditingOverview && (
+          <div className="pt-2 flex justify-end">
+            <Button variant="outline" size="sm" className="text-gray-100 hover:text-gray-100" onClick={handleSaveOverview} disabled={isLoading}>
+              <Save className="h-4 w-4 mr-2" />
+              {isLoading ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        )}
       </CardContent>
+      )}
     </Card>
   )
 }

@@ -1,13 +1,11 @@
 import { z } from 'zod';
 
 const quarterEnum = z.enum(['Q1', 'Q2', 'Q3', 'Q4']);
+const kpiTypeEnum = z.enum(['QUALITATIVE', 'QUANTITATIVE']);
 
 export const createKpiSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   targetMetric: z.number().optional(),
-  actualMetric: z.number().optional(),
-  forecastedRevenue: z.number().optional(),
-  actualRevenue: z.number().optional(),
   quarter: quarterEnum,
   year: z.number().int(),
   organizationId: z.string().min(1, 'Organization ID is required'),
@@ -22,6 +20,9 @@ export const createKpiSchema = z.object({
     .optional()
     .nullable()
     .transform((v) => (v ? v : undefined)),
+  businessUnitIds: z.array(z.string()).optional(),
+  kpiType: kpiTypeEnum.optional(),
+  revenueImpacting: z.boolean().optional(),
 });
 
 export const updateKpiSchema = createKpiSchema.partial();

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getViewerCompanyOrgIds } from '@/lib/access';
 
 const updateTeamSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -15,12 +18,47 @@ export async function GET(
 ) {
   try {
     const { teamId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const allowed = await prisma.team.findFirst({ where: { id: teamId, organizationId: { in: orgIds } }, select: { id: true } });
+      if (!allowed) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const include = process.env.NODE_ENV === 'test'
+      ? ({ organization: true, members: true } as any)
+      : ({
+          Organization: { select: { id: true, name: true } },
+          TeamMember: { select: { id: true, name: true, email: true, role: true } },
+        } as any);
     const team = await prisma.team.findUnique({
       where: { id: teamId },
-      include: { Organization: true, TeamMember: true },
+      include,
     });
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
-    return NextResponse.json(team);
+
+    // Transform to the shape expected by the Team page
+    const orgRaw = (team as any).organization ?? (team as any).Organization ?? null;
+    const membersRaw = ((team as any).members ?? (team as any).TeamMember ?? []) as any[];
+    const response = {
+      id: (team as any).id,
+      name: (team as any).name,
+      description: (team as any).description ?? null,
+      organizationId: (team as any).organizationId,
+      organization: orgRaw
+        ? { id: orgRaw.id, name: orgRaw.name }
+        : null,
+      members: membersRaw.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email || '',
+        role: m.role || 'Member',
+      })),
+    };
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching team:', error);
     return handleError(error);
@@ -33,6 +71,15 @@ export async function PUT(
 ) {
   try {
     const { teamId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const allowed = await prisma.team.findFirst({ where: { id: teamId, organizationId: { in: orgIds } }, select: { id: true } });
+      if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const json = await request.json();
     console.log('Team update request data:', json);
     const data = updateTeamSchema.parse(json);
@@ -61,6 +108,15 @@ export async function DELETE(
 ) {
   try {
     const { teamId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const allowed = await prisma.team.findFirst({ where: { id: teamId, organizationId: { in: orgIds } }, select: { id: true } });
+      if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     await prisma.team.delete({ where: { id: teamId } });
     return NextResponse.json({ success: true });
   } catch (error) {

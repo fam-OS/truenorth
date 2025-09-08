@@ -6,7 +6,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 export type KpiFormValues = {
   name: string;
   targetMetric?: number;
-  actualMetric?: number;
+  actualMetric?: number; // computed on server; displayed read-only
   forecastedRevenue?: number;
   actualRevenue?: number;
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
@@ -14,6 +14,9 @@ export type KpiFormValues = {
   organizationId: string;
   teamId: string;
   initiativeId?: string;
+  kpiType?: 'QUALITATIVE' | 'QUANTITATIVE';
+  revenueImpacting?: boolean;
+  businessUnitIds?: string[];
 };
 
 export function KpiForm({
@@ -30,6 +33,7 @@ export function KpiForm({
   const { currentOrg } = useOrganization();
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
   const [initiatives, setInitiatives] = useState<Array<{ id: string; name: string }>>([]);
+  const [businessUnits, setBusinessUnits] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +52,9 @@ export function KpiForm({
     organizationId: defaultValues?.organizationId ?? currentOrg?.id ?? '',
     teamId: defaultValues?.teamId ?? '',
     initiativeId: defaultValues?.initiativeId,
+    kpiType: (defaultValues as any)?.kpiType,
+    revenueImpacting: (defaultValues as any)?.revenueImpacting ?? false,
+    businessUnitIds: (defaultValues as any)?.businessUnitIds ?? [],
   }));
 
   useEffect(() => {
@@ -59,9 +66,10 @@ export function KpiForm({
       try {
         setLoading(true);
         setError(null);
-        const [teamsRes, initsRes] = await Promise.all([
+        const [teamsRes, initsRes, busRes] = await Promise.all([
           fetch('/api/teams'),
           currentOrg?.id ? fetch(`/api/initiatives?orgId=${currentOrg.id}`) : Promise.resolve({ ok: true, json: async () => [] }),
+          fetch('/api/business-units'),
         ]);
         if (!teamsRes.ok) throw new Error('Failed to load teams');
         const teamsJson = await teamsRes.json();
@@ -69,6 +77,9 @@ export function KpiForm({
         if (!initsRes.ok) throw new Error('Failed to load initiatives');
         const initsJson = await initsRes.json();
         setInitiatives(initsJson);
+        if (!busRes.ok) throw new Error('Failed to load business units');
+        const busJson = await busRes.json();
+        setBusinessUnits(busJson);
       } catch (e) {
         console.error(e);
         setError('Failed to load form data');
@@ -127,39 +138,62 @@ export function KpiForm({
         </div>
       </div>
 
+      {/* KPI Type and Revenue Impacting */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700" htmlFor="kpiType">KPI Type</label>
+          <select
+            id="kpiType"
+            className={input}
+            value={form.kpiType || ''}
+            onChange={(e) => setForm({ ...form, kpiType: (e.target.value || undefined) as any })}
+          >
+            <option value="">Select type</option>
+            <option value="QUALITATIVE">Qualitative</option>
+            <option value="QUANTITATIVE">Quantitative</option>
+          </select>
+        </div>
+        <div className="flex items-end">
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              checked={!!form.revenueImpacting}
+              onChange={(e) => setForm({ ...form, revenueImpacting: e.target.checked })}
+            />
+            Revenue Impacting
+          </label>
+        </div>
+      </div>
+
+      {/* Business Units multi-select */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700" htmlFor="businessUnitIds">Business Units</label>
+        <select
+          id="businessUnitIds"
+          multiple
+          className={input}
+          value={form.businessUnitIds || []}
+          onChange={(e) => {
+            const options = Array.from(e.target.selectedOptions).map((o) => o.value);
+            setForm({ ...form, businessUnitIds: options });
+          }}
+        >
+          {businessUnits.map((bu) => (
+            <option key={bu.id} value={bu.id}>{bu.name}</option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-gray-500">Select all business units this KPI applies to</p>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700" htmlFor="targetMetric">Target</label>
           <input id="targetMetric" type="number" step="any" className={input} value={form.targetMetric ?? ''} onChange={(e) => setForm({ ...form, targetMetric: e.target.value === '' ? undefined : Number(e.target.value) })} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700" htmlFor="actualMetric">Actual</label>
-          <input id="actualMetric" type="number" step="any" className={input} value={form.actualMetric ?? ''} onChange={(e) => setForm({ ...form, actualMetric: e.target.value === '' ? undefined : Number(e.target.value) })} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700" htmlFor="forecastedRevenue">Forecasted Revenue</label>
-          <input
-            id="forecastedRevenue"
-            type="number"
-            step="any"
-            className={input}
-            value={form.forecastedRevenue ?? ''}
-            onChange={(e) => setForm({ ...form, forecastedRevenue: e.target.value === '' ? undefined : Number(e.target.value) })}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700" htmlFor="actualRevenue">Actual Revenue</label>
-          <input
-            id="actualRevenue"
-            type="number"
-            step="any"
-            className={input}
-            value={form.actualRevenue ?? ''}
-            onChange={(e) => setForm({ ...form, actualRevenue: e.target.value === '' ? undefined : Number(e.target.value) })}
-          />
+          <label className="block text-sm font-medium text-gray-700" htmlFor="actualMetric">Actual (calculated)</label>
+          <input id="actualMetric" type="number" step="any" className={input + ' bg-gray-50'} value={form.actualMetric ?? ''} readOnly disabled />
         </div>
       </div>
 

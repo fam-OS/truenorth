@@ -29,6 +29,13 @@ export default function BusinessUnitsPage() {
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Search state for 3-column overview
+  const [searchBU, setSearchBU] = useState('');
+  const [searchStake, setSearchStake] = useState('');
+  const [searchGoal, setSearchGoal] = useState('');
+  const [recentGoals, setRecentGoals] = useState<any[]>([]);
+  const [buInitiatives, setBuInitiatives] = useState<any[]>([]);
+  const [buKpis, setBuKpis] = useState<any[]>([]);
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
   const { showToast } = useToast();
@@ -102,6 +109,19 @@ export default function BusinessUnitsPage() {
         if (isMounted.current) setAllStakeholders([]);
       }
 
+      // Fetch recent goals for overview
+      try {
+        const goalsRes = await fetch('/api/goals?recentDays=30&limit=5', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+        if (goalsRes.ok) {
+          const g = await goalsRes.json();
+          if (isMounted.current) setRecentGoals(Array.isArray(g) ? g : []);
+        } else {
+          if (isMounted.current) setRecentGoals([]);
+        }
+      } catch {
+        if (isMounted.current) setRecentGoals([]);
+      }
+
       if (selectedUnit) {
         const updatedUnit = businessUnitsData.find((unit: BusinessUnitWithDetails) => unit.id === selectedUnit.id);
         if (updatedUnit) setSelectedUnit(updatedUnit);
@@ -158,6 +178,42 @@ export default function BusinessUnitsPage() {
         }
       })();
     }
+  }, [viewMode, selectedUnit?.id]);
+
+  // Load Initiatives and KPIs for the selected Business Unit in detail view
+  useEffect(() => {
+    if (viewMode !== 'detail' || !selectedUnit) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [initRes, kpiRes] = await Promise.all([
+          fetch(`/api/initiatives?businessUnitId=${encodeURIComponent(selectedUnit.id)}`, { cache: 'no-store' }),
+          fetch(`/api/kpis?businessUnitId=${encodeURIComponent(selectedUnit.id)}`, { cache: 'no-store' }),
+        ]);
+        if (!cancelled) {
+          if (initRes.ok) {
+            const inits = await initRes.json();
+            setBuInitiatives(Array.isArray(inits) ? inits : []);
+          } else {
+            setBuInitiatives([]);
+          }
+          if (kpiRes.ok) {
+            const kp = await kpiRes.json();
+            setBuKpis(Array.isArray(kp) ? kp : []);
+          } else {
+            setBuKpis([]);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setBuInitiatives([]);
+          setBuKpis([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [viewMode, selectedUnit?.id]);
 
   async function handleCreateBusinessUnit({ name, description }: { name: string; description?: string }) {
@@ -312,25 +368,37 @@ export default function BusinessUnitsPage() {
   };
 
   async function handleCreateGoal(data: any) {
-    if (!selectedUnit) return;
-
+    // Allow creating from global modal by using selectedUnit OR the BU chosen in the form
+    const targetBU = selectedUnit?.id || data.businessUnitId;
+    if (!targetBU) {
+      showToast({ title: 'Business unit required', description: 'Please select a Business Unit for this goal.', type: 'destructive' });
+      return;
+    }
     try {
       setIsSubmitting(true);
       setError('');
       
-      const response = await fetch(`/api/business-units/${selectedUnit.id}/goals`, {
+      const response = await fetch(`/api/business-units/${targetBU}/goals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create goal');
+        let raw = '';
+        try { raw = await response.clone().text(); } catch {}
+        let msg = 'Failed to create goal';
+        try {
+          const json = JSON.parse(raw || '{}');
+          msg = json.error || json.message || msg;
+        } catch {
+          msg = raw || msg;
+        }
+        throw new Error(msg);
       }
       
       await fetchData();
-      setViewMode('detail');
+      setViewMode(selectedUnit ? 'detail' : 'list');
       showToast({ title: 'Goal created', description: 'Goal was created successfully.' });
     } catch (err) {
       console.error('Error creating goal:', err);
@@ -395,15 +463,15 @@ export default function BusinessUnitsPage() {
   const renderContent = () => {
     switch (viewMode) {
       case 'createGoal':
-        return selectedUnit ? (
+        return (
           <GoalFormModal
             isOpen={true}
-            onClose={() => setViewMode('detail')}
-            goal={editingGoal || undefined}
+            onClose={() => setViewMode(selectedUnit ? 'detail' : 'list')}
+            goal={(editingGoal || (selectedUnit ? ({ businessUnitId: selectedUnit.id } as any) : undefined))}
             onSubmit={editingGoal ? handleUpdateGoal : handleCreateGoal}
             isSubmitting={isSubmitting}
           />
-        ) : null;
+        );
       case 'createUnit':
         return (
           <div>
@@ -449,9 +517,6 @@ export default function BusinessUnitsPage() {
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedUnit.name}
                 </h2>
-                <p className="text-sm text-gray-500">
-                  {selectedUnit.Organization?.name || 'No organization'}
-                </p>
               </div>
               <div className="flex items-center space-x-4">
                 <button
@@ -474,19 +539,18 @@ export default function BusinessUnitsPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="border-t border-gray-200 pt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Goals</h3>
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-gray-900">Goals</h2>
                   <button
                     onClick={() => setViewMode('createGoal')}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Add Goal
+                    New Goal
                   </button>
                 </div>
                 <GoalList
                   goals={selectedUnit.Goal || []}
                   onEditGoal={handleEditGoal}
-                  onCreateGoal={handleCreateNewGoal}
                   onSelectGoal={(goal) => {
                     // Navigate to goal detail page
                     window.location.href = `/goals/${goal.id}`;
@@ -542,6 +606,102 @@ export default function BusinessUnitsPage() {
                       </button>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Initiatives and KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Initiatives */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-gray-900">Initiatives</h2>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setTimeout(() => { window.location.href = `/initiatives/new?businessUnitId=${encodeURIComponent(selectedUnit.id)}`; }, 0)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      New Initiative
+                    </button>
+                    <button
+                      onClick={() => window.location.href = `/initiatives-kpis`}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      View all
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200">
+                    {buInitiatives.slice(0, 5).map((init) => (
+                      <li key={init.id} className="px-4 py-4">
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => window.location.href = `/initiatives-kpis#initiative-${init.id}`}
+                            className="text-sm font-medium text-blue-600 hover:underline truncate"
+                          >
+                            {init.name}
+                          </button>
+                          <span className="text-xs text-gray-500">
+                            {init.status || '—'}
+                          </span>
+                        </div>
+                        {init.summary && (
+                          <p className="mt-1 text-xs text-gray-600 line-clamp-2">{init.summary}</p>
+                        )}
+                      </li>
+                    ))}
+                    {buInitiatives.length === 0 && (
+                      <li className="px-4 py-6 text-sm text-gray-500 text-center">No initiatives</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+
+              {/* KPIs */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-gray-900">KPIs</h2>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setTimeout(() => { window.location.href = `/kpis/new?businessUnitId=${encodeURIComponent(selectedUnit.id)}`; }, 0)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      New KPI
+                    </button>
+                    <button
+                      onClick={() => window.location.href = `/initiatives-kpis`}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      View all
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200">
+                    {buKpis.slice(0, 5).map((kpi) => (
+                      <li key={kpi.id} className="px-4 py-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{kpi.name}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{kpi.quarter} {kpi.year}</p>
+                          </div>
+                          <div className="text-right">
+                            {typeof kpi.actualMetric === 'number' && typeof kpi.targetMetric === 'number' ? (
+                              <p className="text-xs text-gray-700">
+                                {kpi.actualMetric} / {kpi.targetMetric}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-500">—</p>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                    {buKpis.length === 0 && (
+                      <li className="px-4 py-6 text-sm text-gray-500 text-center">No KPIs</li>
+                    )}
+                  </ul>
                 </div>
               </div>
             </div>
@@ -648,6 +808,12 @@ export default function BusinessUnitsPage() {
                   >
                     New Business Unit
                   </button>
+                  <button
+                    onClick={() => { setEditingGoal(null); setViewMode('createGoal'); }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    New Goal
+                  </button>
                 </div>
               )}
             </div>
@@ -663,43 +829,89 @@ export default function BusinessUnitsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-8">
-                {/* Business Units section */}
-                <div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Column 1: Business Units */}
+                <div className="bg-white shadow rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold">Business Units</h2>
+                    <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/business-units'}>View all</button>
                   </div>
-                  <BusinessUnitList
-                    businessUnits={businessUnits}
-                    onSelectUnit={(unit) => {
-                      setSelectedUnit(unit);
-                      setViewMode('detail');
-                    }}
-                    onAddStakeholder={(unit) => {
-                      setSelectedUnit(unit);
-                      setViewMode('createStakeholder');
-                    }}
+                  <input
+                    className="w-full mb-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Search Business Units..."
+                    value={searchBU}
+                    onChange={(e) => setSearchBU(e.target.value)}
                   />
+                  <ul className="divide-y divide-gray-200">
+                    {businessUnits
+                      .filter((u) => (u.name || '').toLowerCase().includes(searchBU.toLowerCase()))
+                      .sort((a, b) => new Date(b.updatedAt || b.createdAt as any).getTime() - new Date(a.updatedAt || a.createdAt as any).getTime())
+                      .slice(0, 5)
+                      .map((u) => (
+                        <li key={u.id} className="py-2 flex justify-between items-center">
+                          <button className="text-sm text-blue-600 hover:underline" onClick={() => { setSelectedUnit(u); setViewMode('detail'); }}>{u.name}</button>
+                        </li>
+                      ))}
+                    {businessUnits.length === 0 && (
+                      <li className="py-6 text-sm text-gray-500 text-center">No business units</li>
+                    )}
+                  </ul>
                 </div>
 
-                {/* Stakeholders section moved from /units-stakeholders */}
-                <div>
+                {/* Column 2: Stakeholders */}
+                <div className="bg-white shadow rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold">Stakeholders</h2>
-                    <button
-                      className="text-sm text-blue-600 hover:underline"
-                      onClick={() => (window.location.href = '/stakeholders')}
-                    >
-                      View all
-                    </button>
+                    <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/stakeholders'}>View all</button>
                   </div>
-                  <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                    <StakeholderList
-                      stakeholders={allStakeholders}
-                      onSelectStakeholder={(s) => (window.location.href = `/stakeholders/${s.id}`)}
-                      onCreateStakeholder={() => (window.location.href = '/stakeholders')}
-                    />
+                  <input
+                    className="w-full mb-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Search Stakeholders..."
+                    value={searchStake}
+                    onChange={(e) => setSearchStake(e.target.value)}
+                  />
+                  <ul className="divide-y divide-gray-200">
+                    {allStakeholders
+                      .filter((s) => (s.name || '').toLowerCase().includes(searchStake.toLowerCase()))
+                      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+                      .slice(0, 5)
+                      .map((s) => (
+                        <li key={s.id} className="py-2 flex justify-between items-center">
+                          <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = `/stakeholders/${s.id}`}>{s.name}</button>
+                          <span className="text-xs text-gray-500">{s.role}</span>
+                        </li>
+                      ))}
+                    {allStakeholders.length === 0 && (
+                      <li className="py-6 text-sm text-gray-500 text-center">No stakeholders</li>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Column 3: Goals */}
+                <div className="bg-white shadow rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold">Goals</h2>
+                    <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/initiatives-kpis'}>View all</button>
                   </div>
+                  <input
+                    className="w-full mb-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Search Goals..."
+                    value={searchGoal}
+                    onChange={(e) => setSearchGoal(e.target.value)}
+                  />
+                  <ul className="divide-y divide-gray-200">
+                    {recentGoals
+                      .filter((g) => (g.title || '').toLowerCase().includes(searchGoal.toLowerCase()))
+                      .map((g) => (
+                        <li key={g.id} className="py-2 flex justify-between items-center">
+                          <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = `/goals/${g.id}`}>{g.title}</button>
+                          <span className="text-xs text-gray-500">{g.quarter} {g.year} {g.status ? `| ${g.status}` : ''}</span>
+                        </li>
+                      ))}
+                    {recentGoals.length === 0 && (
+                      <li className="py-6 text-sm text-gray-500 text-center">No goals</li>
+                    )}
+                  </ul>
                 </div>
               </div>
             )}

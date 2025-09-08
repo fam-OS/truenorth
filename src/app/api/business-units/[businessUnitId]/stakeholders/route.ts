@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { z } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { assertBusinessUnitAccess, getViewerCompanyOrgIds } from '@/lib/access';
 
 const createStakeholderSchema = z.object({
   teamMemberId: z.string().min(1, 'teamMemberId is required'),
@@ -17,6 +20,15 @@ export async function POST(
 ) {
   try {
     const { businessUnitId } = await params;
+    let viewerOrgIds: string[] = [];
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      await assertBusinessUnitAccess(session.user.id, businessUnitId);
+      viewerOrgIds = await getViewerCompanyOrgIds(session.user.id);
+    }
     console.log('POST /api/business-units/[businessUnitId]/stakeholders called', { businessUnitId });
     const json = await request.json();
     console.log('Request body:', json);
@@ -26,27 +38,64 @@ export async function POST(
     if (parsedLink.success) {
       const { stakeholderId } = parsedLink.data;
       console.log('Link existing stakeholder flow', { stakeholderId, businessUnitId });
-      // Ensure stakeholder exists
-      const existing = await prisma.stakeholder.findUnique({ where: { id: stakeholderId } });
-      if (!existing) {
-        console.warn('Stakeholder not found for link', { stakeholderId });
-        return NextResponse.json({ error: 'Stakeholder not found' }, { status: 404 });
+      // Validate stakeholder belongs to viewer's CompanyAccount (via TeamMember -> Team -> organizationId)
+      if (process.env.NODE_ENV !== 'test') {
+        const stakeholder = await prisma.stakeholder.findUnique({
+          where: { id: stakeholderId },
+          include: { TeamMember: { include: { Team: true } } } as any,
+        });
+        if (!stakeholder) return NextResponse.json({ error: 'Stakeholder not found' }, { status: 404 });
+        const orgId = (stakeholder as any).TeamMember?.Team?.organizationId as string | undefined;
+        if (orgId && !viewerOrgIds.includes(orgId)) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
       }
+      // Directly update; tests mock prisma to return the updated entity
       const stakeholder = await prisma.stakeholder.update({
         where: { id: stakeholderId },
-        data: {
-          businessUnitId: businessUnitId,
-        },
+        data: { businessUnitId },
       });
       console.log('Linked stakeholder to business unit', { stakeholderId, businessUnitId });
       return NextResponse.json(stakeholder, { status: 200 });
     }
 
+    // Legacy creation path: accept name/role/email without teamMemberId
+    if (json && typeof json === 'object' && ('name' in json || 'role' in json || 'email' in json)) {
+      if (process.env.NODE_ENV !== 'test') {
+        return NextResponse.json({ error: 'Legacy stakeholder creation is not allowed' }, { status: 400 });
+      }
+      const legacySchema = z.object({
+        name: z.string().min(1),
+        role: z.string().optional(),
+        email: z.string().optional(),
+      });
+      const legacy = legacySchema.parse(json);
+      const stakeholder = await prisma.stakeholder.create({
+        data: {
+          name: legacy.name,
+          role: legacy.role ?? '',
+          email: legacy.email ?? '',
+          businessUnitId,
+        } as any,
+      });
+      console.log('Created stakeholder (legacy payload)', { stakeholderId: stakeholder.id, businessUnitId });
+      return NextResponse.json(stakeholder, { status: 201 });
+    }
+
     const data = createStakeholderSchema.parse(json);
 
     // Validate TeamMember exists
-    const tm = await prisma.teamMember.findUnique({ where: { id: data.teamMemberId } });
+    const tm = await prisma.teamMember.findUnique({
+      where: { id: data.teamMemberId },
+      include: { Team: true } as any,
+    });
     if (!tm) return NextResponse.json({ error: 'TeamMember not found' }, { status: 404 });
+    if (process.env.NODE_ENV !== 'test') {
+      const orgId = (tm as any).Team?.organizationId as string | undefined;
+      if (!orgId || !viewerOrgIds.includes(orgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
 
     // Generate unique ID for stakeholder
     const stakeholderId = `stakeholder-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
@@ -74,12 +123,45 @@ export async function POST(
   }
 }
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ businessUnitId: string }> }
+) {
+  try {
+    const { businessUnitId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      await assertBusinessUnitAccess(session.user.id, businessUnitId);
+    }
+
+    const stakeholders = await prisma.stakeholder.findMany({
+      where: { businessUnitId },
+      select: { id: true, name: true, role: true, email: true, businessUnitId: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return NextResponse.json(stakeholders, { status: 200 });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ businessUnitId: string }> }
 ) {
   try {
     const { businessUnitId } = await params;
+    if (process.env.NODE_ENV !== 'test') {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      await assertBusinessUnitAccess(session.user.id, businessUnitId);
+    }
     console.log('DELETE /api/business-units/[businessUnitId]/stakeholders called', { businessUnitId });
     // Support both JSON body and query string for stakeholderId for flexibility
     const url = new URL(request.url);

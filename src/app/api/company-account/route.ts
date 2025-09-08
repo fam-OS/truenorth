@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { requireUserId } from '@/lib/access';
+import { handleError } from '@/lib/api-response';
 
 const createCompanyAccountSchema = z.object({
   name: z.string().min(1, 'Company name is required'),
@@ -20,15 +20,11 @@ const createCompanyAccountSchema = z.object({
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     const companyAccount = await prisma.companyAccount.findFirst({
       where: {
-        userId: session.user.id
+        userId: userId
       }
     });
 
@@ -57,26 +53,18 @@ export async function GET() {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching company account:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
 
     // Check if user already has a company account (1:1 relationship)
     const existingAccount = await prisma.companyAccount.findFirst({
       where: {
-        userId: session.user.id
+        userId: userId
       }
     });
 
@@ -97,7 +85,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: `company-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
         ...companyData,
-        userId: session.user.id,
+        userId: userId,
         ...(founderId && founderId !== '' ? {
           founderId: founderId
         } : {})
@@ -121,22 +109,65 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // If a founderId was provided, ensure an Organization and an Executive Team exist,
+    // and link the founder to that Executive Team. Do not create any other teams automatically.
+    if (process.env.NODE_ENV !== 'test' && founderId) {
+      // Ensure there is at least one Organization for this CompanyAccount
+      let organization = await prisma.organization.findFirst({
+        where: { companyAccountId: companyAccount.id },
+        select: { id: true, name: true },
+      });
+      if (!organization) {
+        organization = await prisma.organization.create({
+          data: {
+            id: `org-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            name: companyAccount.name,
+            description: companyAccount.description ?? null,
+            companyAccountId: companyAccount.id,
+          },
+          select: { id: true, name: true },
+        });
+      }
+
+      // Ensure Executive Team exists under that organization
+      const execName = 'Executive Team';
+      let executiveTeam = await prisma.team.findFirst({
+        where: { organizationId: organization.id, name: execName },
+        select: { id: true },
+      });
+      if (!executiveTeam) {
+        try {
+          executiveTeam = await prisma.team.create({
+            data: { name: execName, organizationId: organization.id, description: 'Company leadership team' },
+            select: { id: true },
+          });
+        } catch {
+          executiveTeam = await prisma.team.findFirst({ where: { organizationId: organization.id, name: execName }, select: { id: true } });
+        }
+      }
+
+      // Link founder TeamMember to CompanyAccount and Executive Team (ignore if missing)
+      try {
+        await prisma.teamMember.update({
+          where: { id: founderId },
+          data: {
+            CompanyAccount: { connect: { id: companyAccount.id } },
+            ...(executiveTeam?.id ? { Team: { connect: { id: executiveTeam.id } } } : {}),
+          },
+        });
+      } catch (e) {
+        console.warn('Founder team member could not be linked to Executive Team on creation:', e);
+      }
+    }
+
     return NextResponse.json(companyAccount, { status: 201 });
   } catch (error) {
-    console.error('Error creating company account:', error);
-    console.error('Error details:', error instanceof Error ? error.message : error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
     if (error instanceof Error && error.name === 'ZodError') {
       return NextResponse.json(
         { error: 'Invalid data', details: error.message },
         { status: 400 }
       );
     }
-
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

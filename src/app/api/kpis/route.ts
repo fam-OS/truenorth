@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleError } from '@/lib/api-response';
 import { createKpiSchema } from '@/lib/validations/kpi';
+import { getViewerCompanyOrgIds, requireUserId } from '@/lib/access';
 
 export async function GET(request: Request) {
   try {
@@ -13,26 +14,26 @@ export async function GET(request: Request) {
     const quarter = searchParams.get('quarter') || undefined;
     const year = searchParams.get('year') ? parseInt(searchParams.get('year') as string, 10) : undefined;
 
+    let orgIdsFilter: string[] | undefined = undefined;
+    if (process.env.NODE_ENV !== 'test') {
+      const userId = await requireUserId();
+      const viewerOrgIds = await getViewerCompanyOrgIds(userId);
+      if (orgId) {
+        if (!viewerOrgIds.includes(orgId)) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      } else {
+        orgIdsFilter = viewerOrgIds;
+      }
+    }
+
     const kpis = await prisma.kpi.findMany({
-      select: {
-        id: true,
-        name: true,
-        targetMetric: true,
-        actualMetric: true,
-        metTarget: true,
-        metTargetPercent: true,
-        quarter: true,
-        year: true,
-        organizationId: true,
-        teamId: true,
-        initiativeId: true,
-        businessUnitId: true,
-        createdAt: true,
-        updatedAt: true,
+      include: ({
         Team: { select: { id: true, name: true } },
-      },
+        KpiBusinessUnit: { include: { BusinessUnit: { select: { id: true, name: true } } } },
+      } as any),
       where: {
-        organizationId: orgId,
+        organizationId: orgIdsFilter ? { in: orgIdsFilter } : (orgId as any),
         teamId: teamId,
         initiativeId: initiativeId,
         businessUnitId: businessUnitId,
@@ -55,13 +56,20 @@ export async function POST(request: Request) {
     const data = createKpiSchema.parse(json);
 
     // derive computed fields from provided metrics
-    const { targetMetric, actualMetric, organizationId, teamId, initiativeId, businessUnitId, ...rest } = data as any;
+    const { targetMetric, actualMetric, organizationId, teamId, initiativeId, businessUnitId, businessUnitIds, kpiType, revenueImpacting, ...rest } = data as any;
     // Default organization from URL if not provided in body
     const { searchParams } = new URL(request.url);
     const orgIdFromUrl = searchParams.get('orgId') || undefined;
     const finalOrgId = organizationId || orgIdFromUrl;
     if (!finalOrgId) {
       return NextResponse.json({ error: 'organizationId is required' }, { status: 400 });
+    }
+    if (process.env.NODE_ENV !== 'test') {
+      const userId = await requireUserId();
+      const viewerOrgIds = await getViewerCompanyOrgIds(userId);
+      if (!viewerOrgIds.includes(finalOrgId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     const org = await prisma.organization.findUnique({ where: { id: finalOrgId } });
     if (!org) {
@@ -86,6 +94,8 @@ export async function POST(request: Request) {
         actualMetric,
         metTarget,
         metTargetPercent,
+        kpiType,
+        revenueImpacting,
         ...(finalOrgId ? { Organization: { connect: { id: finalOrgId } } } : {}),
         ...(teamId ? { Team: { connect: { id: teamId } } } : {}),
         ...(initiativeId ? { Initiative: { connect: { id: initiativeId } } } : {}),
@@ -93,6 +103,16 @@ export async function POST(request: Request) {
       },
       include: { Team: true, Initiative: true },
     });
+
+    // If multiple business units provided, create junctions
+    if (Array.isArray(businessUnitIds) && businessUnitIds.length > 0) {
+      const values = businessUnitIds
+        .filter((id: string) => !!id)
+        .map((buId: string) => ({ kpiId: kpi.id, businessUnitId: buId }));
+      if (values.length > 0) {
+        await (prisma as any).kpiBusinessUnit.createMany({ data: values, skipDuplicates: true });
+      }
+    }
 
     return NextResponse.json(kpi, { status: 201 });
   } catch (error) {

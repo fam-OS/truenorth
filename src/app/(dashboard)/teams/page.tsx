@@ -122,6 +122,56 @@ export default function TeamsPage() {
     }).format(n);
   }
 
+  // Export current headcount rows to CSV (uses visible state and team lookup for names)
+  const exportHeadcountCSV = () => {
+    try {
+      const headers = [
+        'Team',
+        'Role',
+        'Level',
+        'Salary',
+        'Q1 Forecast','Q1 Actual',
+        'Q2 Forecast','Q2 Actual',
+        'Q3 Forecast','Q3 Actual',
+        'Q4 Forecast','Q4 Actual',
+        'Notes',
+        'Year',
+      ];
+      const lines: string[] = [];
+      lines.push(headers.join(','));
+      for (const r of headcount) {
+        const teamName = teams.find((t) => t.id === r.teamId)?.name ?? '';
+        const row = [
+          teamName,
+          r.role,
+          r.level,
+          String(r.salary),
+          String(r.q1Forecast), String(r.q1Actual),
+          String(r.q2Forecast), String(r.q2Actual),
+          String(r.q3Forecast), String(r.q3Actual),
+          String(r.q4Forecast), String(r.q4Actual),
+          (r.notes ?? '').replace(/\r?\n/g, ' ').replace(/,/g, ';'),
+          String(r.year),
+        ];
+        lines.push(row.map((v) => `"${(v ?? '').toString().replace(/"/g, '""')}"`).join(','));
+      }
+
+      const csv = lines.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const y = new Date().getFullYear();
+      a.href = url;
+      a.download = `headcount_${y}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setHcError(e instanceof Error ? e.message : 'Failed to export CSV');
+    }
+  };
+
   const headcountSummary = useMemo(() => {
     let forecastHC = 0;
     let actualHC = 0;
@@ -253,11 +303,28 @@ export default function TeamsPage() {
   // Keep for future normalization if API shape changes again
   const displayMembers = useMemo(() => members, [members]);
 
+  const orderedTeams = useMemo(() => {
+    const arr = [...teams];
+    const weight = (t: Team) => (/^executive team$/i.test(t.name?.trim() ?? '') ? 1 : 0);
+    // Sort by weight first (non-exec before exec), then by name asc
+    arr.sort((a, b) => {
+      const dw = weight(a) - weight(b);
+      if (dw !== 0) return dw;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    return arr;
+  }, [teams]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Team Management</h1>
         <div className="text-sm text-gray-500">Teams and Members</div>
+      </div>
+      <div>
+        <Link href="/org-chart" className="text-sm text-blue-600 hover:underline">
+          Visualize Org Chart
+        </Link>
       </div>
 
       {error && (
@@ -272,12 +339,16 @@ export default function TeamsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Teams Column */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 border-b font-medium">Teams</div>
+            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+              <span>Teams ({teams.length})</span>
+              <Link href="/teams/list" className="text-xs text-blue-600 hover:underline">View All Teams</Link>
+            </div>
             {teams.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No teams found.</div>
             ) : (
+              <>
               <ul className="divide-y">
-                {teams.map((t) => (
+                {orderedTeams.slice(0, 5).map((t) => (
                   <li key={t.id} className="px-4 py-3 flex items-center justify-between">
                     <div>
                       <Link href={`/teams/${t.id}`} className="text-sm text-blue-600 hover:underline">
@@ -291,17 +362,23 @@ export default function TeamsPage() {
                   </li>
                 ))}
               </ul>
+              
+              </>
             )}
           </div>
 
           {/* Team Members Column */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 border-b font-medium">Team Members ({members.length})</div>
+            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+              <span>Team Members ({members.length})</span>
+              <Link href="/team-members/list" className="text-xs text-blue-600 hover:underline">View All Team Members</Link>
+            </div>
             {displayMembers.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No team members found.</div>
             ) : (
+              <>
               <ul className="divide-y">
-                {members.map((m, idx) => (
+                {displayMembers.slice(0, 5).map((m, idx) => (
                   <li key={m.id ?? `row-${idx}`} className="px-4 py-3 flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       {m.id ? (
@@ -322,6 +399,7 @@ export default function TeamsPage() {
                 ))}
               </ul>
               
+              </>
             )}
           </div>
 
@@ -329,7 +407,9 @@ export default function TeamsPage() {
           <div className="bg-white shadow rounded-lg lg:col-span-2">
             <div className="px-4 py-3 border-b flex items-center justify-between">
               <div className="font-medium">Team Planning — Headcount Manager ({currentYear})</div>
-              <Link href="/api/headcount" className="text-xs text-blue-600 hover:underline">API</Link>
+              <div className="flex items-center gap-3">
+                <button onClick={exportHeadcountCSV} type="button" className="text-xs px-2 py-1 border rounded hover:bg-gray-50">Export CSV</button>
+              </div>
             </div>
             {hcError && <div className="p-3 text-sm text-red-700 bg-red-50">{hcError}</div>}
             {hcLoading ? (
@@ -469,7 +549,7 @@ export default function TeamsPage() {
 
           {/* Headcount Tracker (Create) */}
           <div className="bg-white shadow rounded-lg lg:col-span-2">
-            <div className="px-4 py-3 border-b flex items-center gap-2">
+            <div className="px-4 py-3 border-b flex items-center justify-between gap-2">
               <div className="font-medium">Headcount Tracker — Add Record</div>
               <button
                 type="button"

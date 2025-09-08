@@ -160,8 +160,9 @@ describe('Goals API', () => {
       expect(res.status).toBe(400);
     });
 
-    it('returns 400 when stakeholderId is missing', async () => {
+    it('creates a goal when stakeholderId is missing (optional)', async () => {
       prismaMock.businessUnit.findUnique.mockResolvedValue(mockBusinessUnit as any);
+      prismaMock.goal.create.mockResolvedValue({ ...mockGoal, stakeholderId: null } as any);
 
       const payload = {
         title: 'Test goal',
@@ -176,8 +177,17 @@ describe('Goals API', () => {
       });
 
       const res = await POST_GOAL(req as any, { params: Promise.resolve({ businessUnitId: 'bu1' }) });
+      const data = await res.json();
       
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
+      expect(data.stakeholderId).toBeNull();
+      expect(prismaMock.goal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            stakeholderId: null,
+          }),
+        })
+      );
     });
   });
 

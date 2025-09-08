@@ -9,10 +9,12 @@ type TeamMember = {
   name: string;
   email: string | null;
   role: string | null;
-  teamId: string;
+  teamId: string | null;
   reportsToId: string | null;
   user?: { name?: string } | null;
 };
+
+type Team = { id: string; name: string };
 
 export default function TeamMemberDetailPage() {
   const params = useParams<{ memberId: string }>();
@@ -26,12 +28,13 @@ export default function TeamMemberDetailPage() {
 
   const [member, setMember] = useState<TeamMember | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const managerOptions = useMemo(
-    () => teamMembers.filter((m) => m.id !== member?.id),
-    [teamMembers, member?.id]
+    () => teamMembers.filter((m) => m.id !== member?.id && m.teamId === (member?.teamId ?? undefined)),
+    [teamMembers, member?.id, member?.teamId]
   );
 
   useEffect(() => {
@@ -45,13 +48,20 @@ export default function TeamMemberDetailPage() {
         const m: TeamMember = await mRes.json();
         if (!mounted.current) return;
         setMember(m);
-        // Fetch all members and filter by this team, normalizing response shape
+        // Fetch all members (normalize response shape)
         const listRes = await fetch(`/api/team-members`, { cache: "no-store" });
         if (listRes.ok) {
           const raw = await listRes.json();
           const list: TeamMember[] = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
-          const sameTeam = list.filter((tm) => tm.teamId === m.teamId && tm.id !== m.id);
-          if (mounted.current) setTeamMembers(sameTeam);
+          if (mounted.current) setTeamMembers(list);
+        }
+
+        // Fetch teams for team selector
+        const teamsRes = await fetch(`/api/teams`, { cache: "no-store" });
+        if (teamsRes.ok) {
+          const tRaw = await teamsRes.json();
+          const ts: Team[] = Array.isArray(tRaw) ? tRaw : Array.isArray(tRaw?.data) ? tRaw.data : [];
+          if (mounted.current) setTeams(ts.map((t: any) => ({ id: t.id, name: t.name })));
         }
       } catch (err) {
         if (mounted.current) {
@@ -85,6 +95,7 @@ export default function TeamMemberDetailPage() {
           email: member.email ?? null,
           role: member.role ?? null,
           reportsToId: member.reportsToId ?? null,
+          teamId: member.teamId ?? null,
         }),
       });
       if (!res.ok) {
@@ -169,12 +180,22 @@ export default function TeamMemberDetailPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Role</label>
-          <input
+          <select
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
             value={member.role ?? ""}
-            onChange={(e) => setMember({ ...member, role: e.target.value })}
-            placeholder="e.g., Manager"
-          />
+            onChange={(e) => setMember({ ...member, role: e.target.value || null })}
+          >
+            <option value="">— Select Role —</option>
+            <option value="CEO">CEO</option>
+            <option value="COO">COO</option>
+            <option value="CTO">CTO</option>
+            <option value="CIO">CIO</option>
+            <option value="CFO">CFO</option>
+            <option value="Executive">Executive</option>
+            <option value="Director">Director</option>
+            <option value="Manager">Manager</option>
+            <option value="Team Member">Team Member</option>
+          </select>
         </div>
 
         <div>
@@ -186,6 +207,20 @@ export default function TeamMemberDetailPage() {
             onChange={(e) => setMember({ ...member, email: e.target.value })}
             placeholder="name@example.com"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Team</label>
+          <select
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
+            value={member.teamId ?? ""}
+            onChange={(e) => setMember({ ...member, teamId: e.target.value || null, reportsToId: null })}
+          >
+            <option value="">— None —</option>
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
         </div>
 
         <div>

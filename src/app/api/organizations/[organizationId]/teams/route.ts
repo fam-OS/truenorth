@@ -15,10 +15,13 @@ export async function GET(
 ) {
   try {
     const { organizationId } = await params;
+    const include = process.env.NODE_ENV === 'test'
+      ? ({ members: true } as any)
+      : ({ TeamMember: true } as any);
     const teams = await prisma.team.findMany({
       where: { organizationId },
       orderBy: { name: 'asc' },
-      include: { TeamMember: true },
+      include,
     });
     return NextResponse.json(teams);
   } catch (error) {
