@@ -31,6 +31,8 @@ export function GoalFormModal({
   isSubmitting,
 }: GoalFormModalProps) {
   const [businessUnits, setBusinessUnits] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedBU, setSelectedBU] = useState<string | ''>('');
+  const [stakeholders, setStakeholders] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -47,6 +49,40 @@ export function GoalFormModal({
     };
     void load();
   }, []);
+
+  // Initialize selected BU when opening (e.g., when invoked from a BU page)
+  useEffect(() => {
+    const initial = (goal as any)?.businessUnitId as string | undefined;
+    if (initial && !selectedBU) {
+      setSelectedBU(initial);
+    }
+  }, [goal]);
+
+  // Load stakeholders for the selected business unit
+  useEffect(() => {
+    if (!selectedBU) {
+      setStakeholders([]);
+      return;
+    }
+    const loadStakeholders = async () => {
+      try {
+        const res = await fetch(`/api/stakeholders?businessUnitId=${encodeURIComponent(selectedBU)}`, { cache: 'no-store' });
+        if (!res.ok) {
+          setStakeholders([]);
+          return;
+        }
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setStakeholders(data.map((s: any) => ({ id: s.id, name: s.name })));
+        } else {
+          setStakeholders([]);
+        }
+      } catch {
+        setStakeholders([]);
+      }
+    };
+    void loadStakeholders();
+  }, [selectedBU]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -161,6 +197,50 @@ export function GoalFormModal({
                       />
                     </div>
                   </div>
+
+                  {/* Business Unit selector (optional when creating outside a BU context) */}
+                  {businessUnits.length > 0 && (
+                    <div>
+                      <label htmlFor="businessUnitId" className="block text-sm font-medium text-gray-700">
+                        Business Unit
+                      </label>
+                      <select
+                        id="businessUnitId"
+                        name="businessUnitId"
+                        defaultValue={goal?.businessUnitId || ''}
+                        onChange={(e) => setSelectedBU(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                      >
+                        <option value="">Select Business Unit (optional)</option>
+                        {businessUnits.map((bu) => (
+                          <option key={bu.id} value={bu.id}>{bu.name}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">If left blank, the goal will be created for the current page's Business Unit (if applicable).</p>
+                    </div>
+                  )}
+
+                  {/* Stakeholder selector (required for creation) */}
+                  {selectedBU && (
+                    <div>
+                      <label htmlFor="stakeholderId" className="block text-sm font-medium text-gray-700">
+                        Stakeholder *
+                      </label>
+                      <select
+                        id="stakeholderId"
+                        name="stakeholderId"
+                        required
+                        defaultValue={goal ? (goal as any).stakeholderId || '' : ''}
+                        className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                      >
+                        <option value="">Select a stakeholder</option>
+                        {stakeholders.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">Only stakeholders in the selected Business Unit are shown.</p>
+                    </div>
+                  )}
 
                   <div>
                     <label htmlFor="status" className="block text-sm font-medium text-gray-700">

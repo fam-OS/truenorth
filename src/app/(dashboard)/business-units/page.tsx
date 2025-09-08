@@ -347,8 +347,16 @@ export default function BusinessUnitsPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create goal');
+        let raw = '';
+        try { raw = await response.clone().text(); } catch {}
+        let msg = 'Failed to create goal';
+        try {
+          const json = JSON.parse(raw || '{}');
+          msg = json.error || json.message || msg;
+        } catch {
+          msg = raw || msg;
+        }
+        throw new Error(msg);
       }
       
       await fetchData();
@@ -421,7 +429,7 @@ export default function BusinessUnitsPage() {
           <GoalFormModal
             isOpen={true}
             onClose={() => setViewMode(selectedUnit ? 'detail' : 'list')}
-            goal={editingGoal || undefined}
+            goal={(editingGoal || (selectedUnit ? ({ businessUnitId: selectedUnit.id } as any) : undefined))}
             onSubmit={editingGoal ? handleUpdateGoal : handleCreateGoal}
             isSubmitting={isSubmitting}
           />

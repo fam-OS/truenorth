@@ -22,7 +22,7 @@ export async function GET(
     });
 
     if (!businessUnit) {
-      return new NextResponse('Business unit not found', { status: 404 });
+      return NextResponse.json({ error: 'Business unit not found' }, { status: 404 });
     }
 
     // Fetch goals for this business unit
@@ -75,12 +75,7 @@ export async function POST(
     });
 
     if (!businessUnit) {
-      return new NextResponse('Business unit not found', { status: 404 });
-    }
-
-    // For this endpoint, stakeholderId is required per tests; return 400 when missing
-    if (!json.stakeholderId) {
-      return new NextResponse('stakeholderId is required', { status: 400 });
+      return NextResponse.json({ error: 'Business unit not found' }, { status: 404 });
     }
 
     // Validate stakeholder exists when provided
@@ -90,10 +85,10 @@ export async function POST(
         select: { id: true, businessUnitId: true },
       });
       if (!stakeholder) {
-        return new NextResponse('Stakeholder not found', { status: 400 });
+        return NextResponse.json({ error: 'Stakeholder not found' }, { status: 400 });
       }
       if (stakeholder.businessUnitId !== effectiveBusinessUnitId) {
-        return new NextResponse('Stakeholder must belong to this Business Unit', { status: 400 });
+        return NextResponse.json({ error: 'Stakeholder must belong to this Business Unit' }, { status: 400 });
       }
     }
 
