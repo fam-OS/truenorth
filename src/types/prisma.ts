@@ -74,7 +74,6 @@ export type BusinessUnitWithDetails = {
     id: string;
     title: string;
     description: string | null;
-    status: $Enums.GoalStatus | null;
     stakeholderId: string | null;
     progressNotes: string | null;
     businessUnitId: string;

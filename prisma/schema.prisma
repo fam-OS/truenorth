@@ -144,7 +144,6 @@ model Goal {
   id             String       @id
   title          String
   description    String?
-  status         GoalStatus?
   stakeholderId  String?
   progressNotes  String?
   createdAt      DateTime     @default(now())
@@ -446,14 +445,6 @@ enum CostType {
   OTHER
 }
 
-enum GoalStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
-  AT_RISK
-  BLOCKED
-  CANCELLED
-}
 
 enum InitiativeStatus {
   NOT_STARTED

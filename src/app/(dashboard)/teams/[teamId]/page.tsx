@@ -125,7 +125,10 @@ function TeamPageContent({ teamId }: { teamId: string }) {
             </h3>
             {team.organization && (
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Organization: {team.organization.name}
+                <span className="font-medium text-gray-700">Parent Organization:</span>{' '}
+                <Link href={`/organizations/${team.organization.id}`} className="text-blue-700 hover:underline">
+                  {team.organization.name}
+                </Link>
               </p>
             )}
             {team.description && (

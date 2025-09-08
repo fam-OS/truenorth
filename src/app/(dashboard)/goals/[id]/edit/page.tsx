@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Goal, BusinessUnit, Stakeholder } from '@prisma/client';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { GoalFormModal } from '@/components/GoalFormModal';
 
 type GoalWithRelations = Goal & {
   businessUnit?: BusinessUnit;
@@ -16,35 +17,13 @@ export default function EditGoalPage() {
   const goalId = params.id as string;
   
   const [goal, setGoal] = useState<GoalWithRelations | null>(null);
-  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
-  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    status: 'NOT_STARTED',
-    requirements: '',
-    progressNotes: '',
-    quarter: 'Q1',
-    year: new Date().getFullYear().toString(),
-    stakeholderId: '',
-    businessUnitId: ''
-  });
 
   useEffect(() => {
     fetchGoal();
-    fetchBusinessUnits();
   }, [goalId]);
-
-  useEffect(() => {
-    // reload stakeholders when BU changes
-    if (formData.businessUnitId) {
-      void fetchStakeholders(formData.businessUnitId);
-    }
-  }, [formData.businessUnitId]);
 
   async function fetchGoal() {
     try {
@@ -54,17 +33,6 @@ export default function EditGoalPage() {
       }
       const data = await response.json();
       setGoal(data);
-      setFormData({
-        title: data.title || '',
-        description: data.description || '',
-        status: data.status || 'NOT_STARTED',
-        requirements: data.requirements || '',
-        progressNotes: data.progressNotes || '',
-        quarter: data.quarter || 'Q1',
-        year: data.year?.toString() || new Date().getFullYear().toString(),
-        stakeholderId: data.stakeholderId || '',
-        businessUnitId: data.businessUnitId || (data.BusinessUnit?.id || data.businessUnit?.id || '')
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -72,50 +40,21 @@ export default function EditGoalPage() {
     }
   }
 
-  async function fetchStakeholders(businessUnitId?: string) {
-    try {
-      const buId = businessUnitId || goal?.businessUnit?.id || (goal as any)?.BusinessUnit?.id;
-      if (!buId) return;
-      const response = await fetch(`/api/business-units/${buId}/stakeholders`);
-      if (response.ok) {
-        const data = await response.json();
-        setStakeholders(data);
-      }
-    } catch (err) {
-      console.error('Error fetching stakeholders:', err);
-    }
-  }
-
-  async function fetchBusinessUnits() {
-    try {
-      const res = await fetch('/api/business-units', { cache: 'no-store' });
-      if (res.ok) {
-        const list = await res.json();
-        setBusinessUnits(list || []);
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmitFromModal(payload: any) {
     setSaving(true);
     setError('');
-
     try {
       const response = await fetch(`/api/goals/${goalId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-
+      const raw = await response.clone().text();
       if (!response.ok) {
-        throw new Error('Failed to update goal');
+        let msg = 'Failed to update goal';
+        try { const j = JSON.parse(raw || '{}'); msg = j.error || msg; } catch {}
+        throw new Error(msg);
       }
-
       router.push(`/goals/${goalId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -174,187 +113,13 @@ export default function EditGoalPage() {
           )}
         </div>
 
-        {/* Form */}
-        <div className="bg-white shadow rounded-lg">
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Business Unit */}
-            <div>
-              <label htmlFor="businessUnitId" className="block text-sm font-medium text-gray-700">
-                Business Unit
-              </label>
-              <select
-                id="businessUnitId"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                value={formData.businessUnitId}
-                onChange={(e) => setFormData({ ...formData, businessUnitId: e.target.value, stakeholderId: '' })}
-              >
-                <option value="">Select a business unit</option>
-                {businessUnits.map((bu) => (
-                  <option key={bu.id} value={bu.id}>{bu.name}</option>
-                ))}
-              </select>
-            </div>
-            {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Goal Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
-              <textarea
-                id="description"
-                rows={4}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-
-            {/* Status, Quarter, Year Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <option value="NOT_STARTED">Not Started</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="AT_RISK">At Risk</option>
-                  <option value="BLOCKED">Blocked</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="quarter" className="block text-sm font-medium text-gray-700">
-                  Quarter
-                </label>
-                <select
-                  id="quarter"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  value={formData.quarter}
-                  onChange={(e) => setFormData({ ...formData, quarter: e.target.value })}
-                >
-                  <option value="Q1">Q1</option>
-                  <option value="Q2">Q2</option>
-                  <option value="Q3">Q3</option>
-                  <option value="Q4">Q4</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="year" className="block text-sm font-medium text-gray-700">
-                  Year
-                </label>
-                <input
-                  type="number"
-                  id="year"
-                  min="2020"
-                  max="2030"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Stakeholder */}
-            {stakeholders.length > 0 && (
-              <div>
-                <label htmlFor="stakeholderId" className="block text-sm font-medium text-gray-700">
-                  Assigned Stakeholder
-                </label>
-                <select
-                  id="stakeholderId"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  value={formData.stakeholderId}
-                  onChange={(e) => setFormData({ ...formData, stakeholderId: e.target.value })}
-                >
-                  <option value="">Select a stakeholder</option>
-                  {stakeholders.map((stakeholder) => (
-                    <option key={stakeholder.id} value={stakeholder.id}>
-                      {stakeholder.name} - {stakeholder.role}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Requirements */}
-            <div>
-              <label htmlFor="requirements" className="block text-sm font-medium text-gray-700">
-                Requirements
-              </label>
-              <textarea
-                id="requirements"
-                rows={4}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                placeholder="List the requirements needed to achieve this goal..."
-                value={formData.requirements}
-                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-              />
-            </div>
-
-            {/* Progress Notes */}
-            <div>
-              <label htmlFor="progressNotes" className="block text-sm font-medium text-gray-700">
-                Progress Notes
-              </label>
-              <textarea
-                id="progressNotes"
-                rows={4}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                placeholder="Add notes about progress, blockers, or updates..."
-                value={formData.progressNotes}
-                onChange={(e) => setFormData({ ...formData, progressNotes: e.target.value })}
-              />
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">{error}</div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => router.push(`/goals/${goalId}`)}
-                className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
-        </div>
+        <GoalFormModal
+          isOpen={true}
+          onClose={() => router.push(`/goals/${goalId}`)}
+          goal={goal as any}
+          onSubmit={handleSubmitFromModal}
+          isSubmitting={saving}
+        />
       </div>
     </div>
   );

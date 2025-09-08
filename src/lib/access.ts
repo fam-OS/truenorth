@@ -52,6 +52,7 @@ export async function assertBusinessUnitAccess(userId: string, businessUnitId: s
   const orgIds = await getViewerCompanyOrgIds(userId);
   if (orgIds.length === 0) throw new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
 
+  // Allow when at least one Team in viewer orgs is linked to this BU
   const teamUsingBU = await prisma.team.findFirst({
     where: {
       businessUnitId: businessUnitId,
@@ -59,9 +60,19 @@ export async function assertBusinessUnitAccess(userId: string, businessUnitId: s
     },
     select: { id: true },
   });
-  if (!teamUsingBU) {
-    throw new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
-  }
+  if (teamUsingBU) return;
+
+  // Or when at least one Initiative in viewer orgs references this BU
+  const initiativeUsingBU = await prisma.initiative.findFirst({
+    where: {
+      businessUnitId: businessUnitId,
+      organizationId: { in: orgIds },
+    },
+    select: { id: true },
+  });
+  if (initiativeUsingBU) return;
+
+  throw new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
 }
 
 export async function assertTeamAccess(userId: string, teamId: string): Promise<void> {

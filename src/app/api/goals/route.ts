@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
         title: true,
         quarter: true,
         year: true,
-        status: true,
         updatedAt: true,
       },
     });
@@ -61,7 +60,6 @@ export async function GET(request: NextRequest) {
         title: true,
         quarter: true,
         year: true,
-        status: true,
         updatedAt: true,
       },
     });

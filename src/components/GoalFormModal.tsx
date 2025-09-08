@@ -7,9 +7,9 @@ import { Goal } from '@prisma/client';
 type GoalFormData = {
   title: string;
   description?: string;
-  quarter: string;
+  quarter?: string; // kept for backward-compat when single quarter is used
+  quarters?: string[]; // new: multi-quarter selection
   year: number;
-  status?: string;
   progressNotes?: string;
   stakeholderId?: string;
   businessUnitId?: string;
@@ -33,6 +33,7 @@ export function GoalFormModal({
   const [businessUnits, setBusinessUnits] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedBU, setSelectedBU] = useState<string | ''>('');
   const [stakeholders, setStakeholders] = useState<Array<{ id: string; name: string }>>([]);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -87,12 +88,19 @@ export function GoalFormModal({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    // Gather multi-select quarters
+    const quarters = (formData.getAll('quarters') as string[]).filter(Boolean);
+    if (quarters.length === 0) {
+      setFormError('Please select at least one quarter.');
+      return;
+    }
+    setFormError(null);
     const data = {
       title: formData.get('title') as string,
       description: formData.get('description') as string || undefined,
-      quarter: formData.get('quarter') as string,
+      quarter: (formData.get('quarter') as string) || undefined,
+      quarters: quarters.length ? quarters : undefined,
       year: parseInt(formData.get('year') as string),
-      status: formData.get('status') as string || undefined,
       progressNotes: formData.get('progressNotes') as string || undefined,
       stakeholderId: formData.get('stakeholderId') as string || undefined,
       businessUnitId: (formData.get('businessUnitId') as string) || undefined,
@@ -164,21 +172,25 @@ export function GoalFormModal({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="quarter" className="block text-sm font-medium text-gray-700">
-                        Quarter *
-                      </label>
-                      <select
-                        id="quarter"
-                        name="quarter"
-                        required
-                        defaultValue={goal?.quarter || 'Q1'}
-                        className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                      >
-                        <option value="Q1">Q1</option>
-                        <option value="Q2">Q2</option>
-                        <option value="Q3">Q3</option>
-                        <option value="Q4">Q4</option>
-                      </select>
+                      <span className="block text-sm font-medium text-gray-700">Quarters</span>
+                      <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {(['Q1','Q2','Q3','Q4'] as const).map((q) => (
+                          <label key={q} className="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              name="quarters"
+                              value={q}
+                              defaultChecked={goal ? (goal as any).quarter === q : q === 'Q1'}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            {q}
+                          </label>
+                        ))}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">Select one or more. One goal will be created per selected quarter.</p>
+                      {formError && (
+                        <p className="mt-2 text-xs text-red-600">{formError}</p>
+                      )}
                     </div>
 
                     <div>
@@ -224,12 +236,11 @@ export function GoalFormModal({
                   {selectedBU && (
                     <div>
                       <label htmlFor="stakeholderId" className="block text-sm font-medium text-gray-700">
-                        Stakeholder *
+                        Stakeholder
                       </label>
                       <select
                         id="stakeholderId"
                         name="stakeholderId"
-                        required
                         defaultValue={goal ? (goal as any).stakeholderId || '' : ''}
                         className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                       >
@@ -238,29 +249,11 @@ export function GoalFormModal({
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
-                      <p className="mt-1 text-xs text-gray-500">Only stakeholders in the selected Business Unit are shown.</p>
+                      <p className="mt-1 text-xs text-gray-500">Optional. Only stakeholders in the selected Business Unit are shown.</p>
                     </div>
                   )}
 
-                  <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                      Status
-                    </label>
-                    <select
-                      id="status"
-                      name="status"
-                      defaultValue={goal?.status || ''}
-                      className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                    >
-                      <option value="">Select Status (Optional)</option>
-                      <option value="NOT_STARTED">Not Started</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="COMPLETED">Completed</option>
-                      <option value="AT_RISK">At Risk</option>
-                      <option value="BLOCKED">Blocked</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
-                  </div>
+                  {/* Status removed */}
 
 
                   <div>

@@ -34,6 +34,8 @@ export default function BusinessUnitsPage() {
   const [searchStake, setSearchStake] = useState('');
   const [searchGoal, setSearchGoal] = useState('');
   const [recentGoals, setRecentGoals] = useState<any[]>([]);
+  const [buInitiatives, setBuInitiatives] = useState<any[]>([]);
+  const [buKpis, setBuKpis] = useState<any[]>([]);
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
   const { showToast } = useToast();
@@ -176,6 +178,42 @@ export default function BusinessUnitsPage() {
         }
       })();
     }
+  }, [viewMode, selectedUnit?.id]);
+
+  // Load Initiatives and KPIs for the selected Business Unit in detail view
+  useEffect(() => {
+    if (viewMode !== 'detail' || !selectedUnit) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [initRes, kpiRes] = await Promise.all([
+          fetch(`/api/initiatives?businessUnitId=${encodeURIComponent(selectedUnit.id)}`, { cache: 'no-store' }),
+          fetch(`/api/kpis?businessUnitId=${encodeURIComponent(selectedUnit.id)}`, { cache: 'no-store' }),
+        ]);
+        if (!cancelled) {
+          if (initRes.ok) {
+            const inits = await initRes.json();
+            setBuInitiatives(Array.isArray(inits) ? inits : []);
+          } else {
+            setBuInitiatives([]);
+          }
+          if (kpiRes.ok) {
+            const kp = await kpiRes.json();
+            setBuKpis(Array.isArray(kp) ? kp : []);
+          } else {
+            setBuKpis([]);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setBuInitiatives([]);
+          setBuKpis([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [viewMode, selectedUnit?.id]);
 
   async function handleCreateBusinessUnit({ name, description }: { name: string; description?: string }) {
@@ -568,6 +606,102 @@ export default function BusinessUnitsPage() {
                       </button>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Initiatives and KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Initiatives */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-gray-900">Initiatives</h2>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setTimeout(() => { window.location.href = `/initiatives/new?businessUnitId=${encodeURIComponent(selectedUnit.id)}`; }, 0)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      New Initiative
+                    </button>
+                    <button
+                      onClick={() => window.location.href = `/initiatives-kpis`}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      View all
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200">
+                    {buInitiatives.slice(0, 5).map((init) => (
+                      <li key={init.id} className="px-4 py-4">
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => window.location.href = `/initiatives-kpis#initiative-${init.id}`}
+                            className="text-sm font-medium text-blue-600 hover:underline truncate"
+                          >
+                            {init.name}
+                          </button>
+                          <span className="text-xs text-gray-500">
+                            {init.status || '—'}
+                          </span>
+                        </div>
+                        {init.summary && (
+                          <p className="mt-1 text-xs text-gray-600 line-clamp-2">{init.summary}</p>
+                        )}
+                      </li>
+                    ))}
+                    {buInitiatives.length === 0 && (
+                      <li className="px-4 py-6 text-sm text-gray-500 text-center">No initiatives</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+
+              {/* KPIs */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-gray-900">KPIs</h2>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setTimeout(() => { window.location.href = `/kpis/new?businessUnitId=${encodeURIComponent(selectedUnit.id)}`; }, 0)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      New KPI
+                    </button>
+                    <button
+                      onClick={() => window.location.href = `/initiatives-kpis`}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      View all
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200">
+                    {buKpis.slice(0, 5).map((kpi) => (
+                      <li key={kpi.id} className="px-4 py-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{kpi.name}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{kpi.quarter} {kpi.year}</p>
+                          </div>
+                          <div className="text-right">
+                            {typeof kpi.actualMetric === 'number' && typeof kpi.targetMetric === 'number' ? (
+                              <p className="text-xs text-gray-700">
+                                {kpi.actualMetric} / {kpi.targetMetric}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-500">—</p>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                    {buKpis.length === 0 && (
+                      <li className="px-4 py-6 text-sm text-gray-500 text-center">No KPIs</li>
+                    )}
+                  </ul>
                 </div>
               </div>
             </div>

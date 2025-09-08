@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import GettingStartedChecklist from '@/components/GettingStartedChecklist';
+import { KpiProgress } from '@/components/KpiProgress';
 
 interface DashboardStats {
   organizations: number;
@@ -175,13 +176,13 @@ export default function DashboardPage() {
         <Link href="/organizations" className="block hover:no-underline">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-100">Organizations</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900">Organizations</CardTitle>
               <svg className="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-100">{stats.organizations}</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.organizations}</div>
             </CardContent>
           </Card>
         </Link>
@@ -189,13 +190,13 @@ export default function DashboardPage() {
         <Link href="/business-units" className="block hover:no-underline">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-100">Business Units</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900">Business Units</CardTitle>
               <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-100">{stats.businessUnits}</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.businessUnits}</div>
             </CardContent>
           </Card>
         </Link>
@@ -203,13 +204,13 @@ export default function DashboardPage() {
         <Link href="/initiatives-kpis" className="block hover:no-underline">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-100">Active Initiatives</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900">Active Initiatives</CardTitle>
               <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-100">{stats.initiatives}</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.initiatives}</div>
             </CardContent>
           </Card>
         </Link>
@@ -217,13 +218,13 @@ export default function DashboardPage() {
         <Link href="/teams/list" className="block hover:no-underline">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-100">Teams</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900">Teams</CardTitle>
               <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-100">{stats.teams}</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.teams}</div>
             </CardContent>
           </Card>
         </Link>
@@ -231,13 +232,13 @@ export default function DashboardPage() {
         <Link href="/initiatives-kpis" className="block hover:no-underline">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-100">KPIs</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900">KPIs</CardTitle>
               <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-100">{stats.kpis}</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.kpis}</div>
             </CardContent>
           </Card>
         </Link>
@@ -245,13 +246,13 @@ export default function DashboardPage() {
         <Link href="/ops-reviews" className="block hover:no-underline">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-100">Ops Reviews</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900">Ops Reviews</CardTitle>
               <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-100">{stats.opsReviews}</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.opsReviews}</div>
             </CardContent>
           </Card>
         </Link>
@@ -260,7 +261,7 @@ export default function DashboardPage() {
       {/* Initiative Tracking */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-100">Initiative Tracking</CardTitle>
+          <CardTitle className="text-gray-900">Initiative Tracking</CardTitle>
         </CardHeader>
         <CardContent>
           {recentActivity.length > 0 ? (
@@ -273,7 +274,7 @@ export default function DashboardPage() {
                     href={`/initiatives/${activity.id}`}
                     className="block hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                    <div className="flex items-center space-x-4 p-3 bg-white rounded-lg hover:bg-gray-50">
                       <div className="flex-shrink-0">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {activity.type}
@@ -310,6 +311,9 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* KPI Progress */}
+      <KpiProgress />
     </div>
   );
 }

@@ -10,7 +10,6 @@ type GoalUpdateData = {
   description?: string;
   quarter: string;
   year: number;
-  status?: string;
   progressNotes?: string;
 };
 
@@ -126,7 +125,6 @@ export async function PUT(
         description: json.description || null,
         quarter: json.quarter,
         year: json.year,
-        ...(json.status && { status: json.status }),
         progressNotes: json.progressNotes || null,
       },
       include: {

@@ -5,15 +5,6 @@ import { format } from 'date-fns';
 import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
-const statusColors = {
-  NOT_STARTED: 'bg-gray-100 text-gray-800',
-  IN_PROGRESS: 'bg-blue-100 text-blue-800',
-  COMPLETED: 'bg-green-100 text-green-800',
-  AT_RISK: 'bg-yellow-100 text-yellow-800',
-  BLOCKED: 'bg-red-100 text-red-800',
-  CANCELLED: 'bg-gray-100 text-gray-600',
-};
-
 interface GoalListProps {
   goals: Goal[];
   onCreateGoal?: () => void;
@@ -59,16 +50,7 @@ export function GoalList({ goals, onCreateGoal, onEditGoal, onSelectGoal }: Goal
                       <PencilIcon className="h-4 w-4" />
                     </button>
                     <p className="text-sm font-medium text-gray-900">{goal.title}</p>
-                    {goal.status && (
-                      <span
-                        className={clsx(
-                          'ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                          statusColors[goal.status]
-                        )}
-                      >
-                        {goal.status}
-                      </span>
-                    )}
+                    {/* Status removed */}
                   </div>
                   <div className="text-sm text-gray-500">
                     {(goal as any).quarter} {(goal as any).year}
