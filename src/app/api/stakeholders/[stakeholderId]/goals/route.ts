@@ -63,7 +63,6 @@ export async function POST(
         stakeholderId,
         businessUnitId: stakeholder.businessUnitId,
         progressNotes: data.progressNotes ?? null,
-        status: data.status,
       },
     });
 
