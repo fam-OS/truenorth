@@ -68,12 +68,6 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/auth/signup"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium"
-            >
-              Start Free Trial
-            </Link>
-            <Link
               href="/auth/signin"
               className="bg-white hover:bg-gray-50 text-gray-900 px-8 py-3 rounded-lg text-lg font-medium border border-gray-300"
             >
@@ -167,9 +161,9 @@ export default function Home() {
           </p>
           <Link
             href="/auth/signup"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium inline-block"
           >
-            Start Your Free Trial
+            Get Started
           </Link>
         </div>
 
