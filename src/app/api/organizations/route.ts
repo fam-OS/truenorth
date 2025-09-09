@@ -24,12 +24,14 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    const organizations = await prisma.organization.findMany({
+    const organizations = await (prisma as any).organization.findMany({
       where: { companyAccountId: companyAccount.id },
       select: {
         id: true,
         name: true,
         description: true,
+        // expose parentId to build hierarchy in UI
+        parentId: true,
         createdAt: true,
         updatedAt: true,
         companyAccountId: true,
@@ -62,6 +64,8 @@ export async function POST(request: Request) {
           description: data.description ?? undefined,
           // Provide a placeholder to satisfy Prisma types; prismaMock intercepts in tests
           companyAccountId: data.companyAccountId ?? 'test-company-account-id',
+          // @ts-expect-error - field added by migration
+          parentId: data.parentId ?? null,
         },
       });
       return NextResponse.json(organization, { status: 201 });
@@ -82,6 +86,9 @@ export async function POST(request: Request) {
         id: randomUUID(),
         ...data,
         companyAccountId: companyAccount.id,
+        // Ensure explicit null when not provided
+        // @ts-expect-error - field added by migration
+        parentId: data.parentId ?? null,
       },
     });
 

@@ -396,41 +396,42 @@ export default function OrganizationsPage() {
           </div>
         ) : (
           <div className="border-t border-gray-200">
-            <ul className="divide-y divide-gray-200">
-              {organizations.map((org) => (
-                <li key={org.id} className="group hover:bg-gray-50">
-                  <div className="px-4 py-4 sm:px-6">
+            {(() => {
+              type Node = { org: OrganizationWithBusinessUnits; children: Node[] };
+              const nodes = new Map<string, Node>();
+              const roots: Node[] = [];
+              organizations.forEach((o) => nodes.set(o.id, { org: o, children: [] }));
+              organizations.forEach((o) => {
+                const pid = (o as any).parentId as string | null | undefined;
+                if (pid && nodes.has(pid)) {
+                  nodes.get(pid)!.children.push(nodes.get(o.id)!);
+                } else {
+                  roots.push(nodes.get(o.id)!);
+                }
+              });
+
+              const OrganizationNode = ({ node, depth = 0 }: { node: Node; depth?: number }) => (
+                <li className="group">
+                  <div className="px-4 py-4 sm:px-6" style={{ marginLeft: depth * 16 }}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <Link 
-                          href={`/organizations/${org.id}`}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-900 truncate"
-                        >
-                          {org.name}
+                        <Link href={`/organizations/${node.org.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-900 truncate">
+                          {node.org.name}
                         </Link>
-                        {org.description && (
-                          <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-                            {org.description}
-                          </p>
+                        {node.org.description && (
+                          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{node.org.description}</p>
                         )}
                       </div>
                       <div className="ml-4 flex-shrink-0 flex space-x-2 opacity-0 group-hover:opacity-100">
                         <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setEditingOrg(org);
-                            setShowCreateOrg(true);
-                          }}
+                          onClick={(e) => { e.preventDefault(); setEditingOrg(node.org as any); setShowCreateOrg(true); }}
                           className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                           title="Edit organization"
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setConfirmDeleteOrgId(org.id);
-                          }}
+                          onClick={(e) => { e.preventDefault(); setConfirmDeleteOrgId(node.org.id); }}
                           className="p-1 rounded-full text-gray-400 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                           title="Delete organization"
                         >
@@ -440,67 +441,28 @@ export default function OrganizationsPage() {
                     </div>
 
                     {/* Teams Section */}
-                    <div className="mt-4">
+                    <div className="mt-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Teams
-                        </h4>
-                        <button
-                          onClick={() => setShowCreateTeamForOrg(org.id)}
-                          className="text-xs text-blue-600 hover:text-blue-800"
-                          title="Add team"
-                        >
-                          + Add Team
-                        </button>
+                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Teams</h4>
+                        <button onClick={() => setShowCreateTeamForOrg(node.org.id)} className="text-xs text-blue-600 hover:text-blue-800" title="Add team">+ Add Team</button>
                       </div>
-
-                      {/* Create Team Form */}
-                      {showCreateTeamForOrg === org.id && (
-                        <TeamForm
-                          onSubmit={(data) => handleCreateTeam(org.id, data)}
-                          onCancel={() => setShowCreateTeamForOrg(null)}
-                        />
+                      {showCreateTeamForOrg === node.org.id && (
+                        <TeamForm onSubmit={(data) => handleCreateTeam(node.org.id, data)} onCancel={() => setShowCreateTeamForOrg(null)} />
                       )}
-
-                      {/* Edit Team Form */}
-                      {editTeam?.orgId === org.id && editTeam.team && (
-                        <TeamForm
-                          team={editTeam.team}
-                          onSubmit={(data) => 
-                            handleUpdateTeam(org.id, editTeam.team.id, data)
-                          }
-                          onCancel={() => setEditTeam(null)}
-                        />
+                      {editTeam?.orgId === node.org.id && editTeam.team && (
+                        <TeamForm team={editTeam.team} onSubmit={(data) => handleUpdateTeam(node.org.id, editTeam.team.id, data)} onCancel={() => setEditTeam(null)} />
                       )}
-
-                      {/* Teams List */}
-                      {orgTeams[org.id]?.length > 0 && (
+                      {orgTeams[node.org.id]?.length > 0 && (
                         <ul className="mt-2 space-y-2">
-                          {orgTeams[org.id].map((team) => (
+                          {orgTeams[node.org.id].map((team) => (
                             <li key={team.id} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-md">
                               <div>
-                                <Link href={`/teams/${team.id}`} className="text-sm font-medium text-blue-600 hover:underline">
-                                  {team.name}
-                                </Link>
-                                {team.description && (
-                                  <p className="text-xs text-gray-500 mt-1">{team.description}</p>
-                                )}
+                                <Link href={`/teams/${team.id}`} className="text-sm font-medium text-blue-600 hover:underline">{team.name}</Link>
+                                {team.description && (<p className="text-xs text-gray-500 mt-1">{team.description}</p>)}
                               </div>
                               <div className="flex space-x-2">
-                                <button
-                                  onClick={() => setEditTeam({ orgId: org.id, team })}
-                                  className="text-gray-400 hover:text-blue-600"
-                                  title="Edit team"
-                                >
-                                  <PencilIcon className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => setConfirmDeleteTeam({ orgId: org.id, teamId: team.id, teamName: team.name })}
-                                  className="text-gray-400 hover:text-red-600"
-                                  title="Delete team"
-                                >
-                                  <TrashIcon className="h-3.5 w-3.5" />
-                                </button>
+                                <button onClick={() => setEditTeam({ orgId: node.org.id, team })} className="text-gray-400 hover:text-blue-600" title="Edit team"><PencilIcon className="h-3.5 w-3.5" /></button>
+                                <button onClick={() => setConfirmDeleteTeam({ orgId: node.org.id, teamId: team.id, teamName: team.name })} className="text-gray-400 hover:text-red-600" title="Delete team"><TrashIcon className="h-3.5 w-3.5" /></button>
                               </div>
                             </li>
                           ))}
@@ -508,9 +470,25 @@ export default function OrganizationsPage() {
                       )}
                     </div>
                   </div>
+                  {node.children.length > 0 && (
+                    <ul className="border-l border-gray-200 ml-4">
+                      {node.children.sort((a, b) => (a.org.name || '').localeCompare(b.org.name || '')).map((child) => (
+                        <OrganizationNode key={child.org.id} node={child} depth={(depth || 0) + 1} />
+                      ))}
+                    </ul>
+                  )}
                 </li>
-              ))}
-            </ul>
+              );
+
+              const rootsSorted = roots.sort((a, b) => (a.org.name || '').localeCompare(b.org.name || ''));
+              return (
+                <ul className="divide-y divide-gray-200">
+                  {rootsSorted.map((n) => (
+                    <OrganizationNode key={n.org.id} node={n} />
+                  ))}
+                </ul>
+              );
+            })()}
           </div>
         )}
         </div>

@@ -36,7 +36,9 @@ interface OrganizationProfileProps {
     ceoGoals?: Array<{
       id: string;
       description: string;
-    }>;
+    } | null>;
+    // Added via API: parent org summary
+    Parent?: { id: string; name: string } | null;
   };
   onEdit?: () => void;
 }
@@ -46,6 +48,7 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
   const [overviewData, setOverviewData] = useState({
     name: organization.name,
     description: organization.description || '',
+    parentId: (organization as any).parentId || organization.Parent?.id || '',
     founderId: organization.founderId || '',
     employees: organization.employees || '',
     headquarters: organization.headquarters || '',
@@ -56,6 +59,7 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
     glassdoorLink: organization.glassdoorLink || '',
     linkedinLink: organization.linkedinLink || ''
   });
+  const [allOrgs, setAllOrgs] = useState<Array<{ id: string; name: string }>>([]);
   const [teamMembers, setTeamMembers] = useState<{id: string, name: string, role?: string}[]>([]);
   const [showCreateMember, setShowCreateMember] = useState(false);
   const [newMemberData, setNewMemberData] = useState({ name: '', email: '', role: '' });
@@ -81,6 +85,19 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
       }
     };
     fetchTeamMembers();
+    // Also fetch organizations for parent selector
+    const fetchOrgs = async () => {
+      try {
+        const res = await fetch('/api/organizations');
+        if (res.ok) {
+          const orgs = await res.json();
+          setAllOrgs(orgs.map((o: any) => ({ id: o.id, name: o.name })));
+        }
+      } catch (e) {
+        console.error('Error fetching organizations:', e);
+      }
+    };
+    fetchOrgs();
   }, []);
 
   const handleCreateTeamMember = async () => {
@@ -161,6 +178,7 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
     setOverviewData({
       name: organization.name,
       description: organization.description || '',
+      parentId: (organization as any).parentId || organization.Parent?.id || '',
       founderId: organization.founderId || '',
       employees: organization.employees || '',
       headquarters: organization.headquarters || '',
@@ -235,12 +253,33 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
+
+            {/* Parent Organization */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Parent Organization</label>
+              <select
+                value={overviewData.parentId}
+                onChange={(e) => setOverviewData(prev => ({ ...prev, parentId: e.target.value }))}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="">None</option>
+                {allOrgs
+                  .filter((o) => o.id !== organization.id)
+                  .map((o) => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Optionally relate this organization under a parent.</p>
+            </div>
           </div>
         ) : (
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{organization.name}</h2>
             {organization.description && (
               <p className="mt-1 text-sm text-gray-600">{organization.description}</p>
+            )}
+            {(organization as any).Parent && (
+              <p className="mt-2 text-sm text-gray-600">Parent: <Link className="text-blue-600 hover:underline" href={`/organizations/${(organization as any).Parent.id}`}>{(organization as any).Parent.name}</Link></p>
             )}
           </div>
         )}

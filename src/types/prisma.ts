@@ -5,6 +5,7 @@ export type OrganizationWithBusinessUnits = {
   id: string;
   name: string;
   description: string | null;
+  parentId?: string | null;
   companyAccountId: string;
   createdAt: Date;
   updatedAt: Date;

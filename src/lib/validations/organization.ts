@@ -4,12 +4,14 @@ export const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   companyAccountId: z.string().min(1, 'Company Account ID is required').optional(),
+  parentId: z.string().min(1).optional().nullable(),
 });
 
 export const updateOrganizationSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
   description: z.string().optional(),
   companyAccountId: z.string().min(1, 'Company Account ID is required').optional(),
+  parentId: z.string().min(1).optional().nullable(),
 });
 
 export const createBusinessUnitSchema = z.object({

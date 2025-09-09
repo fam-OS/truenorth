@@ -9,15 +9,10 @@ export async function GET(
 ) {
   try {
     const { organizationId } = await params;
-    const organization = await prisma.organization.findUnique({
+    const organization = await (prisma as any).organization.findUnique({
       where: { id: organizationId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        companyAccountId: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        Parent: { select: { id: true, name: true } },
       },
     });
 

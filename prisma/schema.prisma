@@ -313,6 +313,7 @@ model Organization {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   companyAccountId String
+  parentId         String?
   CeoGoal          CeoGoal[]
   Cost             Cost[]
   HeadcountTracker HeadcountTracker[]
@@ -321,6 +322,10 @@ model Organization {
   CompanyAccount   CompanyAccount     @relation(fields: [companyAccountId], references: [id], onDelete: Cascade)
   Team             Team[]
   User             User[]
+  Parent           Organization?      @relation("OrgToParent", fields: [parentId], references: [id])
+  Children         Organization[]     @relation("OrgToParent")
+
+  @@index([parentId])
 }
 
 model Session {

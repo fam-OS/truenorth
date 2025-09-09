@@ -367,6 +367,22 @@ function TeamsClient() {
         </div>
       )}
 
+      {!loading && activeTab === 'org-chart' && (
+        <div className="space-y-4">
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+              <span>Org Chart</span>
+            </div>
+            <div className="p-4 text-sm text-gray-700">
+              Visualize your organization structure.
+              <div className="mt-3">
+                <Link href="/org-chart" className="inline-flex items-center px-3 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Open Org Chart</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!loading && activeTab === 'team-management' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Teams Column */}
