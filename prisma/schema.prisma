@@ -346,6 +346,7 @@ model Stakeholder {
   updatedAt         DateTime      @updatedAt
   reportsToId       String?
   teamMemberId      String        @unique
+  relationshipNotes String?
   Goal              Goal[]
   Meeting           Meeting[]
   BusinessUnit      BusinessUnit? @relation(fields: [businessUnitId], references: [id])

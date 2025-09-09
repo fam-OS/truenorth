@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Stakeholder } from '@prisma/client';
 import { useState } from 'react';
 
@@ -82,7 +83,7 @@ export function StakeholderList({
               ? 'Try adjusting your search terms'
               : hasTeamMembers === false
                 ? (<>
-                    You don’t have any team members yet. Please <a href="/team-members/new" className="text-blue-600 hover:underline">create a team member</a> first, then add them as a stakeholder.
+                    You don’t have any team members yet. Please <Link href="/team-members/new" className="text-blue-600 hover:underline">create a team member</Link> first, then add them as a stakeholder.
                   </>)
                 : 'Get started by adding a new stakeholder'}
           </p>

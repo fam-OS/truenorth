@@ -11,6 +11,7 @@ const updateStakeholderSchema = z.object({
   name: z.string().min(1).optional(),
   role: z.string().min(1).optional(),
   email: z.preprocess((v) => (v === '' ? null : v), z.string().email().nullable().optional()),
+  relationshipNotes: z.string().max(10000).optional(),
 });
 
 export async function GET(_request: Request, { params }: { params: Promise<{ stakeholderId: string }> }) {
@@ -69,6 +70,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ stak
     if (data.name !== undefined) stakeholderUpdate.name = data.name;
     if (data.role !== undefined) stakeholderUpdate.role = data.role as any;
     if (data.email !== undefined) stakeholderUpdate.email = data.email ?? '';
+    if (data.relationshipNotes !== undefined) stakeholderUpdate.relationshipNotes = data.relationshipNotes;
 
     // Determine which TeamMember to update
     const teamMemberId = data.teamMemberId ?? existing.teamMemberId;

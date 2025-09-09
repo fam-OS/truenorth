@@ -12,6 +12,8 @@ interface Stakeholder {
   email?: string | null; // hidden in UI
   businessUnitId?: string | null;
   reportsToId?: string | null;
+  teamMemberId?: string;
+  TeamMember?: { id: string; name: string } | null;
 }
 
 export default function StakeholderDetailPage() {
@@ -25,6 +27,9 @@ export default function StakeholderDetailPage() {
 
   const [stakeholder, setStakeholder] = useState<Stakeholder | null>(null);
   const [allStakeholders, setAllStakeholders] = useState<Stakeholder[]>([]);
+  const [relationshipNotes, setRelationshipNotes] = useState<string>("");
+  const [businessUnitName, setBusinessUnitName] = useState<string>("");
+  const [initiatives, setInitiatives] = useState<any[]>([]);
 
   // Delete confirmation modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -50,6 +55,34 @@ export default function StakeholderDetailPage() {
         if (!mounted.current) return;
         setStakeholder(s);
         setAllStakeholders(all);
+        // Pre-fill relationship notes if present in response in the future; UI only for now
+        if (s?.relationshipNotes) setRelationshipNotes(s.relationshipNotes);
+
+        // Resolve business unit name (if any)
+        try {
+          if (s?.businessUnitId) {
+            const buRes = await fetch('/api/business-units', { cache: 'no-store' });
+            if (buRes.ok) {
+              const buList = await buRes.json();
+              const bu = (Array.isArray(buList) ? buList : []).find((u: any) => u.id === s.businessUnitId);
+              if (bu?.name) setBusinessUnitName(bu.name);
+            }
+          }
+        } catch {}
+
+        // Load initiatives tied to this stakeholder's Business Unit
+        try {
+          const buId = s?.businessUnitId;
+          if (buId) {
+            const initRes = await fetch(`/api/initiatives?businessUnitId=${encodeURIComponent(buId)}`, { cache: 'no-store' });
+            if (initRes.ok) {
+              const inits = await initRes.json();
+              setInitiatives(Array.isArray(inits) ? inits : []);
+            }
+          } else {
+            setInitiatives([]);
+          }
+        } catch {}
       } catch (err) {
         if (mounted.current) {
           setError('Failed to load stakeholder');
@@ -75,6 +108,8 @@ export default function StakeholderDetailPage() {
           name: stakeholder.name,
           role: stakeholder.role,
           reportsToId: stakeholder.reportsToId ?? null,
+          // relationshipNotes is currently UI-only; backend will ignore unknown keys until field is added
+          relationshipNotes,
         }),
       });
       if (!res.ok) {
@@ -223,6 +258,86 @@ export default function StakeholderDetailPage() {
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
+        </div>
+      </div>
+
+      {/* Relationship Notes */}
+      <div className="bg-white shadow rounded-lg p-6 space-y-3">
+        <h2 className="text-lg font-medium text-gray-900">Relationship Notes</h2>
+        <p className="text-xs text-gray-500">Use this space to capture context, history, and key points about your relationship with this stakeholder.</p>
+        <textarea
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
+          rows={5}
+          value={relationshipNotes}
+          onChange={(e) => setRelationshipNotes(e.target.value)}
+          placeholder="Add notes..."
+        />
+        <div className="text-xs text-gray-400">Notes are saved with "Save Changes" above.</div>
+      </div>
+
+      {/* Related: Business Unit, Goals, Initiatives */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Business Unit */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-md font-medium text-gray-900">Business Unit</h3>
+          {stakeholder.businessUnitId ? (
+            <div className="mt-2 text-sm">
+              <div className="text-gray-700">{businessUnitName || 'Business Unit'}</div>
+              <button
+                className="mt-2 text-blue-600 hover:underline text-sm"
+                onClick={() => window.location.assign(`/business-units/${stakeholder.businessUnitId}`)}
+              >
+                View Business Unit
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 text-sm text-gray-500">Not assigned</div>
+          )}
+        </div>
+
+        {/* Goals helper */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-md font-medium text-gray-900">Goals</h3>
+          <div className="mt-2 text-sm text-gray-500">
+            View goals managed within the stakeholder's business unit or search the goals view.
+          </div>
+          <div className="mt-3 flex gap-2">
+            {stakeholder.businessUnitId && (
+              <button
+                className="text-blue-600 hover:underline text-sm"
+                onClick={() => window.location.assign(`/business-units/${stakeholder.businessUnitId}`)}
+              >
+                Open BU Details
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Initiatives */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-md font-medium text-gray-900">Initiatives</h3>
+          {initiatives.length === 0 ? (
+            <div className="mt-2 text-sm text-gray-500">No initiatives for this business unit</div>
+          ) : (
+            <ul className="mt-3 divide-y">
+              {initiatives.slice(0, 5).map((init: any) => (
+                <li key={init.id} className="py-2 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <div className="text-sm text-gray-900 truncate">{init.name}</div>
+                    {init.summary && (
+                      <div className="text-xs text-gray-500 line-clamp-2">{init.summary}</div>
+                    )}
+                  </div>
+                  <button
+                    className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                    onClick={() => window.location.assign(`/initiatives-kpis#initiative-${init.id}`)}
+                  >
+                    View
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     {/* Delete Confirmation Modal */}

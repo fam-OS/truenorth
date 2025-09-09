@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type React from 'react';
 import { BusinessUnitList } from '@/components/BusinessUnitList';
@@ -597,7 +598,7 @@ export default function BusinessUnitsPage() {
                     ))}
                     {(selectedUnit.stakeholders || []).length === 0 && (
                       <li className="py-6 text-sm text-gray-500 text-center">
-                        No stakeholders. Please <a href="/team-members/new" className="text-blue-600 hover:underline">create a team member</a> first, then add them as a stakeholder.
+                        No stakeholders. Please <Link href="/team-members/new" className="text-blue-600 hover:underline">create a team member</Link> first, then add them as a stakeholder.
                       </li>
                     )}
                   </ul>
