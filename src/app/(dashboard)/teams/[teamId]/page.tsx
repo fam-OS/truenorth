@@ -49,6 +49,7 @@ function TeamPageContent({ teamId }: { teamId: string }) {
   const handleTeamUpdated = (updatedTeam: Team) => {
     setTeam(updatedTeam);
     setIsEditing(false);
+    showToast({ title: 'Team updated', description: 'Changes were saved successfully.' });
   };
 
   const handleCancelEdit = () => {
