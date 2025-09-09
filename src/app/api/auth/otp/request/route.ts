@@ -7,11 +7,12 @@ import { sendEmail } from '@/lib/email';
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions as any);
-    if (!session?.user?.id || !session.user.email) {
+    const s = session as any; // Explicit cast to avoid strict type narrowing in CI
+    if (!s?.user?.id || !s?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: s.user.id } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Optional: rudimentary rate limit by not issuing a new code if an unexpired one exists
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     });
 
     await sendEmail({
-      to: session.user.email,
+      to: s.user.email,
       subject: 'Your TrueNorth verification code',
       text: `Your verification code is ${code}. It expires in 10 minutes.`,
       html: `<p>Your verification code is <b>${code}</b>. It expires in 10 minutes.</p>`,

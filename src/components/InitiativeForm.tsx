@@ -118,10 +118,6 @@ export function InitiativeForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!form.organizationId) {
-      setError('Please select an organization.');
-      return;
-    }
     console.log('[InitiativeForm] submit with organizationId =', form.organizationId, 'businessUnitId =', form.businessUnitId);
     await onSubmit({ ...form, releaseDate: form.releaseDate || undefined });
   }
@@ -130,6 +126,11 @@ export function InitiativeForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+      )}
+      {!form.organizationId && (
+        <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">
+          No organization selected. This initiative will be created without an organization and scoped to your company account.
+        </div>
       )}
 
       <div>

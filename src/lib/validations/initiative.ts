@@ -16,7 +16,11 @@ export const createInitiativeSchema = z.object({
     .optional()
     .nullable()
     .transform((str) => (str ? new Date(str) : undefined)),
-  organizationId: z.string().min(1, 'Organization ID is required'),
+  organizationId: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => (v ? v : undefined)),
   ownerId: z
     .string()
     .optional()

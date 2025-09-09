@@ -83,12 +83,27 @@ export default function InitiativesPage() {
           <h1 className="text-2xl font-bold">Initiatives</h1>
           <p className="mt-1 text-sm text-gray-500">Strategic initiatives for {currentOrg.name}</p>
         </div>
-        <Link
-          href="/initiatives/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          New Initiative
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={{
+              pathname: '/api/reports/initiatives',
+              query: {
+                orgId: currentOrg.id,
+                ...(filters.ownerId ? { ownerId: filters.ownerId } : {}),
+              },
+            } as any}
+            prefetch={false}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Export CSV
+          </Link>
+          <Link
+            href="/initiatives/new"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            New Initiative
+          </Link>
+        </div>
       </div>
 
       {/* Filters (match KPIs: Year, Quarter, plus Owner lookup) */}
