@@ -73,7 +73,7 @@ export function StakeholderForm({ businessUnit, onSubmit, onCancel }: Stakeholde
           <option value="">Select a team member</option>
           {teamMembers.map(tm => (
             <option key={tm.id} value={tm.id}>
-              {tm.name}{tm.email ? ` (${tm.email})` : ''}
+              {tm.name}
             </option>
           ))}
         </select>
@@ -85,12 +85,6 @@ export function StakeholderForm({ businessUnit, onSubmit, onCancel }: Stakeholde
             <label className="block text-sm font-medium text-gray-700">Role</label>
             <div className="mt-1 text-sm text-gray-900 border rounded-md px-3 py-2 bg-gray-50">
               {selected.role || '—'}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <div className="mt-1 text-sm text-gray-900 border rounded-md px-3 py-2 bg-gray-50 break-all">
-              {selected.email || '—'}
             </div>
           </div>
         </div>

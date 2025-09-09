@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import type { BusinessUnitWithDetails } from '@/types/prisma';
 import { UserGroupIcon, ChartBarIcon, PlusIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface BusinessUnitListProps {
   businessUnits: BusinessUnitWithDetails[];
-  onSelectUnit: (unit: BusinessUnitWithDetails) => void;
+  onSelectUnit?: (unit: BusinessUnitWithDetails) => void;
   onAddStakeholder?: (unit: BusinessUnitWithDetails) => void;
 }
 
@@ -24,18 +25,18 @@ export function BusinessUnitList({
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <button
-                  className="text-left w-full flex items-start justify-between"
-                  onClick={() => onSelectUnit(unit)}
+                <Link
+                  href={`/business-units/${unit.id}`}
+                  className="text-left w-full flex items-start justify-between hover:no-underline"
                 >
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">{unit.name}</h3>
+                    <h3 className="text-sm font-medium text-gray-900 hover:underline">{unit.name}</h3>
                     {unit.description && (
                       <p className="text-sm text-gray-500 mt-1">{unit.description}</p>
                     )}
                   </div>
                   <ChevronRightIcon className="ml-3 h-4 w-4 text-gray-400 mt-0.5 transition-transform group-hover:translate-x-0.5" />
-                </button>
+                </Link>
               </div>
               {onAddStakeholder && (
                 <button

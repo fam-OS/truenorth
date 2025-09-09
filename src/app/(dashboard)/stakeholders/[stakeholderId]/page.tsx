@@ -9,7 +9,7 @@ interface Stakeholder {
   id: string;
   name: string;
   role: string;
-  email?: string | null;
+  email?: string | null; // hidden in UI
   businessUnitId?: string | null;
   reportsToId?: string | null;
 }
@@ -74,7 +74,6 @@ export default function StakeholderDetailPage() {
         body: JSON.stringify({
           name: stakeholder.name,
           role: stakeholder.role,
-          email: stakeholder.email ?? undefined,
           reportsToId: stakeholder.reportsToId ?? null,
         }),
       });
@@ -192,16 +191,7 @@ export default function StakeholderDetailPage() {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-            value={stakeholder.email ?? ''}
-            onChange={(e) => setStakeholder({ ...stakeholder, email: e.target.value })}
-            placeholder="name@example.com"
-          />
-        </div>
+        {/* Email hidden by request */}
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Reports to</label>

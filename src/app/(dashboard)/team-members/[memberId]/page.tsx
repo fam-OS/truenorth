@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/toast";
 type TeamMember = {
   id: string;
   name: string;
-  email: string | null;
+  email: string | null; // kept in type for compatibility but hidden in UI
   role: string | null;
   teamId: string | null;
   reportsToId: string | null;
@@ -92,7 +92,6 @@ export default function TeamMemberDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: member.name,
-          email: member.email ?? null,
           role: member.role ?? null,
           reportsToId: member.reportsToId ?? null,
           teamId: member.teamId ?? null,
@@ -198,16 +197,7 @@ export default function TeamMemberDetailPage() {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-            value={member.email ?? ""}
-            onChange={(e) => setMember({ ...member, email: e.target.value })}
-            placeholder="name@example.com"
-          />
-        </div>
+        {/* Email hidden by request */}
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Team</label>

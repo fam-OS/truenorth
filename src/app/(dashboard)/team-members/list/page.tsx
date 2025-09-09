@@ -58,7 +58,7 @@ export default function AllTeamMembersPage() {
                 <Link href={`/team-members/${m.id}`} className="text-blue-600 hover:underline">
                   {m.name || "(no name)"}
                 </Link>
-                <div className="text-xs text-gray-500 mt-0.5">{m.role || "Member"} • {m.email || "no email"}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{m.role || "Member"}</div>
               </div>
               <Link href={`/team-members/${m.id}`} className="text-xs text-blue-600 hover:underline">
                 View

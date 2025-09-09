@@ -88,13 +88,33 @@ export async function POST(request: Request) {
       ...rest,
       companyAccountId: companyAccount.id,
     };
-    if (parentId) {
-      createData.Parent = { connect: { id: parentId } };
+    if (parentId && typeof parentId === 'string' && parentId.trim().length > 0) {
+      // Ensure the selected parent belongs to the same company account
+      const parent = await prisma.organization.findFirst({
+        where: { id: parentId, companyAccountId: companyAccount.id },
+        select: { id: true },
+      });
+      if (!parent) {
+        return NextResponse.json({ error: 'Invalid parent organization specified.' }, { status: 400 });
+      }
+      // Set parentId directly to avoid nested relation errors
+      createData.parentId = parentId;
     }
     const organization = await prisma.organization.create({ data: createData });
 
     return NextResponse.json(organization, { status: 201 });
   } catch (error) {
+    // Provide clearer diagnostics in server logs and return a helpful message
+    console.error('[Organizations][POST] Create error:', error);
+    const code = (error as any)?.code as string | undefined;
+    const message = (error as any)?.message as string | undefined;
+    if (code === 'P2003' || code === 'P2025') {
+      // Foreign key / record not found (likely invalid parentId)
+      return NextResponse.json({ error: 'Invalid parent organization specified.' }, { status: 400 });
+    }
+    if (message && /parent/i.test(message)) {
+      return NextResponse.json({ error: 'Unable to link parent organization. Please remove Parent or pick a valid one.' }, { status: 400 });
+    }
     return handleError(error);
   }
 }

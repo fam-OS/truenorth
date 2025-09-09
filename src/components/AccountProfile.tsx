@@ -568,7 +568,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                   <option value="">Select founder</option>
                   {teamMembers.map((member) => (
                     <option key={member.id} value={member.id}>
-                      {member.name} {member.email && `(${member.email})`}
+                      {member.name}
                     </option>
                   ))}
                 </select>
@@ -588,11 +588,7 @@ export default function AccountProfile({ companyAccount, onUpdate }: AccountProf
                     value={newMemberName}
                     onChange={(e) => setNewMemberName(e.target.value)}
                   />
-                  <Input
-                    placeholder="Email (optional)"
-                    value={newMemberEmail}
-                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                  />
+                  {/* Email hidden by request */}
                   <div className="flex gap-2">
                     <Button size="sm" onClick={handleCreateTeamMember}>
                       Add

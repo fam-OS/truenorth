@@ -595,6 +595,11 @@ export default function BusinessUnitsPage() {
                         </div>
                       </li>
                     ))}
+                    {(selectedUnit.stakeholders || []).length === 0 && (
+                      <li className="py-6 text-sm text-gray-500 text-center">
+                        No stakeholders. Please <a href="/team-members/new" className="text-blue-600 hover:underline">create a team member</a> first, then add them as a stakeholder.
+                      </li>
+                    )}
                   </ul>
                   {(selectedUnit.stakeholders || []).length > 3 && (
                     <div className="px-4 py-3 bg-gray-50 text-center">

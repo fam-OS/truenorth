@@ -13,6 +13,7 @@ export default function UnitsAndStakeholdersPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [businessUnits, setBusinessUnits] = useState<any[]>([]);
   const [stakeholders, setStakeholders] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -20,18 +21,21 @@ export default function UnitsAndStakeholdersPage() {
     if (!mounted.current) return;
     try {
       setLoading(true);
-      const [orgRes, shRes] = await Promise.all([
+      const [orgRes, shRes, tmRes] = await Promise.all([
         fetch('/api/organizations', { cache: 'no-store', signal: AbortSignal.timeout(5000) }),
         fetch('/api/stakeholders', { cache: 'no-store', signal: AbortSignal.timeout(5000) }),
+        fetch('/api/team-members', { cache: 'no-store', signal: AbortSignal.timeout(5000) }),
       ]);
       if (!orgRes.ok) throw new Error('Failed to fetch organizations');
       if (!shRes.ok) throw new Error('Failed to fetch stakeholders');
+      if (!tmRes.ok) throw new Error('Failed to fetch team members');
 
-      const [orgs, shs] = await Promise.all([orgRes.json(), shRes.json()]);
+      const [orgs, shs, tms] = await Promise.all([orgRes.json(), shRes.json(), tmRes.json()]);
       if (!mounted.current) return;
 
       setOrganizations(orgs);
       setStakeholders(shs || []);
+      setTeamMembers(Array.isArray(tms) ? tms : []);
 
       const units = orgs.flatMap((org: any) =>
         (org.businessUnits || []).map((unit: any) => ({
@@ -114,6 +118,7 @@ export default function UnitsAndStakeholdersPage() {
                 stakeholders={stakeholders}
                 onSelectStakeholder={(s) => location.assign(`/stakeholders/${s.id}`)}
                 onCreateStakeholder={() => location.assign('/stakeholders')}
+                hasTeamMembers={teamMembers.length > 0}
               />
             </div>
           </div>

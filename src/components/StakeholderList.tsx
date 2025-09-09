@@ -8,6 +8,7 @@ interface StakeholderListProps {
   onSelectStakeholder: (stakeholder: Stakeholder) => void;
   onCreateStakeholder: () => void;
   onRemoveStakeholder?: (stakeholder: Stakeholder) => void;
+  hasTeamMembers?: boolean;
 }
 
 export function StakeholderList({
@@ -15,6 +16,7 @@ export function StakeholderList({
   onSelectStakeholder,
   onCreateStakeholder,
   onRemoveStakeholder,
+  hasTeamMembers,
 }: StakeholderListProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -78,7 +80,11 @@ export function StakeholderList({
           <p className="mt-1 text-sm text-gray-500">
             {searchTerm
               ? 'Try adjusting your search terms'
-              : 'Get started by adding a new stakeholder'}
+              : hasTeamMembers === false
+                ? (<>
+                    You don’t have any team members yet. Please <a href="/team-members/new" className="text-blue-600 hover:underline">create a team member</a> first, then add them as a stakeholder.
+                  </>)
+                : 'Get started by adding a new stakeholder'}
           </p>
         </div>
       ) : (

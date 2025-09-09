@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/toast';
 
-type Member = { id: string; name: string; email: string; role: string; teamId?: string | null };
+type Member = { id: string; name: string; role: string; teamId?: string | null };
 
 export function TeamMembers({ teamId }: { teamId: string }) {
   const [members, setMembers] = useState<Member[]>([]);
@@ -28,7 +28,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   // Add form state
   const [addOpen, setAddOpen] = useState(false);
   const [addName, setAddName] = useState('');
-  const [addEmail, setAddEmail] = useState('');
+  // Email field removed from UI per request
   const [addRole, setAddRole] = useState('');
   const [adding, setAdding] = useState(false);
   // Attach existing
@@ -39,7 +39,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
+  // Email field removed from UI per request
   const [editRole, setEditRole] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [editReportsToId, setEditReportsToId] = useState<string>('');
@@ -88,7 +88,6 @@ export function TeamMembers({ teamId }: { teamId: string }) {
         ? { existingMemberId: selectedExistingId }
         : {
             name: addName,
-            email: addEmail.trim() === '' ? undefined : addEmail,
             role: addRole.trim() === '' ? undefined : addRole,
           };
       const res = await fetch(`/api/teams/${teamId}/members`, {
@@ -98,7 +97,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
       });
       if (!res.ok) throw new Error('Failed to add member');
       setAddName('');
-      setAddEmail('');
+      // no email field to reset
       setAddRole('');
       setSelectedExistingId('');
       setAttachExisting(false);
@@ -114,7 +113,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   const openEdit = (m: Member) => {
     setEditingId(m.id);
     setEditName(m.name || '');
-    setEditEmail((m as any).email ?? '');
+    // no email editing
     setEditRole((m as any).role ?? '');
     setEditReportsToId('');
   };
@@ -122,7 +121,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
   const cancelEdit = () => {
     setEditingId(null);
     setEditName('');
-    setEditEmail('');
+    // no email editing
     setEditRole('');
     setEditReportsToId('');
   };
@@ -135,7 +134,6 @@ export function TeamMembers({ teamId }: { teamId: string }) {
       setSavingEdit(true);
       const payload = {
         name: editName,
-        email: editEmail.trim() === '' ? null : editEmail,
         role: editRole.trim() === '' ? null : editRole,
         reportsToId: editReportsToId.trim() === '' ? null : editReportsToId,
       };
@@ -231,7 +229,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                 .filter((m) => !members.some((tm) => tm.id === m.id))
                 .map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name} {m.email ? `(${m.email})` : ''}
+                    {m.name}
                   </option>
                 ))}
             </select>
@@ -245,14 +243,6 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                 onChange={(e) => setAddName(e.target.value)}
                 className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               />
-              <input
-                type="email"
-                placeholder="Email"
-                value={addEmail}
-                onChange={(e) => setAddEmail(e.target.value)}
-                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-              />
-              <p className="text-xs text-gray-500 md:col-span-3">Enter a work email address (e.g., name@company.com).</p>
               <select
                 value={addRole}
                 onChange={(e) => setAddRole(e.target.value)}
@@ -304,7 +294,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
           {members.map((m) => (
             <li key={m.id} className="p-3">
               {editingId === m.id ? (
-                <form onSubmit={handleSaveEdit} className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <form onSubmit={handleSaveEdit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <input
                     type="text"
                     required
@@ -312,13 +302,6 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                     onChange={(e) => setEditName(e.target.value)}
                     className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                   />
-                  <input
-                    type="email"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                  />
-                  <p className="text-xs text-gray-500">Enter a work email address (e.g., name@company.com).</p>
                   <select
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value)}
@@ -376,7 +359,7 @@ export function TeamMembers({ teamId }: { teamId: string }) {
                         {m.name}
                       </Link>
                     </div>
-                    <div className="text-xs text-gray-500">{m.email}</div>
+                    {/* email hidden */}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-600">{m.role}</span>

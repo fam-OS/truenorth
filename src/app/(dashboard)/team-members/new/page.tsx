@@ -13,7 +13,6 @@ export default function NewTeamMemberPage() {
   const [error, setError] = useState<string>("");
   const [form, setForm] = useState({
     name: "",
-    email: "",
     role: "",
     teamId: "",
   });
@@ -42,8 +41,7 @@ export default function NewTeamMemberPage() {
     try {
       const payload: any = {
         name: form.name,
-        email: form.email || undefined,
-        role: form.role || undefined,
+        role: form.role, // required
         teamId: form.teamId,
       };
       const res = await fetch("/api/team-members", {
@@ -93,25 +91,26 @@ export default function NewTeamMemberPage() {
               required
             />
           </div>
+          {/* Email removed per requirement */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email (optional)</label>
-            <input
-              type="email"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="user@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Role (optional)</label>
-            <input
-              type="text"
+            <label className="block text-sm font-medium text-gray-700">Role</label>
+            <select
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
-              placeholder="e.g., Engineer"
-            />
+              required
+            >
+              <option value="">Select Role</option>
+              <option value="CEO">CEO</option>
+              <option value="COO">COO</option>
+              <option value="CTO">CTO</option>
+              <option value="CIO">CIO</option>
+              <option value="CFO">CFO</option>
+              <option value="Executive">Executive</option>
+              <option value="Director">Director</option>
+              <option value="Manager">Manager</option>
+              <option value="Team Member">Team Member</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Team</label>

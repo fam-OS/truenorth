@@ -389,7 +389,10 @@ function TeamsClient() {
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
               <span>Teams ({teams.length})</span>
-              <Link href="/teams/list" className="text-xs text-blue-600 hover:underline">View All Teams</Link>
+              <div className="flex items-center gap-3">
+                <Link href="/teams/list" className="text-xs text-blue-600 hover:underline">View All Teams</Link>
+                <Link href="/teams/new" className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Add Team</Link>
+              </div>
             </div>
             {teams.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No teams found.</div>
@@ -419,8 +422,16 @@ function TeamsClient() {
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
               <span>Team Members ({members.length})</span>
-              <Link href="/team-members/list" className="text-xs text-blue-600 hover:underline">View All Team Members</Link>
+              <div className="flex items-center gap-3">
+                <Link href="/team-members/list" className="text-xs text-blue-600 hover:underline">View All Team Members</Link>
+                <Link href="/team-members/new" className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Add Team Member</Link>
+              </div>
             </div>
+            {teams.length === 0 && (
+              <div className="px-4 py-3 text-xs text-yellow-800 bg-yellow-50 border-t border-b">
+                No teams found. Please create a team first before adding team members. <Link href="/teams/new" className="underline text-yellow-900">Add a team</Link>.
+              </div>
+            )}
             {displayMembers.length === 0 ? (
               <div className="p-4 text-sm text-gray-500">No team members found.</div>
             ) : (
