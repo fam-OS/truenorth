@@ -5,7 +5,8 @@ import { z } from 'zod';
 const signupSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().min(1, 'Name is required')
+  // Name is optional per UI; allow undefined or empty string
+  name: z.string().optional().transform((v) => (v && v.trim().length > 0 ? v : undefined)),
 });
 
 export async function POST(request: Request) {
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
       data: {
         id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
         email,
-        name: name || null,
+        name: name ?? null,
         passwordHash,
       },
     });

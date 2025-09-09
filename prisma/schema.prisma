@@ -434,6 +434,10 @@ model User {
   sessions       Session[]
   SupportRequest SupportRequest[]
   Organization   Organization[]
+  // MFA (Email OTP) fields
+  mfaEnforced    Boolean          @default(true)
+  otpCode        String?
+  otpExpiresAt   DateTime?
 }
 
 model VerificationToken {
