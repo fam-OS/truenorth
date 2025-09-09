@@ -1,14 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { Stakeholder } from '@prisma/client';
 import { useState } from 'react';
 
+// Lightweight stakeholder shape for list rendering
+export type StakeholderListItem = {
+  id: string;
+  name: string;
+  role?: string | null;
+  email?: string | null;
+};
+
 interface StakeholderListProps {
-  stakeholders: Stakeholder[];
-  onSelectStakeholder: (stakeholder: Stakeholder) => void;
+  stakeholders: StakeholderListItem[];
+  onSelectStakeholder: (stakeholder: StakeholderListItem) => void;
   onCreateStakeholder: () => void;
-  onRemoveStakeholder?: (stakeholder: Stakeholder) => void;
+  onRemoveStakeholder?: (stakeholder: StakeholderListItem) => void;
   hasTeamMembers?: boolean;
 }
 
