@@ -13,7 +13,8 @@ const {
   EMAIL_STREAM, // e.g. Postmark message stream name
 } = process.env as Record<string, string | undefined>;
 
-let transporter: nodemailer.Transporter;
+// Avoid referencing nodemailer namespace types in CI where @types may be absent
+let transporter: any;
 
 if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
   transporter = nodemailer.createTransport({
