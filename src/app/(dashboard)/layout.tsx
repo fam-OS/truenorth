@@ -238,7 +238,7 @@ export default function DashboardLayout({
                         <button
                           onClick={() => {
                             setUserMenuOpen(false);
-                            signOut();
+                            signOut({ callbackUrl: '/' });
                           }}
                           className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import GettingStartedChecklist from '@/components/GettingStartedChecklist';
 import { KpiProgress } from '@/components/KpiProgress';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface DashboardStats {
   organizations: number;
@@ -24,6 +26,8 @@ interface RecentActivity {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [stats, setStats] = useState<DashboardStats>({
     organizations: 0,
     businessUnits: 0,
@@ -101,6 +105,12 @@ export default function DashboardPage() {
       if (stored !== null) setShowChecklist(stored === 'true');
     } catch {}
 
+    // If authenticated but MFA not verified, redirect to MFA page
+    if (status === 'authenticated' && (session as any)?.mfaVerified === false) {
+      router.replace('/auth/mfa');
+      return; // don't fetch dashboard data yet
+    }
+
     const fetchDashboardData = async () => {
       try {
         // Fetch organizations and count related data
@@ -157,8 +167,10 @@ export default function DashboardPage() {
       }
     };
 
-    fetchDashboardData();
-  }, []);
+    if (status === 'authenticated' && (session as any)?.mfaVerified !== false) {
+      fetchDashboardData();
+    }
+  }, [status, session, router]);
 
   const toggleChecklist = () => {
     setShowChecklist((prev) => {
@@ -169,6 +181,12 @@ export default function DashboardPage() {
       return next;
     });
   };
+
+  if (status === 'authenticated' && (session as any)?.mfaVerified === false) {
+    return (
+      <div className="flex items-center justify-center h-64"><div className="text-lg">Redirecting to verification…</div></div>
+    );
+  }
 
   if (loading) {
     return (
