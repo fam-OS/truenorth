@@ -1,11 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Organization } from '@prisma/client';
 import { CreateOrganizationInput } from '@/lib/validations/organization';
 
 interface OrganizationFormProps {
-  organization?: Organization;
+  organization?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    parentId?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+    companyAccountId?: string;
+  };
   onSubmit: (data: CreateOrganizationInput) => Promise<void>;
   onCancel: () => void;
 }
