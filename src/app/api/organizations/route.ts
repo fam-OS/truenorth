@@ -57,17 +57,18 @@ export async function POST(request: Request) {
 
     // In test environment, bypass auth and manual id generation
     if (process.env.NODE_ENV === 'test') {
-      const organization = await prisma.organization.create({
-        data: {
-          id: randomUUID(),
-          name: data.name,
-          description: data.description ?? undefined,
-          // Provide a placeholder to satisfy Prisma types; prismaMock intercepts in tests
-          companyAccountId: data.companyAccountId ?? 'test-company-account-id',
-          // @ts-expect-error - field added by migration
-          parentId: data.parentId ?? null,
-        },
-      });
+      // In tests, prismaMock may intercept; still use proper relation connect to satisfy types
+      const createData: any = {
+        id: randomUUID(),
+        name: data.name,
+        description: data.description ?? undefined,
+        // Provide a placeholder to satisfy Prisma types; prismaMock intercepts in tests
+        companyAccountId: data.companyAccountId ?? 'test-company-account-id',
+      };
+      if (data.parentId) {
+        createData.Parent = { connect: { id: data.parentId } };
+      }
+      const organization = await prisma.organization.create({ data: createData });
       return NextResponse.json(organization, { status: 201 });
     }
 
@@ -81,16 +82,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Company account required' }, { status: 400 });
     }
 
-    const organization = await prisma.organization.create({
-      data: {
-        id: randomUUID(),
-        ...data,
-        companyAccountId: companyAccount.id,
-        // Ensure explicit null when not provided
-        // @ts-expect-error - field added by migration
-        parentId: data.parentId ?? null,
-      },
-    });
+    const { parentId, ...rest } = data as any;
+    const createData: any = {
+      id: randomUUID(),
+      ...rest,
+      companyAccountId: companyAccount.id,
+    };
+    if (parentId) {
+      createData.Parent = { connect: { id: parentId } };
+    }
+    const organization = await prisma.organization.create({ data: createData });
 
     return NextResponse.json(organization, { status: 201 });
   } catch (error) {
