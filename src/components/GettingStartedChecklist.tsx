@@ -67,6 +67,7 @@ export default function GettingStartedChecklist() {
   ]);
 
   const [completedCount, setCompletedCount] = useState(0);
+  const [expanded, setExpanded] = useState(false); // allow viewing details when all completed
 
   const [hasCompanyAccount, setHasCompanyAccount] = useState<boolean | null>(null);
 
@@ -172,14 +173,23 @@ export default function GettingStartedChecklist() {
   const progressPercentage = Math.round((completedCount / checklist.length) * 100);
 
   const allCompleted = checklist.length > 0 && checklist.every((i) => i.completed);
-  if (allCompleted) {
+  if (allCompleted && !expanded) {
     return (
       <div className="w-full p-3 rounded-md bg-green-50 border border-green-200 text-sm text-green-700 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">🎉</span>
           <span>All getting started steps completed. You’re all set!</span>
         </div>
-        <Link href="/organizations" className="underline text-xs text-green-700 hover:text-green-800">View organization</Link>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="underline text-xs text-green-700 hover:text-green-800"
+          >
+            Review steps
+          </button>
+          <Link href="/organizations" className="underline text-xs text-green-700 hover:text-green-800">View organization</Link>
+        </div>
       </div>
     );
   }
@@ -188,9 +198,20 @@ export default function GettingStartedChecklist() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-semibold text-gray-100">Getting Started</CardTitle>
-          <div className="text-sm text-gray-300">
-            {completedCount}/{checklist.length} completed
+          <CardTitle className="text-xl font-semibold text-gray-900">Getting Started</CardTitle>
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-600">
+              {completedCount}/{checklist.length} completed
+            </div>
+            {allCompleted && (
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                Close
+              </button>
+            )}
           </div>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -199,7 +220,7 @@ export default function GettingStartedChecklist() {
             style={{ width: `${progressPercentage}%` }}
           ></div>
         </div>
-        <p className="text-sm text-gray-300">
+        <p className="text-sm text-gray-600">
           Complete these steps to set up your organization in TrueNorth
         </p>
       </CardHeader>

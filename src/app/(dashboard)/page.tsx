@@ -34,6 +34,7 @@ export default function DashboardPage() {
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showChecklist, setShowChecklist] = useState<boolean>(true);
 
   // Helper function to format numbers with commas
   const formatNumber = (num: number) => {
@@ -94,6 +95,12 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    // Initialize show/hide state for the onboarding checklist from localStorage
+    try {
+      const stored = typeof window !== 'undefined' ? window.localStorage.getItem('tn_show_checklist') : null;
+      if (stored !== null) setShowChecklist(stored === 'true');
+    } catch {}
+
     const fetchDashboardData = async () => {
       try {
         // Fetch organizations and count related data
@@ -153,6 +160,16 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, []);
 
+  const toggleChecklist = () => {
+    setShowChecklist((prev) => {
+      const next = !prev;
+      try {
+        if (typeof window !== 'undefined') window.localStorage.setItem('tn_show_checklist', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -164,12 +181,23 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Overview of your organization's performance</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Overview of your organization's performance</p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleChecklist}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {showChecklist ? 'Hide checklist' : 'Show checklist'}
+          </button>
+        </div>
       </div>
 
       {/* Getting Started Checklist */}
-      <GettingStartedChecklist />
+      {showChecklist && <GettingStartedChecklist />}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

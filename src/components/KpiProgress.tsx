@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type KpiItem = {
   id: string;
@@ -49,29 +50,38 @@ export function KpiProgress() {
 
   if (loading) {
     return (
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg p-4 text-sm text-gray-500">Loading KPI progress…</div>
+      <Card>
+        <CardContent className="p-4 text-sm text-gray-500">Loading KPI progress…</CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg p-4 text-sm text-red-600">{error}</div>
+      <Card>
+        <CardContent className="p-4 text-sm text-red-600">{error}</CardContent>
+      </Card>
     );
   }
 
   if (kpis.length === 0) {
     return (
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg p-4 text-sm text-gray-500">No KPIs for {currentYear}</div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-gray-900">KPI Progress — {currentYear}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 text-sm text-gray-500">No KPIs for {currentYear}</CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-base font-medium text-gray-900">KPI Progress — {currentYear}</h2>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-gray-900">KPI Progress — {currentYear}</CardTitle>
         <Link href="/goals" className="text-sm text-blue-600 hover:underline">View all</Link>
-      </div>
-      <div className="p-6 pt-0">
+      </CardHeader>
+      <CardContent>
         <ul className="divide-y divide-gray-200">
           {kpis.map((kpi) => {
             const target = typeof kpi.targetMetric === 'number' ? kpi.targetMetric : null;
@@ -115,7 +125,7 @@ export function KpiProgress() {
             );
           })}
         </ul>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
