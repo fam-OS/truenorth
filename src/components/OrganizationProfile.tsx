@@ -439,14 +439,17 @@ export default function OrganizationProfile({ organization, onEdit }: Organizati
         <div className="px-6 py-4 border-t border-gray-200">
           <h3 className="text-sm font-medium text-gray-500 mb-3">CEO Goals</h3>
           <div className="space-y-2">
-            {organization.ceoGoals.map((goal, index) => (
-              <div key={goal.id} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
-                <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-xs font-medium text-yellow-800">
-                  {index + 1}
-                </span>
-                <p className="text-sm text-gray-900">{goal.description}</p>
-              </div>
-            ))}
+            {organization.ceoGoals.map((goal, index) => {
+              if (!goal) return null;
+              return (
+                <div key={goal.id} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
+                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-xs font-medium text-yellow-800">
+                    {index + 1}
+                  </span>
+                  <p className="text-sm text-gray-900">{goal.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
