@@ -114,7 +114,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-[#FFF6E5] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between h-28">
             <div className="flex">
               {session && (
                 <div ref={launcherRef} className="flex items-center mr-2 relative">
@@ -171,9 +171,9 @@ export default function DashboardLayout({
                 <Image 
                   src="/truenorth-logo.png" 
                   alt="TrueNorth Logo" 
-                  width={200}
-                  height={100}
-                  className="h-14 w-auto"
+                  width={900}
+                  height={600}
+                  className="h-44 w-auto"
                 />
               </Link>
             </div>

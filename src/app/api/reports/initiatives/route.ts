@@ -18,10 +18,11 @@ export async function GET(request: Request) {
     let orgIdsFilter: string[] | undefined = undefined;
     if (process.env.NODE_ENV !== 'test') {
       const session = await getServerSession(authOptions as any);
-      if (!session?.user?.id) {
+      const s = session as any; // satisfy stricter CI typing
+      if (!s?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      const orgIds = await getViewerCompanyOrgIds(s.user.id);
       // If orgId filter is provided, ensure it belongs to the viewer
       if (orgId && !orgIds.includes(orgId)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

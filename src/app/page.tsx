@@ -29,17 +29,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* Header (marketing) */}
         <header className="flex justify-between items-center py-6">
-          <div className="flex items-center space-x-3">
-            <Image 
-              src="/truenorth-logo.png" 
-              alt="TrueNorth Logo" 
-              width={200}
-              height={60}
-              className="h-10 w-auto"
-            />
-          </div>
+          <div aria-hidden className="flex items-center min-w-[1rem]" />
           <div className="flex items-center space-x-4">
             <Link
               href="/auth/signin"
@@ -62,9 +54,9 @@ export default function Home() {
             <Image 
               src="/truenorth-logo.png" 
               alt="TrueNorth Logo" 
-              width={400}
-              height={120}
-              className="h-24 w-auto"
+              width={1600}
+              height={480}
+              className="h-96 w-auto"
             />
           </div>
           <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
