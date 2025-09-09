@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireUserId } from '@/lib/access';
+import { requireUserId, getViewerCompanyOrgIds } from '@/lib/access';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,9 +12,34 @@ export async function GET(request: NextRequest) {
 
     const since = new Date(Date.now() - recentDays * 24 * 60 * 60 * 1000);
 
+    // Determine which Business Units the viewer can access based on their organizations
+    const orgIds = await getViewerCompanyOrgIds(userId);
+    if (!orgIds || orgIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    const [teams, inits] = await Promise.all([
+      prisma.team.findMany({
+        where: { organizationId: { in: orgIds }, businessUnitId: { not: null } },
+        select: { businessUnitId: true },
+      }),
+      prisma.initiative.findMany({
+        where: { organizationId: { in: orgIds }, businessUnitId: { not: null } },
+        select: { businessUnitId: true },
+      }),
+    ]);
+    const buSet = new Set<string>();
+    for (const t of teams) if ((t as any).businessUnitId) buSet.add((t as any).businessUnitId);
+    for (const i of inits) if ((i as any).businessUnitId) buSet.add((i as any).businessUnitId);
+    const accessibleBUIds = Array.from(buSet);
+    if (accessibleBUIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
     // First try: recently created or updated within window
     const recent = await prisma.goal.findMany({
       where: {
+        businessUnitId: { in: accessibleBUIds },
         OR: [
           { createdAt: { gte: since } },
           { updatedAt: { gte: since } },
@@ -47,12 +72,13 @@ export async function GET(request: NextRequest) {
     const fallback = await prisma.goal.findMany({
       where: q
         ? {
+            businessUnitId: { in: accessibleBUIds },
             OR: [
               { title: { contains: q, mode: 'insensitive' } },
               { description: { contains: q, mode: 'insensitive' } },
             ],
           }
-        : undefined,
+        : { businessUnitId: { in: accessibleBUIds } },
       orderBy: { updatedAt: 'desc' },
       take: limit,
       select: {

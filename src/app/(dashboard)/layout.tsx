@@ -37,6 +37,7 @@ export default function DashboardLayout({
         { href: '/teams', label: 'Team Management', icon: UserGroupIcon, desc: 'Headcount, roles, and team setup' },
         { href: '/business-units', label: 'Business Units', icon: BuildingOfficeIcon, desc: 'Business Units, stakeholders, and goals' },
         { href: '/initiatives-kpis', label: 'Initiatives & KPIs', icon: PresentationChartBarIcon, desc: 'Plan, execute, and measure outcomes' },
+        { href: '/reports', label: 'Reports', icon: PresentationChartBarIcon, desc: 'Canned reports & exports' },
         { href: '/ops-reviews', label: 'Team Ops Reviews', icon: PresentationChartBarIcon, desc: 'Quarterly operational reviews' },
         { href: '/financial', label: 'Financial Management', icon: PresentationChartBarIcon, desc: 'Track costs, forecasts, and actuals' },
       ],
@@ -111,7 +112,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-[#FFF6E5] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
@@ -168,10 +169,10 @@ export default function DashboardLayout({
               )}
               <Link href="/" className="flex-shrink-0 flex items-center">
                 <Image 
-                  src="/truenorth-logo.svg" 
+                  src="/truenorth-logo.png" 
                   alt="TrueNorth Logo" 
                   width={200}
-                  height={60}
+                  height={100}
                   className="h-14 w-auto"
                 />
               </Link>

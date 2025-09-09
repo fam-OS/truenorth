@@ -6,8 +6,9 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions as any);
-    console.log('[OTP][verify] session user:', session?.user?.id, session?.user?.email);
-    if (!session?.user?.id) {
+    const s = session as any; // Explicit cast to satisfy strict CI type checking
+    console.log('[OTP][verify] session user:', s?.user?.id, s?.user?.email);
+    if (!s?.user?.id) {
       console.warn('[OTP][verify] Unauthorized: missing session.user.id');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid code' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: s.user.id } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     const isValid = Boolean(

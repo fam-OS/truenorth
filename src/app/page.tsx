@@ -33,7 +33,7 @@ export default function Home() {
         <header className="flex justify-between items-center py-6">
           <div className="flex items-center space-x-3">
             <Image 
-              src="/truenorth-logo.svg" 
+              src="/truenorth-logo.png" 
               alt="TrueNorth Logo" 
               width={200}
               height={60}
@@ -60,7 +60,7 @@ export default function Home() {
         <div className="text-center py-20">
           <div className="flex justify-center mb-8">
             <Image 
-              src="/truenorth-logo.svg" 
+              src="/truenorth-logo.png" 
               alt="TrueNorth Logo" 
               width={400}
               height={120}

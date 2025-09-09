@@ -30,8 +30,8 @@ body::before {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 400px;
-  height: 120px;
-  background-image: url('/truenorth-logo.svg');
+  height: 220px;
+  background-image: url('/truenorth-logo.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
