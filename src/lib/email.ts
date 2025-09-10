@@ -1,3 +1,4 @@
+import 'server-only';
 import nodemailer from 'nodemailer';
 
 // Centralized email transporter using SMTP.

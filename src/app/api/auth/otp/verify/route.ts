@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { setTrustedDevice } from '@/lib/trustedDevice';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,8 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { code } = await req.json().catch(() => ({ code: '' }));
-    console.log('[OTP][verify] received code:', code);
+    const { code, rememberDevice } = await req.json().catch(() => ({ code: '', rememberDevice: false }));
+    console.log('[OTP][verify] received code:', code, 'rememberDevice:', rememberDevice);
     if (!code || typeof code !== 'string') {
       console.warn('[OTP][verify] Invalid code payload');
       return NextResponse.json({ error: 'Invalid code' }, { status: 400 });
@@ -44,6 +45,15 @@ export async function POST(req: NextRequest) {
       data: { otpCode: null, otpExpiresAt: null },
     });
     console.log('[OTP][verify] Verification succeeded for user', user.id);
+
+    if (rememberDevice) {
+      try {
+        setTrustedDevice(user.id);
+        console.log('[OTP][verify] remembered device for user', user.id);
+      } catch (e) {
+        console.warn('[OTP][verify] failed to set trusted device cookie:', e);
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {

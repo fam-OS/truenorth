@@ -447,6 +447,14 @@ model User {
   mfaEnforced    Boolean          @default(true)
   otpCode        String?
   otpExpiresAt   DateTime?
+  // Onboarding fields
+  firstName      String?
+  lastName       String?
+  companyName    String?
+  level          String?
+  industry       String?
+  leadershipStyles String[] @default([])
+  onboardedAt    DateTime?
 }
 
 model VerificationToken {

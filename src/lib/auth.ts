@@ -1,9 +1,11 @@
+import 'server-only';
 import { AuthOptions } from "next-auth";
 import { randomUUID } from "crypto";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import { hasTrustedDevice } from "@/lib/trustedDevice";
 import { sendEmail } from "@/lib/email";
 
 export const authOptions: AuthOptions = {
@@ -94,7 +96,15 @@ export const authOptions: AuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        (session as any).mfaVerified = (token as any).mfaVerified ?? false;
+        let verified = (token as any).mfaVerified ?? false;
+        // Treat trusted device as MFA-verified
+        if (!verified && session.user.id) {
+          try {
+            const trusted = await hasTrustedDevice(session.user.id);
+            if (trusted) verified = true;
+          } catch {}
+        }
+        (session as any).mfaVerified = verified;
       }
       return session;
     },

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function MfaPage() {
   const router = useRouter();
   const [code, setCode] = useState("");
+  const [remember, setRemember] = useState<boolean>(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "error" | "resent" | "success">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +20,7 @@ export default function MfaPage() {
       const res = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ code, rememberDevice: remember })
       });
       console.log('[MFA][client] Verify response:', res.status);
       if (!res.ok) {
@@ -73,6 +74,16 @@ export default function MfaPage() {
               required
               disabled={status === 'submitting' || status === 'success'}
             />
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                disabled={status === 'submitting' || status === 'success'}
+                className="h-4 w-4"
+              />
+              Remember this device for 6 months
+            </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
             {status === "resent" && (
               <p className="text-sm text-green-700">A new code has been sent to your email.</p>

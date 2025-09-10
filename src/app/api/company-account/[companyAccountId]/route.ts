@@ -12,9 +12,10 @@ const updateCompanyAccountSchema = z.object({
   launchedDate: z.string().optional(),
   isPrivate: z.boolean().optional(),
   tradedAs: z.string().optional(),
-  corporateIntranet: z.string().url().optional().or(z.literal('')),
-  glassdoorLink: z.string().url().optional().or(z.literal('')),
-  linkedinLink: z.string().url().optional().or(z.literal(''))
+  // Accept any string and normalize below; empty string clears the field
+  corporateIntranet: z.string().optional(),
+  glassdoorLink: z.string().optional(),
+  linkedinLink: z.string().optional()
 });
 
 export async function GET(
@@ -90,6 +91,27 @@ export async function PUT(
 
     // Extract founderId and validate if provided
     const { founderId, ...companyData } = validatedData;
+
+    // Normalize link fields: allow entries without scheme by prefixing https://
+    function normalizeLink(input?: string): string | undefined {
+      if (typeof input !== 'string') return undefined;
+      const s = input.trim();
+      if (s === '') return '';
+      const tryUrl = (u: string) => { try { new URL(u); return u; } catch { return null; } };
+      return tryUrl(s) ?? tryUrl(`https://${s}`) ?? undefined;
+    }
+    const normalizedLinks: Record<string, string | undefined> = {
+      corporateIntranet: normalizeLink(companyData.corporateIntranet),
+      glassdoorLink: normalizeLink(companyData.glassdoorLink),
+      linkedinLink: normalizeLink(companyData.linkedinLink),
+    };
+    // If any provided link fails normalization, return 400
+    for (const [k, v] of Object.entries(normalizedLinks)) {
+      if (companyData[k as keyof typeof companyData] !== undefined && v === undefined) {
+        return NextResponse.json({ error: `Invalid URL format for ${k}` }, { status: 400 });
+      }
+    }
+    Object.assign(companyData, normalizedLinks);
     console.log('Extracted founderId:', founderId);
     
     // If founderId is provided and not empty, verify it exists

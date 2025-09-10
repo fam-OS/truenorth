@@ -9,6 +9,7 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^server-only$': '<rootDir>/test/mocks/server-only.js',
   },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 };
