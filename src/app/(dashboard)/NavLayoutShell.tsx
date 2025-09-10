@@ -101,6 +101,8 @@ export default function NavLayoutShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-sm">
+        {/* Gradient strip for brand accent */}
+        <div className="bg-brand-gradient h-1 w-full" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-28">
             <div className="flex">
@@ -228,7 +230,7 @@ export default function NavLayoutShell({ children }: { children: ReactNode }) {
         </div>
       </nav>
 
-      <main className="py-10">
+      <main className="py-10 animate-fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {children}
         </div>
