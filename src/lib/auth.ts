@@ -149,6 +149,14 @@ export const authOptions: AuthOptions = {
 
         // For credentials logins, issue OTP if enforced and not currently valid
         if (account?.provider === 'credentials' && user?.id && user?.email) {
+          // If this device is trusted, skip OTP entirely
+          try {
+            const trusted = await hasTrustedDevice(user.id);
+            if (trusted) {
+              return true;
+            }
+          } catch {}
+
           const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
           if (dbUser?.mfaEnforced) {
             // Generate a 6-digit OTP and expiry (10 minutes)

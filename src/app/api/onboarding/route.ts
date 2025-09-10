@@ -67,7 +67,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3) Create a TeamMember for the user under this CompanyAccount
+    // 3) Ensure a default Organization exists: "<Company Name> - All"
+    const defaultOrgName = `${company.name} - All`;
+    let defaultOrg = await prisma.organization.findFirst({
+      where: { companyAccountId: company.id, name: defaultOrgName },
+      select: { id: true, name: true },
+    });
+    if (!defaultOrg) {
+      defaultOrg = await prisma.organization.create({
+        data: {
+          id: `org-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          name: defaultOrgName,
+          description: null,
+          companyAccountId: company.id,
+        },
+        select: { id: true, name: true },
+      });
+    }
+
+    // 4) Create a TeamMember for the user under this CompanyAccount
     // Map onboarding level -> TeamMember.role options used in UI
     const roleMap: Record<string, string> = {
       'Founder / owner': 'CEO',
@@ -103,7 +121,7 @@ export async function POST(req: NextRequest) {
       select: { id: true, name: true, email: true, role: true, companyAccountId: true },
     });
 
-    return NextResponse.json({ success: true, user: updated, companyAccount: company, teamMember });
+    return NextResponse.json({ success: true, user: updated, companyAccount: company, organization: defaultOrg, teamMember });
   } catch (error: any) {
     if (error?.name === 'ZodError') {
       return NextResponse.json({ error: 'Invalid data', details: error.issues }, { status: 400 });

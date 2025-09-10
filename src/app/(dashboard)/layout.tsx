@@ -32,7 +32,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
     if (!complete) {
       // Server redirect at the layout level
-      // eslint-disable-next-line @next/next/no-server-import-in-page
       const { redirect } = await import('next/navigation');
       redirect('/onboarding');
     }
