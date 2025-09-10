@@ -6,6 +6,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { QueryClientProvider } from "@/providers/QueryClientProvider";
 import { AuthSessionProvider } from "@/providers/SessionProvider";
 import Footer from "@/components/Footer";
+import ClientRefShim from "@/components/ClientRefShim";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,6 +28,7 @@ export default function RootLayout({
             <ToastProvider>
               <OrganizationProvider>
                 <div className="flex-1">
+                  <ClientRefShim />
                   {children}
                 </div>
                 <Footer />
