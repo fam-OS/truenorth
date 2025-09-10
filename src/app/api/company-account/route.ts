@@ -168,6 +168,27 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    // Prisma unique constraint errors (e.g., userId 1:1, founderId unique)
+    const err: any = error;
+    if (err?.code === 'P2002') {
+      const targets = Array.isArray(err?.meta?.target) ? err.meta.target as string[] : [];
+      if (targets.includes('userId')) {
+        return NextResponse.json(
+          { error: 'User already has a company account' },
+          { status: 400 }
+        );
+      }
+      if (targets.includes('founderId')) {
+        return NextResponse.json(
+          { error: 'Founder is already assigned to another company account. Clear the founder from that account or pick a different founder.' },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Unique constraint violation', details: targets.join(', ') },
+        { status: 400 }
+      );
+    }
     return handleError(error);
   }
 }

@@ -20,6 +20,26 @@ A web application for managing tasks, goals, and business metrics for tech execu
 - Zod `^4` for request validation
 - Jest for backend tests (Node environment)
 
+## Recent Improvements
+
+- Auth-scoped Goals endpoint
+  - `src/app/api/goals/route.ts` now restricts results to Business Units the viewer can access (derived from their Organizations via Teams/Initiatives). New users with no org access will see zero goals in dashboard overviews.
+- Session typing hardening for CI/Vercel
+  - Cast `getServerSession(authOptions)` results to `any` before accessing `session.user` in a few routes to satisfy stricter type inference in CI.
+  - Updated files include:
+    - `src/app/api/auth/otp/verify/route.ts`
+    - `src/app/api/reports/initiatives/route.ts`
+- Nodemailer typing fix for builds
+  - Added `types/nodemailer.d.ts` to provide a minimal ambient declaration.
+  - Updated `src/lib/email.ts` to avoid referencing `nodemailer.Transporter` namespace type (uses `any`), fixing “Cannot find namespace 'nodemailer'” build errors without introducing a new dev dependency.
+- Marketing page and header UI updates
+  - Switched logo to PNG and matched header background tone: `src/app/(dashboard)/layout.tsx` now uses `bg-[#FFF6E5]`.
+  - Adjusted header/logo sizing for better branding presence.
+  - Marketing page (`src/app/page.tsx`):
+    - Removed “Free Trial” CTAs (not offered yet).
+    - Added a clear “Get Started” CTA (links to `/auth/signup`).
+    - Enlarged hero logo for stronger visual impact.
+
 ## Data Model
 
 ### Diagram
@@ -269,6 +289,20 @@ MIT
 
 - `DATABASE_URL` — Postgres connection string (required)
 - `NEXT_PUBLIC_BASE_URL` — optional. If set, client code may use it to prefix API calls; server routes/pages should prefer header-derived base URL as above.
+
+## Production Deployment Notes
+
+- Platform: Vercel (production URL configured via project settings)
+- Required runtime variables (non-exhaustive):
+  - `NEXTAUTH_SECRET`
+  - `NEXTAUTH_URL` (e.g., your Vercel production URL)
+  - `DATABASE_URL` (PostgreSQL)
+  - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` if using Google OAuth
+- Prisma notes:
+  - Prisma’s `clientExtensions` preview flag is no longer required in v6+; deprecation warnings are benign but can be removed in future cleanup.
+- Build notes:
+  - If CI complains about `session.user` typing, ensure routes cast `getServerSession(authOptions)` to `any` before property access, or refactor shared auth helpers to return a strongly-typed session shape.
+  - If Nodemailer types cause CI errors, keep `types/nodemailer.d.ts` or install `@types/nodemailer`.
 
 ## Prisma
 

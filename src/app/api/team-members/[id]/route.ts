@@ -10,6 +10,10 @@ const updateSchema = z.object({
   role: z.string().optional().or(z.literal('').transform(() => null)).or(z.null()),
   teamId: z.string().nullable().optional(),
   reportsToId: z.string().nullable().optional(),
+  oneOnOneNotes: z.string().optional().or(z.literal('').transform(() => null)).or(z.null()),
+  lastOneOnOneAt: z.string().optional().or(z.literal('').transform(() => null)).or(z.null()),
+  goalsNotes: z.string().optional().or(z.literal('').transform(() => null)).or(z.null()),
+  personalNotes: z.string().optional().or(z.literal('').transform(() => null)).or(z.null()),
 });
 
 export async function GET(
@@ -66,13 +70,17 @@ export async function PUT(
 
     const updated = await prisma.teamMember.update({
       where: { id },
-      data: {
+      data: ({
         ...(parsed.name !== undefined ? { name: parsed.name } : {}),
         ...(parsed.email !== undefined ? { email: parsed.email } : {}),
         ...(parsed.role !== undefined ? { role: parsed.role } : {}),
+        ...(parsed.oneOnOneNotes !== undefined ? { oneOnOneNotes: parsed.oneOnOneNotes } : {}),
+        ...(parsed.lastOneOnOneAt !== undefined ? { lastOneOnOneAt: parsed.lastOneOnOneAt ? new Date(parsed.lastOneOnOneAt) : null } : {}),
+        ...(parsed.goalsNotes !== undefined ? { goalsNotes: parsed.goalsNotes } : {}),
+        ...(parsed.personalNotes !== undefined ? { personalNotes: parsed.personalNotes } : {}),
         ...teamOp,
         ...managerOp,
-      },
+      } as any),
     });
 
     return NextResponse.json(updated);

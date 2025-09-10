@@ -418,6 +418,11 @@ model TeamMember {
   other_TeamMember TeamMember[]    @relation("TeamMemberToTeamMember")
   Team             Team?           @relation(fields: [teamId], references: [id], onDelete: SetNull)
   Stakeholder      Stakeholder?
+  // 1:1 Management fields
+  oneOnOneNotes   String?
+  lastOneOnOneAt  DateTime?
+  goalsNotes      String?
+  personalNotes   String?
 
   @@unique([companyAccountId, email])
   @@index([teamId])

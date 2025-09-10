@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import "quill/dist/quill.snow.css";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 
@@ -12,6 +13,10 @@ type TeamMember = {
   teamId: string | null;
   reportsToId: string | null;
   user?: { name?: string } | null;
+  oneOnOneNotes?: string | null;
+  lastOneOnOneAt?: string | null;
+  goalsNotes?: string | null;
+  personalNotes?: string | null;
 };
 
 type Team = { id: string; name: string };
@@ -95,6 +100,10 @@ export default function TeamMemberDetailPage() {
           role: member.role ?? null,
           reportsToId: member.reportsToId ?? null,
           teamId: member.teamId ?? null,
+          oneOnOneNotes: member.oneOnOneNotes ?? null,
+          lastOneOnOneAt: member.lastOneOnOneAt ?? null,
+          goalsNotes: member.goalsNotes ?? null,
+          personalNotes: member.personalNotes ?? null,
         }),
       });
       if (!res.ok) {
@@ -167,83 +176,142 @@ export default function TeamMemberDetailPage() {
         </div>
       )}
 
-      <div className="bg-white shadow rounded-lg p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Name</label>
-          <input
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-            value={member.name}
-            onChange={(e) => setMember({ ...member, name: e.target.value })}
+      {/* Top row: Details (left) and 1:1 Notes (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Details (left) */}
+        <div className="bg-white shadow rounded-lg p-6 space-y-4 lg:col-span-1">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <input
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
+              value={member.name}
+              onChange={(e) => setMember((prev) => (prev ? { ...prev, name: e.target.value } : prev))}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Role</label>
+            <select
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
+              value={member.role ?? ""}
+              onChange={(e) => setMember((prev) => (prev ? { ...prev, role: e.target.value || null } : prev))}
+            >
+              <option value="">— Select Role —</option>
+              <option value="CEO">CEO</option>
+              <option value="COO">COO</option>
+              <option value="CTO">CTO</option>
+              <option value="CIO">CIO</option>
+              <option value="CFO">CFO</option>
+              <option value="Executive">Executive</option>
+              <option value="Director">Director</option>
+              <option value="Manager">Manager</option>
+              <option value="Team Member">Team Member</option>
+            </select>
+          </div>
+
+          {/* Email hidden by request */}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Team</label>
+            <select
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
+              value={member.teamId ?? ""}
+              onChange={(e) => setMember((prev) => (prev ? { ...prev, teamId: e.target.value || null, reportsToId: null } : prev))}
+            >
+              <option value="">— None —</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Reports to</label>
+            <select
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
+              value={member.reportsToId ?? ""}
+              onChange={(e) => setMember((prev) => (prev ? { ...prev, reportsToId: e.target.value || null } : prev))}
+            >
+              <option value="">— None —</option>
+              {managerOptions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.user?.name || m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-between">
+            <button
+              type="button"
+              onClick={() => setShowConfirm(true)}
+              className="inline-flex items-center px-1 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+            >
+              Delete Member
+            </button>
+            <button
+              disabled={saving}
+              onClick={handleSave}
+              className="inline-flex items-center px-1 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+
+        {/* 1:1 Notes (right, double width) */}
+        <div className="bg-white shadow rounded-lg p-6 space-y-4 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">1:1 Notes</h2>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-600 flex items-center gap-2">
+                <label htmlFor="last11" className="text-gray-700">Date of Last 1:1</label>
+                <input
+                  id="last11"
+                  type="date"
+                  className="border rounded px-2 py-1 text-sm text-gray-900"
+                  value={member.lastOneOnOneAt ? new Date(member.lastOneOnOneAt).toISOString().slice(0,10) : ""}
+                  onChange={(e) => setMember((prev) => (prev ? { ...prev, lastOneOnOneAt: e.target.value || null } : prev))}
+                />
+                <button
+                  type="button"
+                  className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                  onClick={() => setMember((prev) => (prev ? { ...prev, lastOneOnOneAt: new Date().toISOString().slice(0,10) } : prev))}
+                  title="Set to today"
+                >Today</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <QuillEditor
+              value={member.oneOnOneNotes ?? ""}
+              onChange={(html: string) => setMember((prev) => (prev ? { ...prev, oneOnOneNotes: html } : prev))}
+            />
+            <p className="mt-1 text-xs text-gray-500">Use this editor to capture your 1:1 notes with formatting.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Below row: Personal life (left) and Goals (right) */}
+      <div className="bg-white shadow rounded-lg p-6 space-y-6 lg:col-span-2">
+        {/* Personal life rich text (left) */}
+        <div className="bg-white shadow rounded-lg p-6 space-y-3 lg:col-span-1">
+          <h2 className="text-lg font-semibold text-gray-900">Personal life</h2>
+          <p className="text-xs text-gray-500">Spouse name, children's names, school, hometown, hobbies, etc. Keep this respectful and relevant for relationship-building.</p>
+          <QuillEditor
+            value={member.personalNotes ?? ""}
+            onChange={(html: string) => setMember((prev) => (prev ? { ...prev, personalNotes: html } : prev))}
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Role</label>
-          <select
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-            value={member.role ?? ""}
-            onChange={(e) => setMember({ ...member, role: e.target.value || null })}
-          >
-            <option value="">— Select Role —</option>
-            <option value="CEO">CEO</option>
-            <option value="COO">COO</option>
-            <option value="CTO">CTO</option>
-            <option value="CIO">CIO</option>
-            <option value="CFO">CFO</option>
-            <option value="Executive">Executive</option>
-            <option value="Director">Director</option>
-            <option value="Manager">Manager</option>
-            <option value="Team Member">Team Member</option>
-          </select>
-        </div>
-
-        {/* Email hidden by request */}
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Team</label>
-          <select
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-            value={member.teamId ?? ""}
-            onChange={(e) => setMember({ ...member, teamId: e.target.value || null, reportsToId: null })}
-          >
-            <option value="">— None —</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Reports to</label>
-          <select
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-gray-900"
-            value={member.reportsToId ?? ""}
-            onChange={(e) => setMember({ ...member, reportsToId: e.target.value || null })}
-          >
-            <option value="">— None —</option>
-            {managerOptions.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.user?.name || m.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={() => setShowConfirm(true)}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
-          >
-            Delete Member
-          </button>
-          <button
-            disabled={saving}
-            onClick={handleSave}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
+        {/* Goals rich text (right, double width) */}
+        <div className="bg-white shadow rounded-lg p-6 space-y-3 lg:col-span-2">
+          <h2 className="text-lg font-semibold text-gray-900">Goals</h2>
+          <p className="text-xs text-gray-500">Discuss goals for this individual — near-term objectives, growth areas, and alignment to company priorities.</p>
+          <QuillEditor
+            value={member.goalsNotes ?? ""}
+            onChange={(html: string) => setMember((prev) => (prev ? { ...prev, goalsNotes: html } : prev))}
+          />
         </div>
       </div>
       {/* Confirmation Modal */}
@@ -275,4 +343,55 @@ export default function TeamMemberDetailPage() {
       )}
     </div>
   );
+}
+
+// Lightweight wrapper around Quill to work with React 19 without react-quill
+function QuillEditor({ value, onChange }: { value: string; onChange: (html: string) => void }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<any>(null);
+  const focusedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const Quill = (await import('quill')).default;
+      if (!mounted || !containerRef.current) return;
+      // Clear and create editor element
+      containerRef.current.innerHTML = '';
+      const editorEl = document.createElement('div');
+      editorEl.style.width = '100%';
+      containerRef.current.appendChild(editorEl);
+
+      const q = new Quill(editorEl, { theme: 'snow' });
+      // Initialize once with provided value
+      q.root.innerHTML = value || '';
+      q.on('text-change', () => {
+        onChange(q.root.innerHTML);
+      });
+      q.root.addEventListener('focus', () => { focusedRef.current = true; });
+      q.root.addEventListener('blur', () => {
+        focusedRef.current = false;
+        // Ensure latest HTML is pushed on blur
+        onChange(q.root.innerHTML);
+      });
+      quillRef.current = q;
+    })();
+    return () => {
+      mounted = false;
+      quillRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const q = quillRef.current;
+    // Avoid overwriting user input while focused
+    if (!q || !q.root) return;
+    if (focusedRef.current) return;
+    if (q.root.innerHTML !== (value || '')) {
+      q.root.innerHTML = value || '';
+    }
+  }, [value]);
+
+  return <div ref={containerRef} className="w-full" />;
 }

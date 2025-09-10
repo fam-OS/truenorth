@@ -33,8 +33,8 @@ type HeadcountRow = {
 
 function TeamsClient() {
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') || 'team-management') as 'org-chart' | 'team-planning' | 'team-management';
-  const [activeTab, setActiveTab] = useState<'org-chart' | 'team-planning' | 'team-management'>(initialTab);
+  const initialTab = (searchParams.get('tab') || 'team-management') as 'org-chart' | 'team-planning' | 'team-management' | 'one-on-ones';
+  const [activeTab, setActiveTab] = useState<'org-chart' | 'team-planning' | 'team-management' | 'one-on-ones'>(initialTab);
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +120,7 @@ function TeamsClient() {
 
   // Keep activeTab in sync with URL changes (e.g., back/forward navigation)
   useEffect(() => {
-    const t = (searchParams.get('tab') || 'team-management') as 'org-chart' | 'team-planning' | 'team-management';
+    const t = (searchParams.get('tab') || 'team-management') as 'org-chart' | 'team-planning' | 'team-management' | 'one-on-ones';
     setActiveTab(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -207,6 +207,30 @@ function TeamsClient() {
       salaryVariance: actualSalary - forecastSalary,
     };
   }, [headcount]);
+
+  // One-on-ones: my direct reports
+  const [myTeam, setMyTeam] = useState<Array<{ id: string; name: string; role?: string | null; lastOneOnOneAt?: string | null }>>([]);
+  const [myTeamLoading, setMyTeamLoading] = useState(false);
+  const [myTeamError, setMyTeamError] = useState<string>("");
+
+  useEffect(() => {
+    const loadMyTeam = async () => {
+      if (activeTab !== 'one-on-ones') return;
+      try {
+        setMyTeamError("");
+        setMyTeamLoading(true);
+        const res = await fetch('/api/my-team', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to fetch My Team');
+        const data = await res.json();
+        setMyTeam(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setMyTeamError(e instanceof Error ? e.message : 'Failed to load My Team');
+      } finally {
+        setMyTeamLoading(false);
+      }
+    };
+    void loadMyTeam();
+  }, [activeTab]);
 
   // Inline edit handlers (component scope)
   const beginEdit = (row: HeadcountRow) => {
@@ -311,8 +335,7 @@ function TeamsClient() {
       setHcSubmitting(false);
     }
   };
-
-  // Keep for future normalization if API shape changes again
+    // Keep for future normalization if API shape changes again
   const displayMembers = useMemo(() => members, [members]);
 
   const orderedTeams = useMemo(() => {
@@ -327,62 +350,94 @@ function TeamsClient() {
     return arr;
   }, [teams]);
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Teams</h1>
-        <div className="text-sm text-gray-500">Organization, Planning, and Management</div>
+return (
+  <div className="space-y-4">
+    {/* Header */}
+    <div className="flex items-center justify-between">
+      <h1 className="text-lg font-semibold">Teams</h1>
+      <div className="text-sm text-gray-500">Organization, Planning, and Management</div>
+    </div>
+
+    {/* Tabs */}
+    <div className="border-b">
+      <nav className="-mb-px flex gap-6" aria-label="Tabs">
+        {[
+          { id: 'team-management', label: 'Team Management', href: '/teams?tab=team-management' },
+          { id: 'team-planning', label: 'Team Planning', href: '/teams?tab=team-planning' },
+          { id: 'org-chart', label: 'Org Chart', href: '/teams?tab=org-chart' },
+          { id: 'one-on-ones', label: '1:1 Management', href: '/teams?tab=one-on-ones' },
+        ].map((t) => (
+          <Link
+            key={t.id}
+            href={t.href}
+            onClick={() => setActiveTab(t.id as any)}
+            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
+              activeTab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+    </div>
+
+    {error && (
+      <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+    )}
+
+    {loading && (
+      <div className="min-h-[200px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
+    )}
 
-      {/* Tabs */}
-      <div className="border-b">
-        <nav className="-mb-px flex gap-6" aria-label="Tabs">
-          {[
-            { id: 'team-management', label: 'Team Management', href: '/teams?tab=team-management' },
-            { id: 'team-planning', label: 'Team Planning', href: '/teams?tab=team-planning' },
-            { id: 'org-chart', label: 'Org Chart', href: '/teams?tab=org-chart' },
-          ].map((t) => (
-            <Link
-              key={t.id}
-              href={t.href}
-              onClick={() => setActiveTab(t.id as any)}
-              className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-                activeTab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-
-      {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
-      )}
-
-      {loading && (
-        <div className="min-h-[200px] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      )}
-
-      {!loading && activeTab === 'org-chart' && (
-        <div className="space-y-4">
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
-              <span>Org Chart</span>
-            </div>
-            <div className="p-4 text-sm text-gray-700">
-              Visualize your organization structure.
-              <div className="mt-3">
-                <Link href="/org-chart" className="inline-flex items-center px-3 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Open Org Chart</Link>
-              </div>
+    {!loading && activeTab === 'org-chart' && (
+      <div className="space-y-4">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+            <span>Org Chart</span>
+          </div>
+          <div className="p-4 text-sm text-gray-700">
+            Visualize your organization structure.
+            <div className="mt-3">
+              <Link href="/org-chart" className="inline-flex items-center px-3 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Open Org Chart</Link>
             </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
+    {!loading && activeTab === 'one-on-ones' && (
+      <div className="space-y-4">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
+            <span>My Team</span>
+          </div>
+          {myTeamError && <div className="p-3 text-sm text-red-700 bg-red-50">{myTeamError}</div>}
+          {myTeamLoading ? (
+            <div className="p-6 text-sm text-gray-500">Loading…</div>
+          ) : myTeam.length === 0 ? (
+            <div className="p-4 text-sm text-gray-500">No direct reports yet.</div>
+          ) : (
+            <ul className="divide-y">
+              {myTeam.map((m) => (
+                <li key={m.id} className="px-4 py-3 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <Link href={`/team-members/${m.id}`} className="text-sm text-blue-600 hover:underline">
+                      {m.name}
+                    </Link>
+                    <div className="text-xs text-gray-500 truncate">{m.role || 'Member'}</div>
+                  </div>
+                  <div className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                    {m.lastOneOnOneAt ? new Date(m.lastOneOnOneAt).toLocaleDateString() : 'No 1:1 yet'}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    )}
       {!loading && activeTab === 'team-management' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Teams Column */}
