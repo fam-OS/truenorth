@@ -24,6 +24,26 @@ const nextConfig: NextConfig = {
             value: 'strict-origin-when-cross-origin'
           }
         ]
+      },
+      // Noindex for all API routes
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, nosnippet'
+          }
+        ]
+      },
+      // Noindex for all dashboard (authenticated) routes
+      {
+        source: '/(dashboard)/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, nosnippet'
+          }
+        ]
       }
     ];
   }

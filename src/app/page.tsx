@@ -4,6 +4,26 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Executive Dashboard for Leaders — Team Planning, Team Management, 1:1 Management',
+  description: 'TrueNorth helps leaders with team planning, team management, and 1:1 management — alongside initiatives, KPIs, and financials — all in one place.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'TrueNorth — Team Planning, Team Management, and 1:1 Management',
+    description: 'Plan teams, run effective 1:1s, and manage initiatives, KPIs, and financials in one place.',
+    images: [{ url: '/og.png', width: 1200, height: 630 }],
+    type: 'website',
+    url: '/',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TrueNorth — Team Planning, Team Management, 1:1 Management',
+    description: 'Plan teams, run effective 1:1s, and manage initiatives, KPIs, and financials in one place.',
+    images: ['/og.png'],
+  },
+};
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -53,6 +73,36 @@ export default async function Home() {
           </div>
         </header>
 
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'TrueNorth',
+              url: (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, ''),
+              logo: '/truenorth-logo.png',
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'TrueNorth',
+              url: (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, ''),
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: '{baseUrl}/search?q={search_term_string}',
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
+
         {/* Hero Section */}
         <div className="text-center py-20">
           <div className="flex justify-center mb-8">
@@ -65,11 +115,10 @@ export default async function Home() {
             />
           </div>
           <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            ROI Tracker and Team Management for Leaders at all levels
+            Team Planning, Team Management, and 1:1 Management for leaders at all levels
           </p>
           <p className="text-lg text-gray-500 mb-12 max-w-2xl mx-auto">
-            Streamline your business operations with comprehensive tools for managing initiatives, 
-            KPIs, team performance, and financial tracking. Make data-driven decisions that drive growth.
+            Streamline people leadership and operations with comprehensive tools for team planning, 1:1s, initiatives, KPIs, and financial tracking. Make data-driven decisions that drive growth.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -83,7 +132,7 @@ export default async function Home() {
 
         {/* Features */}
         <div className="py-20">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Everything you need to make your team better operators
             </h2>
@@ -91,6 +140,13 @@ export default async function Home() {
               Comprehensive tools designed for leaders who want to track performance, 
               manage teams, and drive results.
             </p>
+          </div>
+
+          {/* Key People Leadership Capabilities */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm">Team Planning</span>
+            <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm">Team Management</span>
+            <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm">1:1 Management</span>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -110,8 +166,8 @@ export default async function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Team Management</h3>
-              <p className="text-gray-600">Manage headcount, roles, and team performance with integrated org charts.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Team Planning & Management</h3>
+              <p className="text-gray-600">Plan headcount and roles, manage performance with integrated org charts, and streamline 1:1s and development conversations.</p>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -130,8 +186,8 @@ export default async function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Business Units</h3>
-              <p className="text-gray-600">Organize stakeholders and metrics by business unit for clear accountability.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">1:1 Management</h3>
+              <p className="text-gray-600">Run effective 1:1s with structured notes, follow-ups, and goals to support continuous growth.</p>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -172,12 +228,7 @@ export default async function Home() {
           </Link>
         </div>
 
-        {/* Footer */}
-        <footer className="border-t border-gray-200 py-8">
-          <div className="text-center text-gray-500">
-            <p>&copy; 2025 TrueNorth. Built for leaders who drive results.</p>
-          </div>
-        </footer>
+        {/* Footer intentionally omitted here; global Footer renders from layout.tsx */}
       </div>
     </div>
   );

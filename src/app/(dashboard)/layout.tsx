@@ -6,6 +6,14 @@ import NavLayoutShell from './NavLayoutShell';
 import ClientRefShim from '@/components/ClientRefShim';
 import { hasTrustedDevice } from '@/lib/trustedDevice';
 
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
+
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
 

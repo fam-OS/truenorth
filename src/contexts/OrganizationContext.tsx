@@ -25,6 +25,25 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const init = async () => {
       try {
+        // Check if the user is authenticated; if not, skip loading orgs
+        try {
+          const sess = await fetch('/api/auth/session', { cache: 'no-store' });
+          const sessionJson = sess.ok ? await sess.json() : null;
+          const isAuthed = Boolean(sessionJson?.user?.id);
+          if (!isAuthed) {
+            if (!cancelled) {
+              setIsLoading(false);
+            }
+            return;
+          }
+        } catch {
+          // If session check fails, assume unauthenticated for safety
+          if (!cancelled) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
         // 1) Check URL for explicit organization id (query or path)
         let orgIdFromUrl: string | null = null;
         try {
@@ -75,7 +94,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // Try to get logged-in user's default org
+        // Try to get logged-in user's default org (only if authenticated; handled above)
         try {
           const meRes = await fetch('/api/me', { cache: 'no-store' });
           if (meRes.ok) {
