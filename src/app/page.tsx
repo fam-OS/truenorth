@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
 export default async function Home() {
@@ -10,6 +11,21 @@ export default async function Home() {
     const mfaVerified = (session as any)?.mfaVerified;
     if (mfaVerified === false) {
       redirect('/auth/mfa');
+    }
+    // If authenticated and MFA is verified (or not required), enforce onboarding completeness here
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    const u = user as any;
+    const complete = !!(
+      u &&
+      u.firstName &&
+      u.lastName &&
+      u.companyName &&
+      u.level &&
+      u.industry &&
+      Array.isArray(u.leadershipStyles) && u.leadershipStyles.length > 0
+    );
+    if (!complete) {
+      redirect('/onboarding');
     }
     redirect('/organizations');
   }
