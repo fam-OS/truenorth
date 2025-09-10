@@ -145,7 +145,7 @@ export default function TeamMemberDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="min-h-[300px] flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -162,7 +162,7 @@ export default function TeamMemberDetailPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">Team Member Detail</h1>
         <button onClick={() => router.push(`/teams/${member.teamId}`)} className="text-sm text-gray-500 hover:text-gray-700">
@@ -287,7 +287,7 @@ export default function TeamMemberDetailPage() {
               value={member.oneOnOneNotes ?? ""}
               onChange={(html: string) => setMember((prev) => (prev ? { ...prev, oneOnOneNotes: html } : prev))}
             />
-            <p className="mt-1 text-xs text-gray-500">Use this editor to capture your 1:1 notes with formatting.</p>
+            <p className="mt-1 text-xs text-gray-500">Capture your ongoing 1:1 notes</p>
           </div>
         </div>
       </div>
@@ -365,6 +365,11 @@ function QuillEditor({ value, onChange }: { value: string; onChange: (html: stri
       const q = new Quill(editorEl, { theme: 'snow' });
       // Initialize once with provided value
       q.root.innerHTML = value || '';
+      // Expand editor height to reduce whitespace below
+      try {
+        q.root.style.minHeight = '280px';
+        q.root.style.padding = '12px';
+      } catch {}
       q.on('text-change', () => {
         onChange(q.root.innerHTML);
       });

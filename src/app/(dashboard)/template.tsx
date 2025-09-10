@@ -35,7 +35,6 @@ export default async function DashboardTemplate({ children }: { children: ReactN
     );
 
     if (!complete) {
-      // eslint-disable-next-line @next/next/no-server-import-in-page
       redirect('/onboarding');
     }
   }
