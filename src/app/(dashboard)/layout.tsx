@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import NavLayoutShell from './NavLayoutShell';
+import ClientRefShim from '@/components/ClientRefShim';
 import { hasTrustedDevice } from '@/lib/trustedDevice';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -39,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <NavLayoutShell>
+      <ClientRefShim />
       {children}
     </NavLayoutShell>
   );
