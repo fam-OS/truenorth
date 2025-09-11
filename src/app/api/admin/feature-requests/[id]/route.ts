@@ -14,14 +14,14 @@ function isAdminEmail(email?: string | null): boolean {
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email || !isAdminEmail(session.user.email)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const message: string | undefined = body?.message;
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
@@ -49,7 +49,7 @@ export async function POST(
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -57,7 +57,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const fr = await prisma.featureRequest.findUnique({
       where: { id },
       include: { User: { select: { id: true, email: true, name: true } } },
