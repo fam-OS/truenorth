@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "quill/dist/quill.snow.css";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 
 type TeamMember = {
   id: string;
@@ -162,7 +163,7 @@ export default function TeamMemberDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in-up">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">Team Member Detail</h1>
         <button onClick={() => router.push(`/teams/${member.teamId}`)} className="text-sm text-gray-500 hover:text-gray-700">
@@ -179,7 +180,7 @@ export default function TeamMemberDetailPage() {
       {/* Top row: Details (left) and 1:1 Notes (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Details (left) */}
-        <div className="bg-white shadow rounded-lg p-6 space-y-4 lg:col-span-1">
+        <div className="card p-6 space-y-4 lg:col-span-1">
           <div>
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
@@ -242,25 +243,17 @@ export default function TeamMemberDetailPage() {
           </div>
 
           <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setShowConfirm(true)}
-              className="inline-flex items-center px-1 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
-            >
+            <Button type="button" variant="destructive" size="sm" onClick={() => setShowConfirm(true)}>
               Delete Member
-            </button>
-            <button
-              disabled={saving}
-              onClick={handleSave}
-              className="inline-flex items-center px-1 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-            >
+            </Button>
+            <Button disabled={saving} onClick={handleSave} variant="gradient" size="sm">
               {saving ? "Saving..." : "Save Changes"}
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* 1:1 Notes (right, double width) */}
-        <div className="bg-white shadow rounded-lg p-6 space-y-4 lg:col-span-2">
+        <div className="card p-6 space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">1:1 Notes</h2>
             <div className="flex items-center gap-3">
@@ -293,9 +286,9 @@ export default function TeamMemberDetailPage() {
       </div>
 
       {/* Below row: Personal life (left) and Goals (right) */}
-      <div className="bg-white shadow rounded-lg p-6 space-y-6 lg:col-span-2">
+      <div className="card p-6 space-y-6 lg:col-span-2">
         {/* Personal life rich text (left) */}
-        <div className="bg-white shadow rounded-lg p-6 space-y-3 lg:col-span-1">
+        <div className="card p-6 space-y-3 lg:col-span-1">
           <h2 className="text-lg font-semibold text-gray-900">Personal life</h2>
           <p className="text-xs text-gray-500">Spouse name, children's names, school, hometown, hobbies, etc. Keep this respectful and relevant for relationship-building.</p>
           <QuillEditor
@@ -305,7 +298,7 @@ export default function TeamMemberDetailPage() {
         </div>
 
         {/* Goals rich text (right, double width) */}
-        <div className="bg-white shadow rounded-lg p-6 space-y-3 lg:col-span-2">
+        <div className="card p-6 space-y-3 lg:col-span-2">
           <h2 className="text-lg font-semibold text-gray-900">Goals</h2>
           <p className="text-xs text-gray-500">Discuss goals for this individual — near-term objectives, growth areas, and alignment to company priorities.</p>
           <QuillEditor
@@ -322,21 +315,12 @@ export default function TeamMemberDetailPage() {
             <h3 className="text-lg font-semibold text-gray-900">Delete Team Member</h3>
             <p className="mt-2 text-sm text-gray-600">Are you sure you want to delete this team member? This action cannot be undone.</p>
             <div className="mt-4 flex justify-end gap-3">
-              <button
-                type="button"
-                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
-                onClick={() => setShowConfirm(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setShowConfirm(false)} size="sm">
                 Cancel
-              </button>
-              <button
-                type="button"
-                className="px-4 py-2 text-sm rounded-md border border-red-300 text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
-                disabled={deleting}
-                onClick={() => { void handleConfirmDelete(); }}
-              >
+              </Button>
+              <Button type="button" variant="destructive" disabled={deleting} onClick={() => { void handleConfirmDelete(); }} size="sm">
                 {deleting ? 'Deleting…' : 'Delete'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

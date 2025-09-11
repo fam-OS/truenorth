@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/toast';
 import { Goal } from '@prisma/client';
 import { GoalFormModal } from '@/components/GoalFormModal';
 import { GoalList } from '@/components/GoalList';
+import { Button } from '@/components/ui/button';
 
 export default function GoalsPage() {
   const router = useRouter();
@@ -69,7 +70,7 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in-up">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Goals</h1>
@@ -85,12 +86,7 @@ export default function GoalsPage() {
               className="block w-64 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
-          <button
-            onClick={() => setView('create')}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-          >
-            New Goal
-          </button>
+          <Button onClick={() => setView('create')} variant="gradient" size="sm">New Goal</Button>
         </div>
       </div>
 
@@ -108,17 +104,21 @@ export default function GoalsPage() {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Add Goal</h2>
-            <button onClick={() => setView('list')} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            <Button onClick={() => setView('list')} variant="outline" size="sm">Cancel</Button>
           </div>
-          <GoalFormModal isOpen={true} onClose={() => setView('list')} goal={null} onSubmit={handleCreateGoal} isSubmitting={false} />
+          <div className="card p-4">
+            <GoalFormModal isOpen={true} onClose={() => setView('list')} goal={null} onSubmit={handleCreateGoal} isSubmitting={false} />
+          </div>
         </div>
       ) : (
-        <GoalList
-          goals={goals as any}
-          onCreateGoal={() => setView('create')}
-          onEditGoal={(g) => router.push(`/goals/${g.id}/edit`) }
-          onSelectGoal={(g) => router.push(`/goals/${g.id}`)}
-        />
+        <div className="card">
+          <GoalList
+            goals={goals as any}
+            onCreateGoal={() => setView('create')}
+            onEditGoal={(g) => router.push(`/goals/${g.id}/edit`) }
+            onSelectGoal={(g) => router.push(`/goals/${g.id}`)}
+          />
+        </div>
       )}
 
       {/* Helpful links */}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/toast';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
 
 interface OpsReview {
   id: string;
@@ -130,8 +131,8 @@ export default function OpsReviewsPage() {
 
   if (!currentOrg) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div className="max-w-4xl mx-auto p-6 animate-fade-in-up">
+        <div className="card overflow-hidden">
           <div className="px-4 py-5 sm:p-6 text-center">
             <h3 className="mt-2 text-sm font-medium text-gray-900">Select an organization to view Team Ops Reviews</h3>
             <p className="mt-1 text-sm text-gray-500">Team Ops Reviews are scoped to a specific organization.</p>
@@ -171,7 +172,7 @@ export default function OpsReviewsPage() {
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 animate-fade-in-up">
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-2xl font-bold">Team Ops Reviews</h1>
@@ -179,16 +180,13 @@ export default function OpsReviewsPage() {
             Track and manage your operational reviews
           </p>
         </div>
-        <Link
-          href="/ops-reviews/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          New Team Ops Review
-        </Link>
+        <Button asChild variant="gradient">
+          <Link href="/ops-reviews/new">New Team Ops Review</Link>
+        </Button>
       </div>
       
       {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-4 mb-6">
+      <div className="card p-4 mb-6">
         <h2 className="text-sm font-medium text-gray-500 mb-3">FILTERS</h2>
         <div className="flex flex-wrap gap-4">
           <div>
@@ -232,7 +230,7 @@ export default function OpsReviewsPage() {
       </div>
 
       {reviews.length === 0 ? (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="card overflow-hidden">
           <div className="px-4 py-5 sm:p-6 text-center">
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
@@ -253,17 +251,14 @@ export default function OpsReviewsPage() {
               Get started by creating a new Team Ops Review.
             </p>
             <div className="mt-6">
-              <Link
-                href="/ops-reviews/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                New Team Ops Review
-              </Link>
+              <Button asChild variant="gradient">
+                <Link href="/ops-reviews/new">New Team Ops Review</Link>
+              </Button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="card overflow-hidden">
           <ul className="divide-y divide-gray-200">
             {reviews.map((review) => (
               <li key={review.id}>

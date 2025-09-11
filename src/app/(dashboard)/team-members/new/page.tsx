@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 type Team = { id: string; name: string };
 
@@ -65,7 +66,7 @@ export default function NewTeamMemberPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in-up">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">New Team Member</h1>
         <p className="text-sm text-gray-500 mt-1">Create a new team member and assign them to a team.</p>
@@ -80,7 +81,7 @@ export default function NewTeamMemberPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       ) : (
-        <form onSubmit={submit} className="bg-white shadow rounded-lg p-6 space-y-4">
+        <form onSubmit={submit} className="card p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
@@ -128,20 +129,10 @@ export default function NewTeamMemberPage() {
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => router.back()}>Cancel</Button>
+            <Button type="submit" disabled={saving} variant="gradient" size="sm">
               {saving ? "Creating…" : "Create Member"}
-            </button>
+            </Button>
           </div>
         </form>
       )}

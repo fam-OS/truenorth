@@ -89,3 +89,15 @@ input, select, textarea {
 /* Section accent bar */
 .section-accent-bar { position: relative; }
 .section-accent-bar::before { content: ''; position: absolute; top: -10px; left: 0; width: 120px; height: 4px; border-radius: 9999px; background-image: linear-gradient(90deg, var(--brand-start), var(--brand-end)); }
+
+/* Navbar gradient strip without extra DOM nodes */
+.nav-gradient-strip { position: relative; }
+.nav-gradient-strip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px; /* visually similar to h-1 */
+  background-image: linear-gradient(90deg, var(--brand-start), var(--brand-end));
+}

@@ -7,6 +7,7 @@ import type { OrganizationWithBusinessUnits } from '@/types/prisma';
 import { OrganizationForm } from '@/components/OrganizationForm';
 import AccountProfile from '@/components/AccountProfile';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
 
 type Team = { id: string; name: string; description?: string | null };
 
@@ -365,18 +366,18 @@ export default function OrganizationsPage() {
 
       {/* Business Units Section - Only show if company account exists */}
       {companyAccount && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="card overflow-hidden animate-fade-in-up">
           <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
             <h1 className="text-xl font-semibold text-gray-900">My Organizations and Teams</h1>
-            <button
+            <Button
+              variant="gradient"
               onClick={() => {
                 setEditingOrg(null);
                 setShowCreateOrg(true);
               }}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               New Organization
-            </button>
+            </Button>
           </div>
 
         {isLoading ? (
@@ -387,12 +388,13 @@ export default function OrganizationsPage() {
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Organizations</h3>
             <p className="text-gray-500">Get started by creating your first organization.</p>
-            <button
+            <Button
+              variant="gradient"
               onClick={() => setShowCreateOrg(true)}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="mt-4"
             >
               New Organization
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="border-t border-gray-200">

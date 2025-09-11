@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
 
 type Team = { id: string; name: string; description?: string | null };
 
@@ -393,14 +394,16 @@ return (
 
     {!loading && activeTab === 'org-chart' && (
       <div className="space-y-4">
-        <div className="bg-white shadow rounded-lg">
+        <div className="card">
           <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
             <span>Org Chart</span>
           </div>
           <div className="p-4 text-sm text-gray-700">
             Visualize your organization structure.
             <div className="mt-3">
-              <Link href="/org-chart" className="inline-flex items-center px-3 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Open Org Chart</Link>
+              <Button asChild variant="gradient" size="sm">
+                <Link href="/org-chart">Open Org Chart</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -441,12 +444,14 @@ return (
       {!loading && activeTab === 'team-management' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Teams Column */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
               <span>Teams ({teams.length})</span>
               <div className="flex items-center gap-3">
                 <Link href="/teams/list" className="text-xs text-blue-600 hover:underline">View All Teams</Link>
-                <Link href="/teams/new" className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Add Team</Link>
+                <Button asChild variant="gradient" size="sm">
+                  <Link href="/teams/new">Add Team</Link>
+                </Button>
               </div>
             </div>
             {teams.length === 0 ? (
@@ -474,12 +479,14 @@ return (
           </div>
 
           {/* Team Members Column */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
               <span>Team Members ({members.length})</span>
               <div className="flex items-center gap-3">
                 <Link href="/team-members/list" className="text-xs text-blue-600 hover:underline">View All Team Members</Link>
-                <Link href="/team-members/new" className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">Add Team Member</Link>
+                <Button asChild variant="gradient" size="sm">
+                  <Link href="/team-members/new">Add Team Member</Link>
+                </Button>
               </div>
             </div>
             {teams.length === 0 && (
@@ -523,7 +530,7 @@ return (
       {activeTab === 'team-planning' && (
         <div className="space-y-6">
           {/* Team Planning -> Headcount Manager */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-3 border-b flex items-center justify-between">
               <div className="font-medium">Team Planning — Headcount Manager ({currentYear})</div>
               <div className="flex items-center gap-3">
@@ -667,7 +674,7 @@ return (
           </div>
 
           {/* Headcount Tracker (Create) */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-3 border-b flex items-center justify-between gap-2">
               <div className="font-medium">Headcount Tracker — Add Record</div>
               <button

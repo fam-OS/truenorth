@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { Button } from '@/components/ui/button';
 
 function useKpis(params: { orgId?: string; teamId?: string; quarter?: string | null; year?: number | null }) {
   const { orgId, teamId, quarter, year } = params;
@@ -54,22 +55,19 @@ export default function KpisPage() {
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6 animate-fade-in-up">
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-2xl font-bold">KPIs</h1>
           <p className="mt-1 text-sm text-gray-500">Key performance indicators{currentOrg ? ` for ${currentOrg.name}` : ''}</p>
         </div>
-        <Link
-          href="/kpis/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          New KPI
-        </Link>
+        <Button asChild variant="gradient">
+          <Link href="/kpis/new">New KPI</Link>
+        </Button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-4 mb-6">
+      <div className="card p-4 mb-6">
         <h2 className="text-sm font-medium text-gray-500 mb-3">FILTERS</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
@@ -113,19 +111,19 @@ export default function KpisPage() {
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       ) : kpis.length === 0 ? (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="card overflow-hidden">
           <div className="px-4 py-5 sm:p-6 text-center">
             <h3 className="mt-2 text-sm font-medium text-gray-900">No KPIs</h3>
             <p className="mt-1 text-sm text-gray-500">Get started by creating a new KPI.</p>
             <div className="mt-6">
-              <Link href="/kpis/new" className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                New KPI
-              </Link>
+              <Button asChild variant="gradient">
+                <Link href="/kpis/new">New KPI</Link>
+              </Button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="card overflow-hidden">
           <ul className="divide-y divide-gray-200">
             {kpis.map((k: any) => (
               <li key={k.id}>

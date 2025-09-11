@@ -12,6 +12,7 @@ import { StakeholderForm } from '@/components/StakeholderForm';
 import { BusinessUnitEditForm } from '@/components/BusinessUnitEditForm';
 import type { BusinessUnitWithDetails } from '@/types/prisma';
 import { useToast } from '@/components/ui/toast';
+import { Button } from '@/components/ui/button';
 
 type ViewMode = 'list' | 'detail' | 'createUnit' | 'createGoal' | 'createStakeholder' | 'stakeholders' | 'editUnit' | 'createGlobalStakeholder';
 
@@ -802,24 +803,9 @@ export default function BusinessUnitsPage() {
               <h1 className="text-2xl font-semibold text-gray-900">Company Business Units</h1>
               {companyAccount && (
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setViewMode('createGlobalStakeholder')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
-                  >
-                    New Stakeholder
-                  </button>
-                  <button
-                    onClick={() => setViewMode('createUnit')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                  >
-                    New Business Unit
-                  </button>
-                  <button
-                    onClick={() => { setEditingGoal(null); setViewMode('createGoal'); }}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    New Goal
-                  </button>
+                  <Button onClick={() => setViewMode('createGlobalStakeholder')} variant="gradient" size="sm">New Stakeholder</Button>
+                  <Button onClick={() => setViewMode('createUnit')} variant="gradient" size="sm">New Business Unit</Button>
+                  <Button onClick={() => { setEditingGoal(null); setViewMode('createGoal'); }} variant="gradient" size="sm">New Goal</Button>
                 </div>
               )}
             </div>
@@ -827,17 +813,12 @@ export default function BusinessUnitsPage() {
               <div className="text-center py-12">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Company Account Required</h3>
                 <p className="text-gray-500 mb-4">You need to create a company account before you can add business units.</p>
-                <button
-                  onClick={() => window.location.href = '/organizations'}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Create Company Account
-                </button>
+                <Button onClick={() => window.location.href = '/organizations'} variant="gradient" size="sm">Create Company Account</Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Column 1: Business Units */}
-                <div className="bg-white shadow rounded-lg p-4">
+                <div className="card p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold">Business Units</h2>
                     <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/business-units'}>View all</button>
@@ -865,7 +846,7 @@ export default function BusinessUnitsPage() {
                 </div>
 
                 {/* Column 2: Stakeholders */}
-                <div className="bg-white shadow rounded-lg p-4">
+                <div className="card p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold">Stakeholders</h2>
                     <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/stakeholders'}>View all</button>
@@ -894,7 +875,7 @@ export default function BusinessUnitsPage() {
                 </div>
 
                 {/* Column 3: Goals */}
-                <div className="bg-white shadow rounded-lg p-4">
+                <div className="card p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold">Goals</h2>
                     <button className="text-sm text-blue-600 hover:underline" onClick={() => window.location.href = '/initiatives-kpis'}>View all</button>
@@ -927,7 +908,7 @@ export default function BusinessUnitsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in-up">
       {error && (
         <div className="rounded-md bg-red-50 p-4 mb-6">
           <div className="text-sm text-red-700">{error}</div>

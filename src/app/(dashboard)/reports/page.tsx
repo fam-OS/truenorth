@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type ReportType =
   | "initiatives_at_risk"
@@ -177,7 +178,7 @@ export default function ReportsPage() {
   const headers = useMemo(() => (displayRows[0] ? Object.keys(displayRows[0]) : []), [displayRows]);
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Reports</h1>
         <div className="text-sm text-gray-500">Quick canned reports with simple filters</div>
@@ -265,20 +266,12 @@ export default function ReportsPage() {
       </div>
 
       <div className="mt-6 flex gap-3">
-        <button
-          onClick={runReport}
-          className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none"
-          disabled={loading}
-        >
+        <Button onClick={runReport} variant="gradient" disabled={loading}>
           {loading ? "Running..." : "Run Report"}
-        </button>
-        <button
-          onClick={() => downloadCSV(`${reportType}.csv`, displayRows)}
-          className="inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          disabled={!displayRows.length}
-        >
+        </Button>
+        <Button onClick={() => downloadCSV(`${reportType}.csv`, displayRows)} variant="gradient" disabled={!displayRows.length}>
           Export CSV
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -289,32 +282,34 @@ export default function ReportsPage() {
         {displayRows.length === 0 ? (
           <div className="text-sm text-gray-500">No results. Adjust filters and run report.</div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {headers.map((h) => (
-                  <th
-                    key={h}
-                    scope="col"
-                    className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {displayRows.map((row, idx) => (
-                <tr key={idx}>
+          <div className="card overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
                   {headers.map((h) => (
-                    <td key={h} className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {String(row[h] ?? "")}
-                    </td>
+                    <th
+                      key={h}
+                      scope="col"
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {displayRows.map((row, idx) => (
+                  <tr key={idx}>
+                    {headers.map((h) => (
+                      <td key={h} className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                        {String(row[h] ?? "")}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -6,6 +6,7 @@ import { Task } from '@prisma/client';
 import { TaskList } from '@/components/TaskList';
 import { TaskForm, TaskFormValues } from '@/components/TaskForm';
 import { TaskDetail } from '@/components/TaskDetail';
+import { Button } from '@/components/ui/button';
 
 type TaskWithNotes = Task & {
   notes: { id: string; content: string; createdAt: Date }[];
@@ -159,15 +160,12 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in-up">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Tasks</h1>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
+        <Button variant="gradient" onClick={() => setIsCreating(true)}>
           New Task
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -177,7 +175,7 @@ export default function TasksPage() {
       )}
 
       {isCreating ? (
-        <div className="bg-white shadow sm:rounded-lg">
+        <div className="card">
           <div className="px-4 py-5 sm:p-6">
             <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">
               Create New Task
@@ -189,7 +187,7 @@ export default function TasksPage() {
           </div>
         </div>
       ) : isEditing && selectedTask ? (
-        <div className="bg-white shadow sm:rounded-lg">
+        <div className="card">
           <div className="px-4 py-5 sm:p-6">
             <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">
               Edit Task

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type Organization = { id: string; name: string };
 
@@ -67,8 +68,8 @@ export default function NewTeamPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white shadow rounded-lg p-6">
+    <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in-up">
+      <div className="card p-6">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">Create Team</h1>
           <button
@@ -130,20 +131,10 @@ export default function NewTeamPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => router.push("/teams?tab=team-management")}
-                className="px-3 py-1.5 border rounded text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting || !orgId || !name.trim()}
-                className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm disabled:opacity-50"
-              >
+              <Button type="button" variant="outline" size="sm" onClick={() => router.push("/teams?tab=team-management")}>Cancel</Button>
+              <Button type="submit" disabled={submitting || !orgId || !name.trim()} variant="gradient" size="sm">
                 {submitting ? "Creating…" : "Create Team"}
-              </button>
+              </Button>
             </div>
           </form>
         )}

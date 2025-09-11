@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 // Keep types local to page for simplicity
  type Team = { id: string; name: string };
@@ -247,7 +248,7 @@ export default function FinancialPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Financial Management</h1>
         <div className="flex items-center gap-3">
@@ -265,7 +266,7 @@ export default function FinancialPage() {
       ) : (
         <div className="space-y-6">
           {/* Summary */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-3 border-b font-medium">Totals ({year})</div>
             <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
               <div>
@@ -286,7 +287,7 @@ export default function FinancialPage() {
           </div>
 
           {/* Table */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-3 border-b font-medium flex items-center justify-between">
               <span>Costs</span>
               <button onClick={exportCostsCSV} type="button" className="text-xs px-2 py-1 border rounded hover:bg-gray-50">Export CSV</button>
@@ -382,7 +383,7 @@ export default function FinancialPage() {
           </div>
 
           {/* Create */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-3 border-b font-medium">Add Cost</div>
             <form onSubmit={submit} className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
@@ -419,9 +420,9 @@ export default function FinancialPage() {
                 <textarea className="w-full border rounded px-2 py-1" rows={2} value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} />
               </div>
               <div className="md:col-span-2 lg:col-span-4 flex items-center gap-3">
-                <button type="submit" disabled={submitting || !form.teamId} className="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 text-white disabled:opacity-50">
+                <Button type="submit" disabled={submitting || !form.teamId} variant="gradient" size="sm">
                   {submitting ? "Saving…" : "Add Cost"}
-                </button>
+                </Button>
                 <div className="text-xs text-gray-500">Adds a cost record that rolls into the totals above.</div>
               </div>
             </form>
