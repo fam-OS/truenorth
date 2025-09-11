@@ -41,6 +41,7 @@ export async function sendEmail(options: {
   subject: string;
   text?: string;
   html?: string;
+  replyTo?: string;
   headers?: Record<string, string>;
 }) {
   const from = EMAIL_FROM || 'TrueNorth <no-reply@localhost>';
@@ -57,6 +58,7 @@ export async function sendEmail(options: {
     subject: options.subject,
     text: options.text,
     html: options.html,
+    replyTo: options.replyTo,
     headers,
   });
 
