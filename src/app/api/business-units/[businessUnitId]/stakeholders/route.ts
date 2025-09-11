@@ -92,7 +92,9 @@ export async function POST(
     if (!tm) return NextResponse.json({ error: 'TeamMember not found' }, { status: 404 });
     if (process.env.NODE_ENV !== 'test') {
       const orgId = (tm as any).Team?.organizationId as string | undefined;
-      if (!orgId || !viewerOrgIds.includes(orgId)) {
+      // If the TeamMember has an org, enforce that it matches viewer's orgs.
+      // If there is no org (unassigned/global member), allow creation since BU access was already asserted.
+      if (orgId && !viewerOrgIds.includes(orgId)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }

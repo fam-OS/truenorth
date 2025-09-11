@@ -254,6 +254,13 @@ export default function TeamMemberDetailPage() {
 
         {/* 1:1 Notes (right, double width) */}
         <div className="card p-6 space-y-4 lg:col-span-2">
+          {member.lastOneOnOneAt && (
+            <div className="mb-1 section-accent-bar">
+              <h3 className="text-base font-semibold text-gray-900">
+                Last 1:1: {new Date(member.lastOneOnOneAt).toLocaleDateString()}
+              </h3>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">1:1 Notes</h2>
             <div className="flex items-center gap-3">

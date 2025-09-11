@@ -44,8 +44,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
       const orgIds = await getViewerCompanyOrgIds(session.user.id);
+      // Allow if the TeamMember is in one of the viewer's orgs OR the TeamMember has no team (unassigned)
       const allowedTm = await prisma.teamMember.findFirst({
-        where: { id: data.teamMemberId, Team: { organizationId: { in: orgIds } } },
+        where: {
+          id: data.teamMemberId,
+          OR: [
+            { Team: { organizationId: { in: orgIds } } },
+            { Team: { is: null } }, // explicitly allow when no team relation
+          ],
+        },
         select: { id: true },
       });
       if (!allowedTm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -94,7 +101,14 @@ export const GET = async (request: Request) => {
             { businessUnitId: null },
             { NOT: { businessUnitId } },
           ],
-          ...(orgIds ? { TeamMember: { Team: { organizationId: { in: orgIds } } } } : {}),
+          ...(orgIds
+            ? {
+                OR: [
+                  { TeamMember: { Team: { organizationId: { in: orgIds } } } },
+                  { TeamMember: { Team: { is: null } } }, // include teamless
+                ],
+              }
+            : {}),
         },
         include: { TeamMember: true },
         orderBy: { name: 'asc' },
@@ -104,7 +118,14 @@ export const GET = async (request: Request) => {
 
     // Legacy behavior for tests: prisma is mocked to return a flat list; filter unassigned client-side
     const all = await prisma.stakeholder.findMany({
-      where: orgIds ? { TeamMember: { Team: { organizationId: { in: orgIds } } } } : undefined,
+      where: orgIds
+        ? {
+            OR: [
+              { TeamMember: { Team: { organizationId: { in: orgIds } } } },
+              { TeamMember: { Team: { is: null } } }, // include teamless
+            ],
+          }
+        : undefined,
       include: { TeamMember: true },
       orderBy: { name: 'asc' },
     });
