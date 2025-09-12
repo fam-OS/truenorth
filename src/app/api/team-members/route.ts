@@ -45,6 +45,7 @@ export async function GET() {
         role: true,
         teamId: true,
         isActive: true,
+        lastOneOnOneAt: true,
       },
       orderBy: { name: 'asc' }
     });

@@ -27,6 +27,7 @@ export default function NavLayoutShell({ children }: { children: ReactNode }) {
   const apps = useMemo(
     () =>
       [
+        { href: '/home', label: 'Home', icon: Squares2X2Icon, desc: 'Dashboard overview and checklist' },
         { href: '/organizations', label: 'Organizations', icon: BuildingOfficeIcon, desc: 'Manage company and your organizations' },
         { href: '/teams', label: 'Team Management', icon: UserGroupIcon, desc: 'Headcount, roles, and team setup' },
         { href: '/business-units', label: 'Business Units', icon: BuildingOfficeIcon, desc: 'Business Units, stakeholders, and goals' },

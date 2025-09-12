@@ -47,7 +47,7 @@ export default async function Home() {
     if (!complete) {
       redirect('/onboarding');
     }
-    redirect('/organizations');
+    redirect('/home');
   }
 
   // Marketing landing page for non-authenticated users
