@@ -67,7 +67,8 @@ export default function GettingStartedChecklist() {
   ]);
 
   const [completedCount, setCompletedCount] = useState(0);
-  const [expanded, setExpanded] = useState(false); // allow viewing details when all completed
+  // Persistent hide/show for the checklist
+  const [hidden, setHidden] = useState<boolean>(false);
 
   const [hasCompanyAccount, setHasCompanyAccount] = useState<boolean | null>(null);
 
@@ -84,6 +85,16 @@ export default function GettingStartedChecklist() {
       } catch (error) {
         console.error('Error parsing saved checklist states:', error);
       }
+    }
+
+    // Load hidden preference
+    try {
+      const savedHidden = localStorage.getItem('gettingStartedChecklistHidden');
+      if (savedHidden !== null) {
+        setHidden(savedHidden === 'true');
+      }
+    } catch (e) {
+      // ignore
     }
 
     // Check completion status based on existing data
@@ -173,22 +184,67 @@ export default function GettingStartedChecklist() {
   const progressPercentage = Math.round((completedCount / checklist.length) * 100);
 
   const allCompleted = checklist.length > 0 && checklist.every((i) => i.completed);
-  if (allCompleted && !expanded) {
+
+  // Persist hidden state
+  useEffect(() => {
+    try {
+      localStorage.setItem('gettingStartedChecklistHidden', hidden ? 'true' : 'false');
+    } catch (e) {
+      // ignore
+    }
+  }, [hidden]);
+
+  // Auto-hide when all items are completed
+  useEffect(() => {
+    if (allCompleted) {
+      setHidden(true);
+    }
+  }, [allCompleted]);
+
+  // When hidden and all completed, show a congratulatory banner with option to review steps
+  if (hidden && allCompleted) {
     return (
       <div className="w-full p-3 rounded-md bg-green-50 border border-green-200 text-sm text-green-700 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">🎉</span>
-          <span>All getting started steps completed. You’re all set!</span>
+          <span>Nice work! All getting started steps are complete. You’re all set!</span>
         </div>
         <div className="flex items-center gap-4">
           <button
             type="button"
-            onClick={() => setExpanded(true)}
+            onClick={() => setHidden(false)}
             className="underline text-xs text-green-700 hover:text-green-800"
           >
             Review steps
           </button>
           <Link href="/organizations" className="underline text-xs text-green-700 hover:text-green-800">View organization</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // When hidden but not all completed, show a compact collapsed view with progress and a Show button
+  if (hidden && !allCompleted) {
+    return (
+      <div className="w-full p-3 rounded-md bg-white border border-gray-200 text-sm text-gray-700 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-lg">✅</span>
+          <div>
+            <div className="font-medium text-gray-900">Getting Started</div>
+            <div className="text-xs text-gray-600">{completedCount}/{checklist.length} completed</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="w-40 bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div className="bg-green-600 h-2" style={{ width: `${progressPercentage}%` }} />
+          </div>
+          <button
+            type="button"
+            onClick={() => setHidden(false)}
+            className="underline text-xs text-blue-700 hover:text-blue-800"
+          >
+            Show checklist
+          </button>
         </div>
       </div>
     );
@@ -203,15 +259,14 @@ export default function GettingStartedChecklist() {
             <div className="text-sm text-gray-600">
               {completedCount}/{checklist.length} completed
             </div>
-            {allCompleted && (
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                className="text-xs text-blue-600 hover:text-blue-800 underline"
-              >
-                Close
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setHidden(true)}
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+              aria-label="Hide checklist"
+            >
+              Hide
+            </button>
           </div>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
