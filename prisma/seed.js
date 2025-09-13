@@ -67,8 +67,30 @@ async function main() {
 
   // Stakeholders
   const [stakeExec, stakePM] = await Promise.all([
-    prisma.stakeholder.create({ data: { id: crypto.randomUUID(), name: 'Dana Director', email: 'dana@example.com', role: 'Executive', businessUnitId: bu.id } }),
-    prisma.stakeholder.create({ data: { id: crypto.randomUUID(), name: 'Evan PM', email: 'evan@example.com', role: 'Product Manager', businessUnitId: bu.id } }),
+    prisma.stakeholder.create({
+      data: {
+        id: crypto.randomUUID(),
+        name: 'Dana Director',
+        email: 'dana@example.com',
+        role: 'Executive',
+        businessUnitId: bu.id,
+        TeamMember: {
+          create: { name: 'Dana Director', role: 'Executive' },
+        },
+      },
+    }),
+    prisma.stakeholder.create({
+      data: {
+        id: crypto.randomUUID(),
+        name: 'Evan PM',
+        email: 'evan@example.com',
+        role: 'Product Manager',
+        businessUnitId: bu.id,
+        TeamMember: {
+          create: { name: 'Evan PM', role: 'Product Manager' },
+        },
+      },
+    }),
   ]);
   // Stakeholder relationships (reportsTo)
   await prisma.stakeholder.update({ where: { id: stakePM.id }, data: { reportsToId: stakeExec.id } });
