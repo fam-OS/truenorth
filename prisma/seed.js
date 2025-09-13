@@ -11,6 +11,7 @@ async function main() {
     where: { email: 'demo@example.com' },
     update: {},
     create: {
+      id: crypto.randomUUID(),
       email: 'demo@example.com',
       name: 'Demo User',
       passwordHash: hashedPassword,
@@ -73,7 +74,7 @@ async function main() {
         name: 'Dana Director',
         email: 'dana@example.com',
         role: 'Executive',
-        businessUnitId: bu.id,
+        BusinessUnit: { connect: { id: bu.id } },
         TeamMember: {
           create: { name: 'Dana Director', role: 'Executive' },
         },
@@ -85,7 +86,7 @@ async function main() {
         name: 'Evan PM',
         email: 'evan@example.com',
         role: 'Product Manager',
-        businessUnitId: bu.id,
+        BusinessUnit: { connect: { id: bu.id } },
         TeamMember: {
           create: { name: 'Evan PM', role: 'Product Manager' },
         },
@@ -154,6 +155,7 @@ async function main() {
       year: new Date().getFullYear(),
       teamId: teamOps.id,
       ownerId: carol.id,
+      updatedAt: new Date(),
     },
   });
 
