@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const crypto = require('node:crypto');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -21,6 +22,7 @@ async function main() {
     where: { userId: user.id },
     update: {},
     create: {
+      id: crypto.randomUUID(),
       userId: user.id,
       name: 'Acme Corp',
       description: 'Demo company',
@@ -34,6 +36,7 @@ async function main() {
   // Create Organization (Business Unit)
   const org = await prisma.organization.create({
     data: {
+      id: crypto.randomUUID(),
       name: 'E-Commerce Division',
       description: 'Online retail business unit',
       companyAccountId: companyAccount.id,
@@ -56,16 +59,16 @@ async function main() {
   // Business Unit
   const bu = await prisma.businessUnit.create({
     data: {
+      id: crypto.randomUUID(),
       name: "E-Commerce",
       description: "Web storefront BU",
-      organizationId: org.id,
     },
   });
 
   // Stakeholders
   const [stakeExec, stakePM] = await Promise.all([
-    prisma.stakeholder.create({ data: { name: 'Dana Director', email: 'dana@example.com', role: 'Executive', businessUnitId: bu.id } }),
-    prisma.stakeholder.create({ data: { name: 'Evan PM', email: 'evan@example.com', role: 'Product Manager', businessUnitId: bu.id } }),
+    prisma.stakeholder.create({ data: { id: crypto.randomUUID(), name: 'Dana Director', email: 'dana@example.com', role: 'Executive', businessUnitId: bu.id } }),
+    prisma.stakeholder.create({ data: { id: crypto.randomUUID(), name: 'Evan PM', email: 'evan@example.com', role: 'Product Manager', businessUnitId: bu.id } }),
   ]);
   // Stakeholder relationships (reportsTo)
   await prisma.stakeholder.update({ where: { id: stakePM.id }, data: { reportsToId: stakeExec.id } });
@@ -73,6 +76,7 @@ async function main() {
   // Metrics
   await prisma.metric.create({
     data: {
+      id: crypto.randomUUID(),
       name: 'Conversion Rate',
       target: 3.5,
       current: 2.8,
@@ -84,6 +88,7 @@ async function main() {
   // Initiatives
   const initiative = await prisma.initiative.create({
     data: {
+      id: crypto.randomUUID(),
       name: 'Checkout Revamp',
       type: 'OPERATIONAL_EFFICIENCY',
       atRisk: false,
@@ -101,11 +106,10 @@ async function main() {
   // KPIs
   await prisma.kpi.create({
     data: {
+      id: crypto.randomUUID(),
       name: 'Revenue Impact',
       targetMetric: 1000000,
       actualMetric: 200000,
-      forecastedRevenue: 1200000,
-      actualRevenue: 250000,
       metTarget: false,
       metTargetPercent: 20.0,
       quarter: 'Q3',
@@ -120,6 +124,7 @@ async function main() {
   // Ops Review and Items
   const review = await prisma.opsReview.create({
     data: {
+      id: crypto.randomUUID(),
       title: 'Q3 Ops Review',
       description: 'Quarterly operations review',
       quarter: 'Q3',
@@ -132,6 +137,7 @@ async function main() {
 
   await prisma.opsReviewItem.create({
     data: {
+      id: crypto.randomUUID(),
       title: 'SLA Improvements',
       description: 'Improve SLA to 99.9%',
       targetMetric: 99.9,
@@ -148,6 +154,7 @@ async function main() {
   await prisma.headcountTracker.createMany({
     data: [
       {
+        id: crypto.randomUUID(),
         teamId: teamEng.id,
         organizationId: org.id,
         year: new Date().getFullYear(),
@@ -161,6 +168,7 @@ async function main() {
         notes: 'Hiring ramp in H2',
       },
       {
+        id: crypto.randomUUID(),
         teamId: teamOps.id,
         organizationId: org.id,
         year: new Date().getFullYear(),
@@ -180,6 +188,7 @@ async function main() {
   await prisma.cost.createMany({
     data: [
       {
+        id: crypto.randomUUID(),
         teamId: teamEng.id,
         organizationId: org.id,
         year: new Date().getFullYear(),
@@ -191,6 +200,7 @@ async function main() {
         notes: 'Cloud and tooling subscriptions',
       },
       {
+        id: crypto.randomUUID(),
         teamId: teamOps.id,
         organizationId: org.id,
         year: new Date().getFullYear(),
@@ -206,7 +216,7 @@ async function main() {
 
   // Tasks & Notes
   const task = await prisma.task.create({
-    data: { title: 'Kickoff Meeting', status: 'TODO', description: 'Plan project kickoff' },
+    data: { id: crypto.randomUUID(), title: 'Kickoff Meeting', status: 'TODO', description: 'Plan project kickoff' },
   });
   await prisma.note.create({
     data: { content: 'Prepare agenda and invite stakeholders', taskId: task.id },
