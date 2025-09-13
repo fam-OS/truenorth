@@ -1,6 +1,97 @@
 # Contributing Guide
 
-This document describes conventions for API routes, focusing on error handling, validation, and Prisma usage. Follow these patterns to keep the codebase consistent and maintainable.
+Thank you for your interest in improving TrueNorth! This guide explains how to set up your environment, run the app and tests, follow code style conventions, and submit high‑quality pull requests. The second half documents our API route patterns and conventions.
+
+We welcome issues, discussions, and PRs of all sizes — from documentation fixes to new features.
+
+## Quick Start for Contributors
+
+1. Fork the repository and clone your fork
+   ```bash
+   git clone https://github.com/<your-username>/truenorth.git
+   cd truenorth
+   git remote add upstream https://github.com/fam-OS/truenorth.git
+   ```
+
+2. Install dependencies
+   ```bash
+   npm install
+   ```
+
+3. Configure environment
+   ```bash
+   cp .env.example .env
+   # Edit .env and set at least DATABASE_URL
+   ```
+
+   - Local Postgres example: `postgresql://username:password@localhost:5432/truenorth`
+   - Neon example (managed): add `?sslmode=require&channel_binding=require`
+
+4. Database setup
+   ```bash
+   npx prisma migrate dev   # for local dev
+   npm run seed             # optional: load demo data
+   ```
+
+5. Start the dev server
+   ```bash
+   npm run dev
+   ```
+
+6. Open http://localhost:3000
+
+Optional auth for full experience (NextAuth): set `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and optionally Google OAuth envs. See README Authentication section.
+
+## Project Scripts
+
+- `npm run dev` — start Next.js with Turbopack
+- `npm run build` — generate Prisma client, build Next.js, fix manifest
+- `npm start` — start production server
+- `npm test` — run Jest tests
+- `npm run test:watch` — watch mode for Jest
+- `npm run test:ui` — run Playwright E2E tests (headless)
+- `npm run test:ui:headed` — run Playwright in headed mode
+- `npm run seed` — seed demo data
+
+## Code Style & Linting
+
+- TypeScript required (`^5`).
+- Run `npm run lint` and ensure no errors before committing.
+- Prefer small, focused changes with clear intent and tests.
+- Keep imports organized; avoid adding imports in the middle of files.
+
+## Testing
+
+Unit/integration tests use Jest (Node env). E2E tests use Playwright.
+
+```bash
+npm test             # run Jest tests
+npm run test:ui      # run Playwright tests
+npm run test:ui:headed
+```
+
+## Database & Prisma
+
+- Dev: `npx prisma migrate dev` to apply migrations and regenerate client.
+- CI/Prod: `npx prisma migrate deploy`.
+- Create new migrations with `npx prisma migrate dev --name <migration_name>`.
+- Seed: `npm run seed`.
+
+## Git Workflow
+
+- Create feature branches from `main`: `feat/<short-name>` or `fix/<short-name>`.
+- Keep PRs small and focused when possible; larger changes are fine if well‑scoped and reviewed incrementally.
+- Reference related issues in your PR description (e.g., `Closes #123`).
+
+## Pull Request Checklist
+
+- [ ] Code builds locally (`npm run build`) and passes tests (`npm test`).
+- [ ] Lint passes (`npm run lint`).
+- [ ] Added/updated tests where relevant.
+- [ ] Updated docs/README if behavior or setup changes.
+- [ ] Consider accessibility and error handling.
+
+---
 
 ## Principles
 
@@ -162,5 +253,10 @@ In some runtimes, `params` for dynamic routes may be async. See `README.md` Deve
 - Place schemas in `src/lib/validations/` with `createXSchema`, `updateXSchema` names.
 - Keep route handlers small; delegate mapping/formatting to helpers if complex.
 - Keep console logging minimal in production (current Prisma client config logs queries in non-production only).
+
+## Where to Get Help
+
+- Open an issue: https://github.com/fam-OS/truenorth/issues
+- Start a discussion: https://github.com/fam-OS/truenorth/discussions
 
 Thanks for contributing! If you have questions, open an issue or draft PR with your proposal.
