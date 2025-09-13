@@ -126,7 +126,7 @@ export default async function Home() {
               View on GitHub
             </a>
             <a
-              href="https://github.com/fam-OS/truenorth#readme"
+              href="https://github.com/fam-OS/truenorth?tab=contributing-ov-file#contributing-guide"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-gradient px-8 py-3 rounded-lg text-lg font-medium"
@@ -237,7 +237,7 @@ export default async function Home() {
               Star on GitHub
             </a>
             <a
-              href="https://github.com/fam-OS/truenorth#-contributing"
+              href="https://github.com/fam-OS/truenorth?tab=contributing-ov-file#contributing-guide"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white hover:bg-gray-50 text-gray-900 px-8 py-3 rounded-lg text-lg font-medium border border-gray-200 shadow-sm"
