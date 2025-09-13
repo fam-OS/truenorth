@@ -1,6 +1,8 @@
-# TrueNorth - Executive Dashboard
+# TrueNorth — Executive Dashboard (Open Source, Self‑Hosted)
 
-A web application for managing tasks, goals, and business metrics for tech executives.
+![CI](https://github.com/fam-OS/truenorth/actions/workflows/ci.yml/badge.svg?branch=test)
+
+TrueNorth is an open-source executive and operations dashboard you can self-host inside your company. It helps leaders manage team planning, 1:1s, initiatives, KPIs, and financials — in one place. We do not host your data or facilitate signups.
 
 ## Features
 
@@ -32,13 +34,10 @@ A web application for managing tasks, goals, and business metrics for tech execu
 - Nodemailer typing fix for builds
   - Added `types/nodemailer.d.ts` to provide a minimal ambient declaration.
   - Updated `src/lib/email.ts` to avoid referencing `nodemailer.Transporter` namespace type (uses `any`), fixing “Cannot find namespace 'nodemailer'” build errors without introducing a new dev dependency.
-- Marketing page and header UI updates
+- Marketing page and header UI updates (open-source focus)
   - Switched logo to PNG and matched header background tone: `src/app/(dashboard)/layout.tsx` now uses `bg-[#FFF6E5]`.
   - Adjusted header/logo sizing for better branding presence.
-  - Marketing page (`src/app/page.tsx`):
-    - Removed “Free Trial” CTAs (not offered yet).
-    - Added a clear “Get Started” CTA (links to `/auth/signup`).
-    - Enlarged hero logo for stronger visual impact.
+  - Marketing page (`src/app/page.tsx`) updated to remove Sign in/Sign up CTAs and add links to the GitHub repo and contributing guide.
 
 ## Data Model
 
@@ -127,11 +126,11 @@ The diagram reflects the relations defined in `prisma/schema.prisma`, including 
 ### (Planned) Ops Reviews
 - Data concept: Ops Review has a title, owner (Team Member relation), description, quarter, month, year, and Team relation
 
-## Getting Started
+## Getting Started (Local Dev)
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/truenorth.git
+   git clone https://github.com/fam-OS/truenorth.git
    cd truenorth
    ```
 
@@ -140,7 +139,11 @@ The diagram reflects the relations defined in `prisma/schema.prisma`, including 
    npm install
    ```
 
-3. Set up PostgreSQL (macOS/Homebrew example):
+3. Set up PostgreSQL
+
+   You can use a local Postgres or a managed Postgres like Neon. Examples below cover both.
+
+   ### Option A) Local Postgres (macOS/Homebrew example)
 
    #### a. Open Terminal and enter the PostgreSQL shell:
    ```bash
@@ -165,10 +168,24 @@ The diagram reflects the relations defined in `prisma/schema.prisma`, including 
    DATABASE_URL="postgresql://yourusername:yourpassword@localhost:5432/truenorth_dev"
    ```
 
-   #### e. Run migrations:
+   #### e. Run migrations & seed demo data:
    ```bash
    npx prisma migrate dev
+   npm run seed
    ```
+
+   ### Option B) Neon (Managed Postgres)
+
+   1. Create a free Neon project and database
+   2. Copy the connection string and set it as `DATABASE_URL` in your `.env` (Neon requires SSL):
+      ```env
+      DATABASE_URL="postgresql://<user>:<password>@<host>/<db>?sslmode=require&channel_binding=require"
+      ```
+   3. Run migrations & seed demo data:
+      ```bash
+      npx prisma migrate deploy
+      npm run seed
+      ```
 
 4. Start the development server:
    ```bash
@@ -181,6 +198,44 @@ The diagram reflects the relations defined in `prisma/schema.prisma`, including 
    ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+> Note: The marketing landing page is public and promotes self-hosting. Authenticated areas require you to configure authentication (see below) if you want to use the full app.
+
+## Authentication (Optional but Recommended)
+
+TrueNorth uses NextAuth. You can enable any provider(s) you prefer for your internal deployment. Common setups:
+
+- Credentials auth (email/password) — internal only
+- Google OAuth — for companies on Google Workspace
+
+Required environment variables (depending on providers):
+
+```env
+NEXTAUTH_SECRET=your_random_secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+For production, set `NEXTAUTH_URL` to your deployed URL and ensure secrets are set via your platform’s env settings.
+
+### Email/OTP (Optional)
+
+If you enable email-based flows (e.g., OTP or notifications), configure SMTP credentials. An example is included in `env.example`:
+
+```env
+SMTP_HOST="smtp.postmarkapp.com"
+SMTP_PORT="587"
+SMTP_USER="<postmark-server-token>"
+SMTP_PASS="<postmark-server-token>"
+EMAIL_FROM="TrueNorth <no-reply@yourdomain.com>"
+# Optional: EMAIL_STREAM for Postmark message stream
+EMAIL_STREAM="true-north"
+```
+
+You can use any SMTP provider. Ensure network egress is allowed from your hosting environment.
 
 ## Database Schema
 
@@ -253,10 +308,7 @@ npm run test:watch
 
 ## Contributing
 
-1. Create a feature branch
-2. Make your changes
-3. Write or update tests
-4. Submit a pull request
+We welcome contributions! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for project conventions, development setup, and the PR checklist.
 
 ## License
 MIT
@@ -288,21 +340,67 @@ MIT
 ## Environment Variables
 
 - `DATABASE_URL` — Postgres connection string (required)
+- `NEXTAUTH_SECRET` — random string used to sign NextAuth JWTs (required if enabling auth)
+- `NEXTAUTH_URL` — base URL of your deployment (required in production if enabling auth)
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — optional if using Google OAuth
 - `NEXT_PUBLIC_BASE_URL` — optional. If set, client code may use it to prefix API calls; server routes/pages should prefer header-derived base URL as above.
 
-## Production Deployment Notes
+## Self-Hosting / Production Deployment
 
-- Platform: Vercel (production URL configured via project settings)
-- Required runtime variables (non-exhaustive):
-  - `NEXTAUTH_SECRET`
-  - `NEXTAUTH_URL` (e.g., your Vercel production URL)
-  - `DATABASE_URL` (PostgreSQL)
-  - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` if using Google OAuth
-- Prisma notes:
-  - Prisma’s `clientExtensions` preview flag is no longer required in v6+; deprecation warnings are benign but can be removed in future cleanup.
-- Build notes:
-  - If CI complains about `session.user` typing, ensure routes cast `getServerSession(authOptions)` to `any` before property access, or refactor shared auth helpers to return a strongly-typed session shape.
-  - If Nodemailer types cause CI errors, keep `types/nodemailer.d.ts` or install `@types/nodemailer`.
+You can deploy TrueNorth to your own infrastructure. Common options:
+
+- Vercel (recommended for Next.js)
+- Your own Node host (PM2/systemd) behind nginx
+
+Minimum steps:
+
+1) Provision Postgres (local, RDS, or Neon) and set `DATABASE_URL`
+2) Run migrations (deploy) and seed if desired:
+   ```bash
+   npx prisma migrate deploy
+   npm run seed
+   ```
+3) Set environment variables for auth (if enabled)
+4) Build and start
+   ```bash
+   npm run build
+   npm start
+   ```
+
+Notes:
+
+- Prisma: `clientExtensions` preview flag is not required in v6+.
+- If CI or builds complain about `session.user` typing, ensure routes cast or use shared auth helpers as noted below in Development Notes.
+- If Nodemailer types cause CI errors, keep `types/nodemailer.d.ts` or install `@types/nodemailer`.
+
+### Deploy to Vercel (One‑Click)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/fam-OS/truenorth&project-name=truenorth&repository-name=truenorth&env=DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,EMAIL_STREAM&envDescription=Set%20required%20secrets%20for%20auth%20and%20database)
+
+After deploy, run migrations (e.g., via a one-off job or `vercel exec`), then seed if desired.
+
+### Continuous Integration
+
+Pull requests targeting the `test` branch run CI via GitHub Actions (`.github/workflows/ci.yml`):
+
+- Spins up Postgres service
+- Installs dependencies with `npm ci`
+- Generates Prisma client and runs `prisma migrate deploy`
+- Seeds demo data (`npm run seed`)
+- Runs tests (`npm test`)
+
+## Security & Data Ownership
+
+TrueNorth is designed for self-hosting. You control your infrastructure, data, and access.
+
+- Data ownership: All data lives in your database (Postgres you provision). The app does not send data to external services unless you configure them (e.g., email SMTP).
+- No telemetry: The project does not collect or transmit telemetry by default.
+- Network & access: Host behind your company SSO and/or on a private network/VPN. Restrict public access where appropriate.
+- Authentication: Use NextAuth providers that match your environment. For Google OAuth, restrict allowed domains in your provider settings.
+- HTTPS: Always terminate TLS in production and set `NEXTAUTH_URL` to the `https://` origin of your deployment.
+- Secrets: Set secrets via your platform’s secure env store. Never commit `.env` files. Rotate `NEXTAUTH_SECRET` if exposed.
+- Database: Use encryption at rest (managed services like Neon/RDS provide this). Enforce SSL (`sslmode=require` for Neon). Back up regularly and test restores.
+- Backups & migrations: Use `prisma migrate deploy` in CI/Prod. Schedule database backups and establish a recovery plan.
 
 ## Prisma
 

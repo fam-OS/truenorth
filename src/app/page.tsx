@@ -1,4 +1,4 @@
-import Link from 'next/link';
+// Note: no internal links on the marketing page; using external anchors
 import Image from 'next/image';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -58,18 +58,14 @@ export default async function Home() {
         <header className="flex justify-between items-center py-6">
           <div aria-hidden className="flex items-center min-w-[1rem]" />
           <div className="flex items-center space-x-4">
-            <Link
-              href="/auth/signin"
-              className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium animate-fade-in-up"
+            <a
+              href="https://github.com/fam-OS/truenorth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-gradient px-4 py-2 rounded-md text-sm font-medium animate-fade-in-up"
             >
-              Sign in
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="btn-gradient px-4 py-2 rounded-md text-sm font-medium animate-fade-in-up delay-1"
-            >
-              Get Started
-            </Link>
+              View on GitHub
+            </a>
           </div>
         </header>
 
@@ -121,18 +117,22 @@ export default async function Home() {
             Streamline people leadership and operations with comprehensive tools for team planning, 1:1s, initiatives, KPIs, and financial tracking. Make data-driven decisions that drive growth.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/auth/signin"
+            <a
+              href="https://github.com/fam-OS/truenorth"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-white hover:bg-gray-50 text-gray-900 px-8 py-3 rounded-lg text-lg font-medium border border-gray-200 shadow-sm"
             >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/signup"
+              View on GitHub
+            </a>
+            <a
+              href="https://github.com/fam-OS/truenorth#readme"
+              target="_blank"
+              rel="noopener noreferrer"
               className="btn-gradient px-8 py-3 rounded-lg text-lg font-medium"
             >
-              Start Free Trial
-            </Link>
+              Self-hosting Guide
+            </a>
           </div>
         </div>
 
@@ -218,20 +218,44 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* CTA Section */}
+        {/* Open Source CTA Section */}
         <div className="text-center py-20">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Ready to get started?
+            Open-source and built for internal teams
           </h2>
-          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join leaders who trust TrueNorth to manage their teams and track their success.
+          <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
+            TrueNorth is an open-source project designed to be self-hosted inside your company. We don’t host your data or
+            facilitate signups—clone the repository, deploy it in your environment, and make it yours.
           </p>
-          <Link
-            href="/auth/signup"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium inline-block"
-          >
-            Get Started
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="https://github.com/fam-OS/truenorth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium inline-block"
+            >
+              Star on GitHub
+            </a>
+            <a
+              href="https://github.com/fam-OS/truenorth#-contributing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white hover:bg-gray-50 text-gray-900 px-8 py-3 rounded-lg text-lg font-medium border border-gray-200 shadow-sm"
+            >
+              Contribute to the project
+            </a>
+          </div>
+        </div>
+
+        {/* Contribution blurb */}
+        <div className="py-10">
+          <div className="text-center mb-10 section-accent-bar animate-fade-in-up">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">How to get started</h3>
+            <p className="text-md text-gray-600 max-w-3xl mx-auto">
+              Read the repository README for setup instructions, environment variables, and deployment steps. We welcome
+              issues, pull requests, and ideas to make TrueNorth better for operators everywhere.
+            </p>
+          </div>
         </div>
 
         {/* Footer intentionally omitted here; global Footer renders from layout.tsx */}
